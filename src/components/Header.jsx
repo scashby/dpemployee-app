@@ -7,7 +7,7 @@ const Header = ({ setView }) => {
         <img
           src="/devils-purse-300x300-3766960153.png"
           alt="Devil's Purse Logo"
-          className="h-10 w-10 rounded-sm"
+          className="h-14 w-14 rounded-sm"
         />
         <div className="text-dpblue text-xl font-semibold tracking-wider uppercase">
           Devil's Purse Brewing Co.
