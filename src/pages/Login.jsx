@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header.jsx';
-
+import React from 'react';
 
 const Login = () => {
   const navigate = useNavigate();
