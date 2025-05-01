@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Header from '../components/Header.jsx';
 
 const sections = {
   'Beer Inventory': ['New Releases', 'Low Inventory', 'First In, First Out'],
@@ -43,48 +44,51 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Section Nav */}
-      <div className="w-1/5 bg-gray-100 p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">Sections</h2>
-        {Object.keys(sections).map(section => (
-          <div
-            key={section}
-            className={`cursor-pointer p-2 rounded hover:bg-gray-200 ${section === selectedSection ? 'bg-gray-300' : ''}`}
-            onClick={() => {
-              setSelectedSection(section);
-              setSelectedSubsection(sections[section][0] || '');
-            }}
-          >
-            {section}
-          </div>
-        ))}
-      </div>
-
-      {/* Subsection Nav */}
-      <div className="w-1/5 bg-gray-50 p-4 border-l border-gray-200 overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">Subsections</h2>
-        {sections[selectedSection].length > 0 ? (
-          sections[selectedSection].map(sub => (
+    <>
+      <Header />
+      <div className="flex h-screen">
+        {/* Section Nav */}
+        <div className="w-1/5 bg-gray-100 p-4 overflow-y-auto">
+          <h2 className="text-lg font-bold mb-4">Sections</h2>
+          {Object.keys(sections).map(section => (
             <div
-              key={sub}
-              className={`cursor-pointer p-2 rounded hover:bg-gray-200 ${sub === selectedSubsection ? 'bg-gray-300' : ''}`}
-              onClick={() => setSelectedSubsection(sub)}
+              key={section}
+              className={`cursor-pointer p-2 rounded hover:bg-gray-200 ${section === selectedSection ? 'bg-gray-300' : ''}`}
+              onClick={() => {
+                setSelectedSection(section);
+                setSelectedSubsection(sections[section][0] || '');
+              }}
             >
-              {sub}
+              {section}
             </div>
-          ))
-        ) : (
-          <p className="text-gray-600">No subsections</p>
-        )}
-      </div>
+          ))}
+        </div>
 
-      {/* Content Display */}
-      <div className="w-3/5 p-6 overflow-y-auto">
-        <h2 className="text-2xl font-semibold mb-4">{selectedSubsection || selectedSection}</h2>
-        {renderContent()}
+        {/* Subsection Nav */}
+        <div className="w-1/5 bg-gray-50 p-4 border-l border-gray-200 overflow-y-auto">
+          <h2 className="text-lg font-bold mb-4">Subsections</h2>
+          {sections[selectedSection].length > 0 ? (
+            sections[selectedSection].map(sub => (
+              <div
+                key={sub}
+                className={`cursor-pointer p-2 rounded hover:bg-gray-200 ${sub === selectedSubsection ? 'bg-gray-300' : ''}`}
+                onClick={() => setSelectedSubsection(sub)}
+              >
+                {sub}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-600">No subsections</p>
+          )}
+        </div>
+
+        {/* Content Display */}
+        <div className="w-3/5 p-6 overflow-y-auto">
+          <h2 className="text-2xl font-semibold mb-4">{selectedSubsection || selectedSection}</h2>
+          {renderContent()}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
