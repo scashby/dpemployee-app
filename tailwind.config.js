@@ -1,11 +1,7 @@
-// tailwind.config.js
-import { defineConfig } from 'vite';
-import plugin from 'tailwindcss/plugin';
-
-export default defineConfig({
+module.exports = {
   content: [
     './index.html',
-    './src/**/*.{js,jsx}',
+    './src/**/*.{js,jsx}'
   ],
   theme: {
     extend: {
@@ -22,8 +18,15 @@ export default defineConfig({
       },
       boxShadow: {
         dp: '0 2px 6px rgba(13, 26, 38, 0.15)',
-      },
-    },
+      }
+    }
   },
+  safelist: [
+    'bg-dpblue',
+    'text-dpgold',
+    'text-dpgray',
+    'font-heading',
+    'shadow-dp',
+  ],
   plugins: [],
-});
+};
