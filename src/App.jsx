@@ -7,6 +7,7 @@ import EventsCalendar from './components/EventsCalendar';
 import ScheduleCalendar from './components/ScheduleCalendar.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import AdminOnly from './components/AdminOnly.jsx';
+import Header from './components/Header.jsx';
 
 const AdminDashboard = () => <h2>Admin Dashboard (placeholder)</h2>;
 const EmployeeDashboard = () => <Dashboard />;
@@ -21,6 +22,7 @@ function App() {
 
   return (
     <Router>
+      <Header />
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
@@ -39,10 +41,13 @@ function App() {
             )
           }
         />
-        <Route path="/admin/*" element={session ? <AdminOnly><AdminPanel /></AdminOnly> : <Navigate to="/login" />} />
+        <Route
+          path="/admin/*"
+          element={session ? <AdminOnly><AdminPanel /></AdminOnly> : <Navigate to="/login" />}
+        />
       </Routes>
     </Router>
-  );
+  );  
 }
 
 export default App;
