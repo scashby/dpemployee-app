@@ -1,10 +1,22 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Header from './components/Header.jsx';
+
+const TestPage = () => (
+  <div style={{ padding: '2rem', fontSize: '2rem', color: 'blue' }}>
+    ✅ This is the /test route (with Header)
+  </div>
+);
 
 function App() {
   return (
-    <div style={{ padding: '2rem', fontSize: '2rem', color: 'green' }}>
-      ✅ App.jsx is rendering this directly (no routes)
-    </div>
+    <Router>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Navigate to="/test" />} />
+        <Route path="/test" element={<TestPage />} />
+      </Routes>
+    </Router>
   );
 }
 
