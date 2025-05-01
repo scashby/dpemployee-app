@@ -23,7 +23,7 @@ function App() {
 
   return (
     <Router>
-      <Header />
+      <Header /> {/* Always rendered */}
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
