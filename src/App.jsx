@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import EventsCalendar from './components/EventsCalendar';
 import ScheduleCalendar from './components/ScheduleCalendar.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
+import AdminOnly from './components/AdminOnly.jsx';
 
 const AdminDashboard = () => <h2>Admin Dashboard (placeholder)</h2>;
 const EmployeeDashboard = () => <Dashboard />;
