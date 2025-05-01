@@ -1,20 +1,18 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header.jsx';
 
-const TestPage = () => (
+const Test = () => (
   <div style={{ padding: '2rem', fontSize: '2rem', color: 'blue' }}>
-    ✅ This is the /test route (with Header)
+    ✅ React Router is working
   </div>
 );
 
 function App() {
   return (
     <Router>
-      <Header />
       <Routes>
         <Route path="/" element={<Navigate to="/test" />} />
-        <Route path="/test" element={<TestPage />} />
+        <Route path="/test" element={<Test />} />
       </Routes>
     </Router>
   );
