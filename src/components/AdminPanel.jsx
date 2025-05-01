@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, Routes, Route, useNavigate } from 'react-router-dom';
 import ScheduleCalendar from './ScheduleCalendar.jsx';
+import EventEditor from './EventEditor.jsx';
 
 const Placeholder = ({ title }) => (
   <div className="p-6">
@@ -38,6 +39,7 @@ const AdminPanel = () => {
           <Route path="/events" element={<Placeholder title="Events" />} />
           <Route path="/staff" element={<Placeholder title="Staff" />} />
           <Route path="/settings" element={<Placeholder title="Settings" />} />
+          <Route path="/events" element={<EventEditor />} />
         </Routes>
       </main>
     </div>
