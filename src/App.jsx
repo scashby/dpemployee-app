@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase/supabaseClient';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import EventsCalendar from './components/EventsCalendar';
+import Login from './pages/Login.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import EventsCalendar from './components/EventsCalendar.jsx';
 import ScheduleCalendar from './components/ScheduleCalendar.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import AdminOnly from './components/AdminOnly.jsx';
 import Header from './components/Header.jsx';
 
-const AdminDashboard = () => <h2>Admin Dashboard (placeholder)</h2>;
+const AdminDashboard = () => <h2 className="text-center p-6">Admin Dashboard (placeholder)</h2>;
 const EmployeeDashboard = () => <Dashboard />;
+const TestPage = () => <h2 className="text-center p-6 text-green-700">✅ App is rendering. This is a test route.</h2>;
 
 function App() {
   const [session, setSession] = useState(null);
@@ -43,11 +44,20 @@ function App() {
         />
         <Route
           path="/admin/*"
-          element={session ? <AdminOnly><AdminPanel /></AdminOnly> : <Navigate to="/login" />}
+          element={
+            session ? (
+              <AdminOnly>
+                <AdminPanel />
+              </AdminOnly>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
+        <Route path="/test" element={<TestPage />} />
       </Routes>
     </Router>
-  );  
+  );
 }
 
 export default App;
