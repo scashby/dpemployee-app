@@ -9,8 +9,9 @@ const Login = () => {
   };
 
   return (
-    <div className="text-center p-10">
-      <h2 className="text-2xl mb-4 font-heading text-dpblue">Sign in to Devil’s Purse</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-dpbg text-dpblue font-body">
+      <h2 className="text-2xl font-heading mb-2">Sign in to Devil’s Purse</h2>
+      <p className="mb-6 text-sm">Employee access portal</p>
       <button
         onClick={handleLogin}
         className="bg-dpblue text-white px-6 py-2 rounded hover:bg-dpgold transition"

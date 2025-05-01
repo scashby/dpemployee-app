@@ -2,24 +2,23 @@ import React from 'react';
 
 const Header = ({ setView }) => {
   return (
-    <header className="bg-dpblue text-white shadow-dp px-6 py-4 flex items-center justify-between">
+    <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between font-heading">
       <div className="flex items-center space-x-4">
         <img
           src="/devils-purse-300x300-3766960153.png"
           alt="Devil's Purse Logo"
-          className="h-12 w-12 rounded"
+          className="h-10 w-10 rounded-sm"
         />
-        <div className="leading-tight">
-          <h1 className="text-xl font-heading text-dpgold">Devil’s Purse</h1>
-          <p className="text-sm text-dpgray font-serif">Employee Portal</p>
+        <div className="text-dpblue text-xl font-semibold tracking-wider uppercase">
+          Devil's Purse Brewing Co.
         </div>
       </div>
-      <nav className="flex items-center space-x-4 text-sm">
-        <button onClick={() => setView('dashboard')} className="hover:underline">Dashboard</button>
-        <button onClick={() => setView('login')} className="hover:underline">Login</button>
-        <button onClick={() => setView('admin')} className="hover:underline">Admin Panel</button>
-        <button onClick={() => setView('schedule')} className="hover:underline">Schedule</button>
-        <button onClick={() => setView('events')} className="hover:underline">Events</button>
+      <nav className="flex items-center space-x-6 text-sm font-medium text-dpgray">
+        <button onClick={() => setView('dashboard')} className="hover:text-dpgold transition">Dashboard</button>
+        <button onClick={() => setView('login')} className="hover:text-dpgold transition">Login</button>
+        <button onClick={() => setView('admin')} className="hover:text-dpgold transition">Admin Panel</button>
+        <button onClick={() => setView('schedule')} className="hover:text-dpgold transition">Schedule</button>
+        <button onClick={() => setView('events')} className="hover:text-dpgold transition">Events</button>
       </nav>
     </header>
   );
