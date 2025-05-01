@@ -1,20 +1,37 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
-const Test = () => (
-  <div style={{ padding: '2rem', fontSize: '2rem', color: 'blue' }}>
-    ✅ React Router is working
-  </div>
-);
+import React, { useState } from 'react';
+import Header from './components/Header.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import Login from './pages/Login.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
+import ScheduleCalendar from './components/ScheduleCalendar.jsx';
+import EventEditor from './components/EventEditor.jsx';
 
 function App() {
+  const [view, setView] = useState('dashboard');
+
+  const renderView = () => {
+    switch (view) {
+      case 'login':
+        return <Login />;
+      case 'admin':
+        return <AdminPanel />;
+      case 'schedule':
+        return <ScheduleCalendar />;
+      case 'events':
+        return <EventEditor />;
+      case 'dashboard':
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/test" />} />
-        <Route path="/test" element={<Test />} />
-      </Routes>
-    </Router>
+    <>
+      <Header setView={setView} />
+      <main className="p-4">
+        {renderView()}
+      </main>
+    </>
   );
 }
 
