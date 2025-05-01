@@ -3,6 +3,8 @@ import { supabase } from './supabase/supabaseClient';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import EventsCalendar from './components/EventsCalendar';
+
 
 const AdminDashboard = () => <h2>Admin Dashboard (placeholder)</h2>;
 const EmployeeDashboard = () => <Dashboard />;
@@ -22,6 +24,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin-dashboard" element={session ? <AdminDashboard /> : <Navigate to="/login" />} />
         <Route path="/employee-dashboard" element={session ? <EmployeeDashboard /> : <Navigate to="/login" />} />
+        <Route path="/events-calendar" element={session ? <EventsCalendar /> : <Navigate to="/login" />} />
       </Routes>
     </Router>
   );
