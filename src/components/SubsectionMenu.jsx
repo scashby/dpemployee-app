@@ -1,1 +1,1 @@
-// src/components/SubsectionMenu.js placeholder
+// src/components/SubsectionMenu.js placehold
