@@ -1,8 +1,11 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+// tailwind.config.js
+import { defineConfig } from 'vite';
+import plugin from 'tailwindcss/plugin';
+
+export default defineConfig({
   content: [
-    "./index.html",
-    "./src/**/*.{js,jsx}"
+    './index.html',
+    './src/**/*.{js,jsx}',
   ],
   theme: {
     extend: {
@@ -11,16 +14,16 @@ module.exports = {
         dpgold: '#c4a160',
         dpgray: '#e6e6e6',
         dpoffwhite: '#f8f8f6',
-        dpshadow: '#0d1a26'
+        dpshadow: '#0d1a26',
       },
       fontFamily: {
+        heading: ['"Playfair Display"', 'serif'],
         serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
-        heading: ['"Playfair Display"', 'serif']
       },
       boxShadow: {
-        dp: '0 2px 6px rgba(13, 26, 38, 0.15)'
-      }
-    }
+        dp: '0 2px 6px rgba(13, 26, 38, 0.15)',
+      },
+    },
   },
-  plugins: []
-};
+  plugins: [],
+});
