@@ -25,8 +25,9 @@ const ScheduleEditor = () => {
       .order('week_start', { ascending: false });
 
     if (!error) {
-      console.log('Available weeks:', data);
-      setWeekStartDates(data.map(d => d.week_start));
+      const cleaned = data.map(d => new Date(d.week_start).toISOString().split('T')[0]);
+      console.log('Cleaned week starts:', cleaned);
+      setWeekStartDates(cleaned);
     }
   };
 
@@ -34,7 +35,7 @@ const ScheduleEditor = () => {
     const { data, error } = await supabase
       .from('schedules')
       .select('*')
-      .eq('week_start', new Date(weekStart).toISOString().split('T')[0])
+      .eq('week_start', weekStart)
       .maybeSingle();
 
     if (!error && data) {
