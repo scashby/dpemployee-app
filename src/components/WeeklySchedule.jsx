@@ -29,14 +29,14 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
               <tr key={rowIdx} className="border-t border-gray-200">
                 <td className="p-2 font-medium">{employee}</td>
                 {shifts[rowIdx].map((shift, colIdx) => {
-                  const isEditable = isAdmin;
-                  const eventType = typeof shift === 'object' && shift.event_type;
-                  const display = typeof shift === 'object' ? shift.shift : shift;
+                  const shiftValue = shift ?? '';
+                  const display = typeof shiftValue === 'object' ? shiftValue.shift : shiftValue;
+                  const eventType = typeof shiftValue === 'object' ? shiftValue.event_type : null;
                   const cellClass = getCellClass(eventType);
 
                   return (
                     <td key={colIdx} className={`p-2 text-center text-sm ${cellClass}`}>
-                      {isEditable ? (
+                      {isAdmin ? (
                         <input
                           type="text"
                           defaultValue={display || ""}
