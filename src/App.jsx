@@ -19,16 +19,20 @@ function App() {
   }, [view]);
 
   const fetchSchedule = async () => {
-    const { data, error } = await supabase
+    const result = await supabase
       .from('schedules')
       .select('*')
       .order('employee_name', { ascending: true })
       .order('date', { ascending: true });
 
-    if (error) {
-      console.error("Supabase fetch error:", error);
+    console.log("Supabase result:", result);
+
+    if (result.error) {
+      console.error("Supabase fetch error:", result.error);
       return;
     }
+
+    const data = result.data;
 
     const uniqueDates = [...new Set(data.map(entry => entry.date))].sort();
     const dayLabels = uniqueDates.map(date => {
