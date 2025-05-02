@@ -11,7 +11,10 @@ const ScheduleEditor = () => {
   useEffect(() => {
     const loadCurrentOrCreate = async () => {
       const today = new Date();
-      const start = new Date(today.setDate(today.getDate() - today.getDay()));
+            const start = new Date();
+      const day = start.getDay();
+      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+      start.setDate(diff);
       const isoWeekStart = start.toISOString().split('T')[0];
       setWeekStart(isoWeekStart);
 
