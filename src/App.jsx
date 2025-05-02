@@ -42,7 +42,7 @@ function App() {
       .from('schedules')
       .select('*')
       .eq('week_start', weekStart)
-      .single();
+      .maybeSingle(); // prevents 406 error
 
     if (error) {
       console.error("Schedule fetch error:", error);
@@ -66,7 +66,7 @@ function App() {
             days={weekData.days}
             employees={weekData.employees}
             shifts={weekData.shifts}
-            editable={false} // 🔒 read-only in this context
+            editable={false}
           />
         ) : (
           <p>Loading schedule...</p>
