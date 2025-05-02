@@ -71,7 +71,7 @@ const ScheduleView = ({ user }) => {
   const start = new Date(weekData.week_start);
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
-  const label = `Week of ${start.toLocaleDateString(undefined, {{ month: '2-digit', day: '2-digit' }})} through ${end.toLocaleDateString(undefined, {{ month: '2-digit', day: '2-digit' }})}`;
+  const label = `Week of ${start.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })} through ${end.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}`;
   const shifts = weekData.shifts[employeeIndex];
 
   return (
