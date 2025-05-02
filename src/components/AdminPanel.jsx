@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import ScheduleEditor from './ScheduleEditor';
+import ScheduleEditor from './ScheduleEditor.jsx';
 
 const AdminPanel = () => {
   const [section, setSection] = useState(null);
 
-  const renderPanel = () => {
+  const renderSection = () => {
     switch (section) {
       case 'schedule':
         return <ScheduleEditor />;
       default:
-        return <p className="text-dpgray">Select a section from the sidebar to begin.</p>;
+        return <p className="text-dpblue text-md p-4">Welcome to the Admin Panel. Select a tool from the left.</p>;
     }
   };
 
@@ -23,14 +23,9 @@ const AdminPanel = () => {
               Edit Schedule
             </button>
           </li>
-          <li>
-            <button disabled className="text-gray-400 cursor-not-allowed">
-              Edit Events (coming soon)
-            </button>
-          </li>
         </ul>
       </aside>
-      <main className="flex-1 p-6">{renderPanel()}</main>
+      <main className="flex-1 p-6">{renderSection()}</main>
     </div>
   );
 };

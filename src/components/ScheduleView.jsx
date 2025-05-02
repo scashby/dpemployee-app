@@ -42,22 +42,43 @@ const ScheduleView = ({ user }) => {
     loadSchedule();
   }, [user]);
 
-  if (loading) return <p className="p-4">Loading schedule…</p>;
-  if (!weekData || employeeIndex === null || employeeIndex === -1) return <p className="p-4">No schedule found.</p>;
+  const handleDownload = () => {
+    const start = new Date(weekData.week_start);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const label = `Week of ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    const employeeName = weekData.employees[employeeIndex];
+    const rows = weekData.days.map((day, i) => {
+      const shift = weekData.shifts[employeeIndex][i];
+      const value = typeof shift === 'object' ? shift?.shift : shift || '-';
+      return `${day},${value}`;
+    });
 
-  const { week_start, days, employees, shifts } = weekData;
-  const emp = employees[employeeIndex];
-  const shiftRow = shifts[employeeIndex];
+    const blob = new Blob(
+      [`Schedule for ${employeeName}\n${label}\n\nDay,Shift\n${rows.join('\n')}`],
+      {{ type: 'text/plain' }}
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${employeeName}_schedule.txt`;
+    link.click();
+  };
 
-  const start = new Date(week_start);
+  if (loading) return <p className="p-6">Loading schedule…</p>;
+  if (!weekData || employeeIndex === null || employeeIndex === -1) return <p className="p-6">No schedule found.</p>;
+
+  const start = new Date(weekData.week_start);
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
-  const label = `Week of ${start.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })} through ${end.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}`;
+  const label = `Week of ${start.toLocaleDateString(undefined, {{ month: '2-digit', day: '2-digit' }})} through ${end.toLocaleDateString(undefined, {{ month: '2-digit', day: '2-digit' }})}`;
+  const shifts = weekData.shifts[employeeIndex];
 
   return (
     <div className="p-6 font-body text-dpblue">
-      <h2 className="text-xl font-heading mb-4">{label}</h2>
-      <table className="min-w-full border border-gray-300">
+      <h2 className="text-xl font-heading mb-2">{label}</h2>
+      <h3 className="mb-4 font-semibold text-lg">{weekData.employees[employeeIndex]}</h3>
+      <table className="min-w-[300px] border border-gray-300 mb-4">
         <thead className="bg-dpoffwhite text-sm uppercase font-semibold text-dpgray">
           <tr>
             <th className="p-2 border-b">Day</th>
@@ -65,14 +86,20 @@ const ScheduleView = ({ user }) => {
           </tr>
         </thead>
         <tbody>
-          {days.map((day, i) => (
+          {weekData.days.map((day, i) => (
             <tr key={i} className="border-t">
               <td className="p-2">{day}</td>
-              <td className="p-2 text-center">{typeof shiftRow[i] === 'object' ? shiftRow[i].shift : shiftRow[i] || '-'}</td>
+              <td className="p-2 text-center">{typeof shifts[i] === 'object' ? shifts[i]?.shift : shifts[i] || '-'}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      <button
+        onClick={handleDownload}
+        className="px-4 py-2 bg-dpblue text-white rounded hover:bg-dpdark"
+      >
+        Download My Schedule
+      </button>
     </div>
   );
 };
