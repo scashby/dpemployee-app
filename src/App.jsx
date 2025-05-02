@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
 import Dashboard from './pages/Dashboard.jsx';
-import Login from './pages/Login.jsx';
-import AdminPanel from './components/AdminPanel.jsx';
-import ScheduleCalendar from './components/ScheduleCalendar.jsx';
-import EventEditor from './components/EventEditor.jsx';
-import EmployeeSchedule from './components/EmployeeSchedule.jsx';
-import PrintableSchedule from './components/PrintableSchedule.jsx';
+import Events from './pages/Events.jsx';
+import ScheduleView from './components/ScheduleView.jsx';
+import ScheduleAdmin from './components/ScheduleAdmin.jsx';
 import { supabase } from './supabase/supabaseClient';
 
 function App() {
@@ -23,18 +20,12 @@ function App() {
     switch (view) {
       case 'dashboard':
         return <Dashboard setView={setView} />;
-      case 'login':
-        return <Login setView={setView} />;
       case 'admin':
-        return <AdminPanel setView={setView} />;
+        return <ScheduleAdmin />;
       case 'scheduleview':
-        return <EmployeeSchedule user={user} />;
-      case 'print':
-        return <PrintableSchedule user={user} />;
-      case 'calendar':
-        return <ScheduleCalendar />;
-      case 'eventeditor':
-        return <EventEditor />;
+        return <ScheduleView user={user} />;
+      case 'events':
+        return <Events />;
       default:
         return <Dashboard setView={setView} />;
     }
