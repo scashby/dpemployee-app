@@ -10,7 +10,7 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false, 
   return (
     <div className="bg-dpbg p-6 font-body text-dpblue">
       <h2 className="text-2xl font-heading mb-4 tracking-tight">
-        Weekly Schedule – Week {weekLabel}
+        {weekLabel}
       </h2>
       <div className="overflow-auto">
         <table className="min-w-full table-fixed border border-gray-300">
