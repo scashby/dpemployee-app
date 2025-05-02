@@ -1,31 +1,11 @@
 import React from 'react';
 
-const calendarData = {
-  weekLabel: "428-54",
-  days: [
-    "Mon 04/28", "Tue 04/29", "Wed 04/30", "Thu 05/01", "Fri 05/02", "Sat 05/03", "Sun 05/04"
-  ],
-  employees: [
-    "Brandon", "Katie", "Stephen", "Brendan", "Matt L.", "Justin", "Matt Ross", "Ann R"
-  ],
-  shifts: [
-    ["", "", "11-Close", "11-Close", "11-Close", "TDB", "TDB"],
-    ["", "", "", "", "11-Close", "", ""],
-    ["", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", ""]
-  ]
-};
-
-const WeeklySchedule = () => {
-  const { weekLabel, days, employees, shifts } = calendarData;
-
+const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
   return (
     <div className="bg-dpbg p-6 font-body text-dpblue">
-      <h2 className="text-2xl font-heading mb-4 tracking-tight">Front of House Schedule – Week {weekLabel}</h2>
+      <h2 className="text-2xl font-heading mb-4 tracking-tight">
+        Front of House Schedule – Week {weekLabel}
+      </h2>
       <div className="overflow-auto">
         <table className="min-w-full table-fixed border border-gray-300">
           <thead className="bg-dpoffwhite text-sm uppercase font-semibold text-dpgray">
