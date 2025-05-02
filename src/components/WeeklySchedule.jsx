@@ -1,6 +1,14 @@
 import React from 'react';
 
 const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
+  const isAdmin = true; // placeholder, replace with actual admin check
+
+  const getCellClass = (eventType) => {
+    if (eventType === 'in-house') return 'bg-green-100 text-green-800';
+    if (eventType === 'off-prem') return 'bg-blue-100 text-blue-800';
+    return '';
+  };
+
   return (
     <div className="bg-dpbg p-6 font-body text-dpblue">
       <h2 className="text-2xl font-heading mb-4 tracking-tight">
@@ -20,9 +28,21 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
             {employees.map((employee, rowIdx) => (
               <tr key={rowIdx} className="border-t border-gray-200">
                 <td className="p-2 font-medium">{employee}</td>
-                {shifts[rowIdx].map((shift, colIdx) => (
-                  <td key={colIdx} className="p-2 text-center text-sm">
-                    {shift || "-"}
+                {shifts[rowIdx].map((shift, colIdx) => {
+              const isEditable = isAdmin;
+              const cellClass = getCellClass(shift.event_type);
+              return (
+
+                  <td key={colIdx} className={`p-2 text-center text-sm ${cellClass}`}>
+                    isEditable ? (
+                      <input
+                        type="text"
+                        defaultValue={shift || ""}
+                        className="w-full text-center border rounded-sm px-1"
+                      />
+                    ) : (
+                      shift || "-"
+                    )
                   </td>
                 ))}
               </tr>
