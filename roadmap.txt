@@ -1,0 +1,16 @@
+# Devil's Purse Employee App – Roadmap
+
+Version: beta.version.1.0
+
+✅ Current baseline is fully functional:
+  - No routing (useState-based view switching)
+  - Fully styled to match public site
+  - Header with navigation and logo
+  - Login view (Google OAuth ready)
+  - Supabase integration
+
+🕒 Upcoming (deferred) features:
+  - Require Google login before accessing the app (auth gate)
+  - Role-based access (admin vs employee)
+  - Real-time updates (schedule editor, event list)
+  - Mobile responsiveness
