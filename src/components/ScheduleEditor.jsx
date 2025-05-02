@@ -4,59 +4,46 @@ import { supabase } from '../supabase/supabaseClient';
 
 const ScheduleEditor = () => {
   const [weekData, setWeekData] = useState(null);
-  const [weekStartDates, setWeekStartDates] = useState([]);
   const [modifiedShifts, setModifiedShifts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [warning, setWarning] = useState('');
+  const [weekStart, setWeekStart] = useState(null);
 
   useEffect(() => {
-    loadWeekStarts();
-  }, []);
+    const loadCurrentOrCreate = async () => {
+      const today = new Date();
+      const start = new Date(today.setDate(today.getDate() - today.getDay()));
+      const isoWeekStart = start.toISOString().split('T')[0];
+      setWeekStart(isoWeekStart);
 
-  useEffect(() => {
-    if (weekStartDates.length > 0) {
-      fetchWeekSchedule(weekStartDates[0]);
-    }
-  }, [weekStartDates]);
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('week_start', isoWeekStart)
+        .maybeSingle();
 
-  const loadWeekStarts = async () => {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('week_start')
-      .order('week_start', { ascending: false });
-
-    if (!error && data.length > 0) {
-      const cleaned = data.map(d => new Date(d.week_start).toISOString().split('T')[0]);
-      setWeekStartDates(cleaned);
-    }
-  };
-
-  const fetchWeekSchedule = async (weekStart) => {
-    setLoading(true);
-    setWarning('');
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('*')
-      .eq('week_start', weekStart)
-      .maybeSingle();
-
-    if (!error && data) {
-      setWeekData(data);
-      if (!data.days || !data.employees || !data.shifts) {
-        setWarning('This week’s schedule is incomplete.');
+      if (!error && data) {
+        setWeekData(data);
         setModifiedShifts(data.shifts || []);
       } else {
-        setModifiedShifts(data.shifts);
+        setWeekData({
+          week_start: isoWeekStart,
+          week_label: `Week of ${isoWeekStart}`,
+          days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+          employees: [],
+          shifts: [],
+        });
+        setModifiedShifts([]);
       }
-    } else {
-      setWarning('Failed to load schedule for selected week.');
-    }
 
-    setLoading(false);
-  };
+      setLoading(false);
+    };
+
+    loadCurrentOrCreate();
+  }, []);
 
   const handleShiftChange = (row, col, newValue) => {
     const updated = [...modifiedShifts];
+    if (!updated[row]) updated[row] = [];
     const current = updated[row][col];
     updated[row][col] =
       typeof current === 'object'
@@ -67,17 +54,28 @@ const ScheduleEditor = () => {
 
   const handleSave = async () => {
     if (!weekData) return;
-    const { error } = await supabase
-      .from('schedules')
-      .update({ shifts: modifiedShifts })
-      .eq('id', weekData.id);
 
-    if (error) {
-      alert('Failed to save schedule.');
+    const existing = await supabase
+      .from('schedules')
+      .select('id')
+      .eq('week_start', weekStart)
+      .maybeSingle();
+
+    const newData = {
+      ...weekData,
+      shifts: modifiedShifts,
+    };
+
+    if (existing.data) {
+      await supabase
+        .from('schedules')
+        .update(newData)
+        .eq('id', existing.data.id);
     } else {
-      alert('Schedule updated.');
-      setWeekData({ ...weekData, shifts: modifiedShifts });
+      await supabase.from('schedules').insert([newData]);
     }
+
+    alert('Schedule saved.');
   };
 
   return (
@@ -85,13 +83,12 @@ const ScheduleEditor = () => {
       <h3 className="text-xl font-heading mb-4">Edit Weekly Schedule</h3>
       {loading ? (
         <p>Loading schedule...</p>
-      ) : weekData ? (
+      ) : (
         <>
-          {warning && <p className="text-red-600 mb-2">{warning}</p>}
           <WeeklySchedule
             weekLabel={weekData.week_label}
-            days={weekData.days || []}
-            employees={weekData.employees || []}
+            days={weekData.days}
+            employees={weekData.employees}
             shifts={modifiedShifts}
             editable={true}
             onShiftChange={handleShiftChange}
@@ -103,8 +100,6 @@ const ScheduleEditor = () => {
             Save Changes
           </button>
         </>
-      ) : (
-        <p className="text-red-600">No schedule found for the latest week.</p>
       )}
     </div>
   );

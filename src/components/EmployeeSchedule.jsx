@@ -32,9 +32,8 @@ const EmployeeSchedule = ({ user }) => {
     if (user) load();
   }, [user]);
 
-  if (!user) return <p className="p-4">Please log in to view your schedule.</p>;
-  if (!weekData) return <p className="p-4">Loading your schedule…</p>;
-  if (employeeIndex == null) return <p className="p-4">No matching schedule found for your account.</p>;
+    if (!weekData) return <p className="p-4">Loading your schedule…</p>;
+  if (employeeIndex === -1 || employeeIndex === null) return <p className="p-4">No matching schedule found for your account.</p>;
 
   const shifts = [[...weekData.shifts[employeeIndex]]];
   const employees = [weekData.employees[employeeIndex]];
