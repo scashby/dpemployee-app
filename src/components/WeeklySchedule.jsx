@@ -1,6 +1,6 @@
 import React from 'react';
 
-const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false }) => {
+const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false, onShiftChange }) => {
   const getCellClass = (eventType) => {
     if (eventType === 'in-house') return 'bg-green-100 text-green-800';
     if (eventType === 'off-prem') return 'bg-blue-100 text-blue-800';
@@ -38,6 +38,7 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false }
                         <input
                           type="text"
                           defaultValue={display || ''}
+                          onChange={(e) => onShiftChange(rowIdx, colIdx, e.target.value)}
                           className="w-full text-center border rounded-sm px-1"
                         />
                       ) : (

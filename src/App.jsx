@@ -6,6 +6,7 @@ import AdminPanel from './components/AdminPanel.jsx';
 import ScheduleCalendar from './components/ScheduleCalendar.jsx';
 import EventEditor from './components/EventEditor.jsx';
 import WeeklySchedule from './components/WeeklySchedule.jsx';
+import PrintableSchedule from './components/PrintableSchedule.jsx';
 import { supabase } from './supabase/supabaseClient';
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
   const [weekData, setWeekData] = useState(null);
 
   useEffect(() => {
-    if (view === 'scheduleview') loadWeekStarts();
+    if (view === 'scheduleview' || view === 'print') loadWeekStarts();
   }, [view]);
 
   useEffect(() => {
@@ -30,9 +31,7 @@ function App() {
       .select('week_start')
       .order('week_start', { ascending: false });
 
-    if (error) {
-      console.error("Week start fetch error:", error);
-    } else {
+    if (!error) {
       setWeekStartDates(data.map(d => d.week_start));
     }
   };
@@ -42,11 +41,9 @@ function App() {
       .from('schedules')
       .select('*')
       .eq('week_start', weekStart)
-      .maybeSingle(); // prevents 406 error
+      .maybeSingle();
 
-    if (error) {
-      console.error("Schedule fetch error:", error);
-    } else {
+    if (!error) {
       setWeekData(data);
     }
   };
@@ -66,11 +63,17 @@ function App() {
             days={weekData.days}
             employees={weekData.employees}
             shifts={weekData.shifts}
-            editable={false}
           />
-        ) : (
-          <p>Loading schedule...</p>
-        );
+        ) : <p>Loading schedule...</p>;
+      case 'print':
+        return weekData ? (
+          <PrintableSchedule
+            weekLabel={weekData.week_label}
+            days={weekData.days}
+            employees={weekData.employees}
+            shifts={weekData.shifts}
+          />
+        ) : <p>Preparing print view...</p>;
       case 'calendar':
         return <ScheduleCalendar />;
       case 'eventeditor':
