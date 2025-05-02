@@ -56,7 +56,7 @@ const ScheduleView = ({ user }) => {
 
     const blob = new Blob(
       [`Schedule for ${employeeName}\n${label}\n\nDay,Shift\n${rows.join('\n')}`],
-      {{ type: 'text/plain' }}
+      { type: 'text/plain' }
     );
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
