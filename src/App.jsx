@@ -10,50 +10,66 @@ import { supabase } from './supabase/supabaseClient';
 
 function App() {
   const [view, setView] = useState('dashboard');
+  const [weekStartDates, setWeekStartDates] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [weekData, setWeekData] = useState(null);
 
   useEffect(() => {
-    if (view === 'scheduleview') {
-      fetchSchedule();
-    }
+    if (view === 'scheduleview') loadWeekStarts();
   }, [view]);
 
-  const fetchSchedule = async () => {
-    const result = await supabase
+  useEffect(() => {
+    if (weekStartDates.length > 0) {
+      fetchWeekSchedule(weekStartDates[currentIndex]);
+    }
+  }, [currentIndex, weekStartDates]);
+
+  const loadWeekStarts = async () => {
+    const { data, error } = await supabase
       .from('schedules')
-      .select('*')
-      .order('employee_name', { ascending: true })
-      .order('date', { ascending: true });
+      .select('week_start')
+      .order('week_start', { ascending: false });
 
-    console.log("Supabase result:", result);
-
-    if (result.error) {
-      console.error("Supabase fetch error:", result.error);
+    if (error) {
+      console.error("Week start fetch error:", error);
       return;
     }
 
-    const data = result.data;
+    const unique = [...new Set(data.map(d => d.week_start))];
+    setWeekStartDates(unique);
+    setCurrentIndex(0);
+  };
 
-    const uniqueDates = [...new Set(data.map(entry => entry.date))].sort();
-    const dayLabels = uniqueDates.map(date => {
-      const d = new Date(date);
-      return d.toLocaleDateString('en-US', { weekday: 'short', month: '2-digit', day: '2-digit' });
-    });
+  const fetchWeekSchedule = async (weekStart) => {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('*')
+      .eq('week_start', weekStart)
+      .order('employee_name', { ascending: true })
+      .order('date', { ascending: true });
 
-    const employeeNames = [...new Set(data.map(entry => entry.employee_name))].sort();
+    if (error) {
+      console.error("Schedule fetch error:", error);
+      return;
+    }
 
-    const shifts = employeeNames.map(name => {
-      return uniqueDates.map(date => {
-        const shift = data.find(entry => entry.employee_name === name && entry.date === date);
-        return shift ? shift.shift : "";
-      });
-    });
+    const dates = [...new Set(data.map(e => e.date))].sort();
+    const days = dates.map(d => new Date(d).toLocaleDateString('en-US', {
+      weekday: 'short', month: '2-digit', day: '2-digit'
+    }));
+    const employees = [...new Set(data.map(e => e.employee_name))].sort();
+    const shifts = employees.map(name =>
+      dates.map(date => {
+        const match = data.find(d => d.employee_name === name && d.date === date);
+        return match ? match.shift : "";
+      })
+    );
 
     setWeekData({
-      weekLabel: `${dayLabels[0]} – ${dayLabels[dayLabels.length - 1]}`,
-      days: dayLabels,
-      employees: employeeNames,
-      shifts: shifts
+      weekLabel: `${days[0]} – ${days[days.length - 1]}`,
+      days,
+      employees,
+      shifts
     });
   };
 
@@ -66,18 +82,35 @@ function App() {
       case 'schedule':
         return <ScheduleCalendar />;
       case 'scheduleview':
-        return weekData &&
-          weekData.days &&
-          weekData.employees &&
-          weekData.shifts ? (
-          <WeeklySchedule
-            weekLabel={weekData.weekLabel}
-            days={weekData.days}
-            employees={weekData.employees}
-            shifts={weekData.shifts}
-          />
-        ) : (
-          <p className="p-4 text-dpgray">Loading schedule...</p>
+        return (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <button
+                onClick={() => setCurrentIndex(Math.min(currentIndex + 1, weekStartDates.length - 1))}
+                className="px-4 py-2 bg-dpgray text-white rounded disabled:opacity-40"
+                disabled={currentIndex >= weekStartDates.length - 1}
+              >
+                Previous Week
+              </button>
+              <button
+                onClick={() => setCurrentIndex(Math.max(currentIndex - 1, 0))}
+                className="px-4 py-2 bg-dpblue text-white rounded disabled:opacity-40"
+                disabled={currentIndex === 0}
+              >
+                Next Week
+              </button>
+            </div>
+            {weekData ? (
+              <WeeklySchedule
+                weekLabel={weekData.weekLabel}
+                days={weekData.days}
+                employees={weekData.employees}
+                shifts={weekData.shifts}
+              />
+            ) : (
+              <p className="p-4 text-dpgray">Loading schedule...</p>
+            )}
+          </div>
         );
       case 'events':
         return <EventEditor />;
