@@ -1,7 +1,7 @@
 import React from 'react';
 
 const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
-  const isAdmin = true; // placeholder, replace with actual admin check
+  const isAdmin = true; // placeholder
 
   const getCellClass = (eventType) => {
     if (eventType === 'in-house') return 'bg-green-100 text-green-800';
@@ -29,22 +29,25 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
               <tr key={rowIdx} className="border-t border-gray-200">
                 <td className="p-2 font-medium">{employee}</td>
                 {shifts[rowIdx].map((shift, colIdx) => {
-              const isEditable = isAdmin;
-              const cellClass = getCellClass(shift.event_type);
-              return (
+                  const isEditable = isAdmin;
+                  const eventType = typeof shift === 'object' && shift.event_type;
+                  const display = typeof shift === 'object' ? shift.shift : shift;
+                  const cellClass = getCellClass(eventType);
 
-                  <td key={colIdx} className={`p-2 text-center text-sm ${cellClass}`}>
-                    isEditable ? (
-                      <input
-                        type="text"
-                        defaultValue={shift || ""}
-                        className="w-full text-center border rounded-sm px-1"
-                      />
-                    ) : (
-                      shift || "-"
-                    )
-                  </td>
-                ))}
+                  return (
+                    <td key={colIdx} className={`p-2 text-center text-sm ${cellClass}`}>
+                      {isEditable ? (
+                        <input
+                          type="text"
+                          defaultValue={display || ""}
+                          className="w-full text-center border rounded-sm px-1"
+                        />
+                      ) : (
+                        display || "-"
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
