@@ -2,7 +2,16 @@ import React, { useState } from 'react';
 import ScheduleEditor from './ScheduleEditor';
 
 const AdminPanel = () => {
-  const [section, setSection] = useState('schedule');
+  const [section, setSection] = useState(null);
+
+  const renderPanel = () => {
+    switch (section) {
+      case 'schedule':
+        return <ScheduleEditor />;
+      default:
+        return <p className="text-dpgray">Select a section from the sidebar to begin.</p>;
+    }
+  };
 
   return (
     <div className="flex font-body text-dpblue">
@@ -19,16 +28,9 @@ const AdminPanel = () => {
               Edit Events (coming soon)
             </button>
           </li>
-          <li>
-            <button disabled className="text-gray-400 cursor-not-allowed">
-              Manage Staff (coming soon)
-            </button>
-          </li>
         </ul>
       </aside>
-      <main className="flex-1 p-6">
-        {section === 'schedule' && <ScheduleEditor />}
-      </main>
+      <main className="flex-1 p-6">{renderPanel()}</main>
     </div>
   );
 };

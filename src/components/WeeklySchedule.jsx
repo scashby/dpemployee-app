@@ -10,7 +10,7 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false, 
   return (
     <div className="bg-dpbg p-6 font-body text-dpblue">
       <h2 className="text-2xl font-heading mb-4 tracking-tight">
-        Front of House Schedule – Week {weekLabel}
+        Weekly Schedule – Week {weekLabel}
       </h2>
       <div className="overflow-auto">
         <table className="min-w-full table-fixed border border-gray-300">
@@ -38,7 +38,7 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false, 
                         <input
                           type="text"
                           defaultValue={display || ''}
-                          onChange={(e) => onShiftChange(rowIdx, colIdx, e.target.value)}
+                          onChange={(e) => onShiftChange?.(rowIdx, colIdx, e.target.value)}
                           className="w-full text-center border rounded-sm px-1"
                         />
                       ) : (

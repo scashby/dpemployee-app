@@ -5,48 +5,19 @@ import Login from './pages/Login.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import ScheduleCalendar from './components/ScheduleCalendar.jsx';
 import EventEditor from './components/EventEditor.jsx';
-import WeeklySchedule from './components/WeeklySchedule.jsx';
+import EmployeeSchedule from './components/EmployeeSchedule.jsx';
 import PrintableSchedule from './components/PrintableSchedule.jsx';
 import { supabase } from './supabase/supabaseClient';
 
 function App() {
   const [view, setView] = useState('dashboard');
-  const [weekStartDates, setWeekStartDates] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [weekData, setWeekData] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (view === 'scheduleview' || view === 'print') loadWeekStarts();
-  }, [view]);
-
-  useEffect(() => {
-    if (weekStartDates.length > 0) {
-      fetchWeekSchedule(weekStartDates[currentIndex]);
-    }
-  }, [currentIndex, weekStartDates]);
-
-  const loadWeekStarts = async () => {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('week_start')
-      .order('week_start', { ascending: false });
-
-    if (!error) {
-      setWeekStartDates(data.map(d => d.week_start));
-    }
-  };
-
-  const fetchWeekSchedule = async (weekStart) => {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('*')
-      .eq('week_start', weekStart)
-      .maybeSingle();
-
-    if (!error) {
-      setWeekData(data);
-    }
-  };
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
 
   const renderView = () => {
     switch (view) {
@@ -57,23 +28,9 @@ function App() {
       case 'admin':
         return <AdminPanel setView={setView} />;
       case 'scheduleview':
-        return weekData ? (
-          <WeeklySchedule
-            weekLabel={weekData.week_label}
-            days={weekData.days}
-            employees={weekData.employees}
-            shifts={weekData.shifts}
-          />
-        ) : <p>Loading schedule...</p>;
+        return <EmployeeSchedule user={user} />;
       case 'print':
-        return weekData ? (
-          <PrintableSchedule
-            weekLabel={weekData.week_label}
-            days={weekData.days}
-            employees={weekData.employees}
-            shifts={weekData.shifts}
-          />
-        ) : <p>Preparing print view...</p>;
+        return <PrintableSchedule user={user} />;
       case 'calendar':
         return <ScheduleCalendar />;
       case 'eventeditor':
