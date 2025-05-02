@@ -34,14 +34,14 @@ const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false }
 
                   return (
                     <td key={colIdx} className={`p-2 text-center text-sm ${cellClass}`}>
-                      {isAdmin ? (
+                      {editable ? (
                         <input
                           type="text"
-                          defaultValue={display || ""}
+                          defaultValue={display || ''}
                           className="w-full text-center border rounded-sm px-1"
                         />
                       ) : (
-                        display || "-"
+                        display || '-'
                       )}
                     </td>
                   );
