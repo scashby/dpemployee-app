@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
-import AdminPanel from './components/AdminPanel.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import ScheduleView from './components/ScheduleView.jsx';
+import ScheduleEditor from './components/ScheduleEditor.jsx';
 
 function App() {
   const [view, setView] = useState('dashboard');
 
   const renderView = () => {
     switch (view) {
-      case 'admin':
-        return <AdminPanel />;
+      case 'dashboard':
+        return <Dashboard />;
       case 'scheduleview':
         return <ScheduleView />;
+      case 'admin':
+        return <ScheduleEditor />;
       default:
-        return <div className="p-6 text-dpblue font-body">Welcome to the Devil’s Purse internal app.</div>;
+        return <Dashboard />;
     }
   };
 

@@ -66,40 +66,46 @@ const ScheduleView = ({ user }) => {
   };
 
   if (loading) return <p className="p-6">Loading schedule…</p>;
-  if (!weekData || employeeIndex === null || employeeIndex === -1) return <p className="p-6">No schedule found.</p>;
+  if (!weekData) return <p className="p-6">No schedule found.</p>;
 
   const start = new Date(weekData.week_start);
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   const label = `Week of ${start.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })} through ${end.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}`;
-  const shifts = weekData.shifts[employeeIndex];
 
   return (
     <div className="p-6 font-body text-dpblue">
       <h2 className="text-xl font-heading mb-2">{label}</h2>
-      <h3 className="mb-4 font-semibold text-lg">{weekData.employees[employeeIndex]}</h3>
-      <table className="min-w-[300px] border border-gray-300 mb-4">
+      <table className="min-w-full border border-gray-300 mb-4">
         <thead className="bg-dpoffwhite text-sm uppercase font-semibold text-dpgray">
           <tr>
-            <th className="p-2 border-b">Day</th>
-            <th className="p-2 border-b">Shift</th>
+            <th className="p-2 border-b text-left">Employee</th>
+            {weekData.days.map((day, i) => (
+              <th key={i} className="p-2 border-b text-center">{day}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {weekData.days.map((day, i) => (
+          {weekData.employees.map((emp, i) => (
             <tr key={i} className="border-t">
-              <td className="p-2">{day}</td>
-              <td className="p-2 text-center">{typeof shifts[i] === 'object' ? shifts[i]?.shift : shifts[i] || '-'}</td>
+              <td className="p-2">{emp}</td>
+              {weekData.days.map((_, j) => (
+                <td key={j} className="p-2 text-center">
+                  {weekData.shifts[i]?.[j]?.shift || '-'}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
       </table>
-      <button
-        onClick={handleDownload}
-        className="px-4 py-2 bg-dpblue text-white rounded hover:bg-dpdark"
-      >
-        Download My Schedule
-      </button>
+      {employeeIndex !== null && employeeIndex >= 0 && (
+        <button
+          onClick={handleDownload}
+          className="px-4 py-2 bg-dpblue text-white rounded hover:bg-dpdark"
+        >
+          Download My Schedule
+        </button>
+      )}
     </div>
   );
 };

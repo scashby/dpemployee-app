@@ -60,6 +60,13 @@ const ScheduleEditor = () => {
     setShifts(updatedShifts);
   };
 
+  const removeEmployee = (index) => {
+    const updatedEmps = weekData.employees.filter((_, i) => i !== index);
+    const updatedShifts = shifts.filter((_, i) => i !== index);
+    setWeekData({ ...weekData, employees: updatedEmps });
+    setShifts(updatedShifts);
+  };
+
   const handleChange = (i, j, val) => {
     const updated = [...shifts];
     if (!updated[i]) updated[i] = [];
@@ -95,6 +102,7 @@ const ScheduleEditor = () => {
           <tr>
             <th className="p-2 border-b text-left">Employee</th>
             {weekData?.days?.map((d, i) => <th key={i} className="p-2 border-b text-center">{d}</th>)}
+            <th className="p-2 border-b text-center">Remove</th>
           </tr>
         </thead>
         <tbody>
@@ -117,6 +125,9 @@ const ScheduleEditor = () => {
                   />
                 </td>
               ))}
+              <td className="p-2 text-center">
+                <button onClick={() => removeEmployee(i)} className="text-red-600 hover:underline">X</button>
+              </td>
             </tr>
           ))}
         </tbody>
