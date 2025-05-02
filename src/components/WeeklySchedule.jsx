@@ -1,8 +1,6 @@
 import React from 'react';
 
-const WeeklySchedule = ({ weekLabel, days, employees, shifts }) => {
-  const isAdmin = true; // placeholder
-
+const WeeklySchedule = ({ weekLabel, days, employees, shifts, editable = false }) => {
   const getCellClass = (eventType) => {
     if (eventType === 'in-house') return 'bg-green-100 text-green-800';
     if (eventType === 'off-prem') return 'bg-blue-100 text-blue-800';

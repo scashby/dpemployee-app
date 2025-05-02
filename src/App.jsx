@@ -32,12 +32,9 @@ function App() {
 
     if (error) {
       console.error("Week start fetch error:", error);
-      return;
+    } else {
+      setWeekStartDates(data.map(d => d.week_start));
     }
-
-    const unique = [...new Set(data.map(d => d.week_start))];
-    setWeekStartDates(unique);
-    setCurrentIndex(0);
   };
 
   const fetchWeekSchedule = async (weekStart) => {
@@ -45,88 +42,49 @@ function App() {
       .from('schedules')
       .select('*')
       .eq('week_start', weekStart)
-      .order('employee_name', { ascending: true })
-      .order('date', { ascending: true });
+      .single();
 
     if (error) {
       console.error("Schedule fetch error:", error);
-      return;
+    } else {
+      setWeekData(data);
     }
-
-    const dates = [...new Set(data.map(e => e.date))].sort();
-    const days = dates.map(d => new Date(d).toLocaleDateString('en-US', {
-      weekday: 'short', month: '2-digit', day: '2-digit'
-    }));
-    const employees = [...new Set(data.map(e => e.employee_name))].sort();
-    const shifts = employees.map(name =>
-      dates.map(date => {
-        const match = data.find(d => d.employee_name === name && d.date === date);
-        return match ? match.shift : "";
-      })
-    );
-
-    setWeekData({
-      weekLabel: `${days[0]} – ${days[days.length - 1]}`,
-      days,
-      employees,
-      shifts
-    });
   };
 
   const renderView = () => {
     switch (view) {
-      case 'login':
-        return <Login />;
-      case 'admin':
-        return <AdminPanel />;
-      case 'schedule':
-        return <ScheduleCalendar />;
-      case 'scheduleview':
-        return (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={() => setCurrentIndex(Math.min(currentIndex + 1, weekStartDates.length - 1))}
-                className="px-4 py-2 bg-dpgray text-white rounded disabled:opacity-40"
-                disabled={currentIndex >= weekStartDates.length - 1}
-              >
-                Previous Week
-              </button>
-              <button
-                onClick={() => setCurrentIndex(Math.max(currentIndex - 1, 0))}
-                className="px-4 py-2 bg-dpblue text-white rounded disabled:opacity-40"
-                disabled={currentIndex === 0}
-              >
-                Next Week
-              </button>
-            </div>
-            {weekData ? (
-              <WeeklySchedule
-                weekLabel={weekData.weekLabel}
-                days={weekData.days}
-                employees={weekData.employees}
-                shifts={weekData.shifts}
-              />
-            ) : (
-              <p className="p-4 text-dpgray">Loading schedule...</p>
-            )}
-          </div>
-        );
-      case 'events':
-        return <EventEditor />;
       case 'dashboard':
+        return <Dashboard setView={setView} />;
+      case 'login':
+        return <Login setView={setView} />;
+      case 'admin':
+        return <AdminPanel setView={setView} />;
+      case 'scheduleview':
+        return weekData ? (
+          <WeeklySchedule
+            weekLabel={weekData.week_label}
+            days={weekData.days}
+            employees={weekData.employees}
+            shifts={weekData.shifts}
+            editable={false} // 🔒 read-only in this context
+          />
+        ) : (
+          <p>Loading schedule...</p>
+        );
+      case 'calendar':
+        return <ScheduleCalendar />;
+      case 'eventeditor':
+        return <EventEditor />;
       default:
-        return <Dashboard />;
+        return <Dashboard setView={setView} />;
     }
   };
 
   return (
-    <>
+    <div className="App">
       <Header setView={setView} />
-      <main className="p-4">
-        {renderView()}
-      </main>
-    </>
+      {renderView()}
+    </div>
   );
 }
 
