@@ -33,7 +33,7 @@ const ScheduleEditor = () => {
     const { data, error } = await supabase
       .from('schedules')
       .select('*')
-      .eq('week_start', weekStart)
+      .eq('week_start', new Date(weekStart).toISOString().split('T')[0])
       .maybeSingle();
 
     if (!error && data) {
