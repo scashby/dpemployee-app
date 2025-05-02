@@ -25,6 +25,7 @@ const ScheduleEditor = () => {
       .order('week_start', { ascending: false });
 
     if (!error) {
+      console.log('Available weeks:', data);
       setWeekStartDates(data.map(d => d.week_start));
     }
   };
