@@ -6,26 +6,28 @@ const ScheduleView = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadSchedule = async () => {
+    const fetchSchedule = async () => {
       const today = new Date();
       const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-      monday.setHours(0, 0, 0, 0);
-      const isoMonday = monday.toISOString().split('T')[0];
+      const iso = monday.toISOString().split('T')[0];
 
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
-        .eq('week_start', isoMonday)
+        .eq('week_start', iso)
         .maybeSingle();
 
-      if (!error && data) {
-        setWeekData(data);
+      if (error) {
+        console.error('Error fetching schedule:', error);
+        setLoading(false);
+        return;
       }
 
+      setWeekData(data);
       setLoading(false);
     };
 
-    loadSchedule();
+    fetchSchedule();
   }, []);
 
   if (loading) return <div className="p-6">Loading schedule...</div>;
@@ -38,22 +40,22 @@ const ScheduleView = () => {
 
   return (
     <div className="p-6 font-body text-dpblue">
-      <h2 className="text-xl font-heading mb-2">{label}</h2>
-      <table className="min-w-full border border-gray-300 mb-4">
-        <thead className="bg-dpoffwhite text-sm uppercase font-semibold text-dpgray">
+      <h2 className="text-xl font-heading mb-4">{label}</h2>
+      <table className="w-full border border-gray-300 text-sm">
+        <thead className="bg-dpoffwhite text-xs uppercase text-dpgray">
           <tr>
-            <th className="p-2 border-b text-left">Employee</th>
+            <th className="border px-2 py-1 text-left">Employee</th>
             {weekData.days.map((day, i) => (
-              <th key={i} className="p-2 border-b text-center">{day}</th>
+              <th key={i} className="border px-2 py-1">{day}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {weekData.employees.map((emp, i) => (
-            <tr key={i} className="border-t">
-              <td className="p-2">{emp}</td>
+            <tr key={i}>
+              <td className="border px-2 py-1">{emp}</td>
               {weekData.days.map((_, j) => (
-                <td key={j} className="p-2 text-center">
+                <td key={j} className="border px-2 py-1 text-center">
                   {weekData.shifts[i]?.[j]?.shift || '-'}
                 </td>
               ))}
