@@ -11,20 +11,23 @@ const ScheduleView = () => {
     const fetchWeek = async () => {
       const today = new Date();
       const start = new Date(today);
-      start.setDate(today.getDate() - today.getDay());
+      start.setDate(today.getDate() - today.getDay()); // Sunday
+      const isoDate = start.toISOString().split('T')[0];
       setWeekStart(start);
 
-      const isoDate = start.toISOString().split('T')[0];
+      console.log('Fetching week_start:', isoDate);
+
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
         .eq('week_start', isoDate)
         .single();
 
-      if (!error && data) {
-        setSchedule(data);
+      if (error) {
+        console.error('Supabase fetch error:', error.message);
       } else {
-        console.error('Schedule not found or error fetching:', error);
+        console.log('Schedule loaded:', data);
+        setSchedule(data);
       }
     };
 
