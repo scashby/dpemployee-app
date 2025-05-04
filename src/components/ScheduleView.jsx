@@ -1,68 +1,78 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 
+const dayLabels = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
 const ScheduleView = () => {
-  const [weekData, setWeekData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [schedule, setSchedule] = useState(null);
+  const [weekStart, setWeekStart] = useState(null);
 
   useEffect(() => {
-    const fetchSchedule = async () => {
+    const fetchWeek = async () => {
       const today = new Date();
-      const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-      const iso = monday.toISOString().split('T')[0];
+      const start = new Date(today);
+      start.setDate(today.getDate() - today.getDay());
+      setWeekStart(start);
 
+      const isoDate = start.toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
-        .eq('week_start', iso)
-        .maybeSingle();
+        .eq('week_start', isoDate)
+        .single();
 
-      if (error) {
-        console.error('Error fetching schedule:', error);
-        setLoading(false);
-        return;
+      if (!error && data) {
+        setSchedule(data);
+      } else {
+        console.error('Schedule not found or error fetching:', error);
       }
-
-      setWeekData(data);
-      setLoading(false);
     };
 
-    fetchSchedule();
+    fetchWeek();
   }, []);
 
-  if (loading) return <div className="p-6">Loading schedule...</div>;
-  if (!weekData) return <div className="p-6">No schedule found for this week.</div>;
+  const renderTable = () => {
+    if (!schedule) return <p className="text-dpblue mt-4">No schedule available.</p>;
 
-  const start = new Date(weekData.week_start);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const label = `Week of ${start.toLocaleDateString()} through ${end.toLocaleDateString()}`;
+    const start = new Date(schedule.week_start);
+    const dates = [...Array(7)].map((_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return `${dayLabels[i]} ${d.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}`;
+    });
 
-  return (
-    <div className="p-6 font-body text-dpblue">
-      <h2 className="text-xl font-heading mb-4">{label}</h2>
-      <table className="w-full border border-gray-300 text-sm">
-        <thead className="bg-dpoffwhite text-xs uppercase text-dpgray">
-          <tr>
-            <th className="border px-2 py-1 text-left">Employee</th>
-            {weekData.days.map((day, i) => (
-              <th key={i} className="border px-2 py-1">{day}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {weekData.employees.map((emp, i) => (
-            <tr key={i}>
-              <td className="border px-2 py-1">{emp}</td>
-              {weekData.days.map((_, j) => (
-                <td key={j} className="border px-2 py-1 text-center">
-                  {weekData.shifts[i]?.[j]?.shift || '-'}
-                </td>
+    return (
+      <div className="overflow-x-auto mt-6">
+        <table className="min-w-full text-sm border border-gray-300 text-center font-body">
+          <thead className="bg-gray-100 text-dpgray uppercase text-xs">
+            <tr>
+              <th className="px-3 py-2 border">Employee</th>
+              {dates.map((label, i) => (
+                <th key={i} className="px-3 py-2 border">{label}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {schedule.employees.map((emp, i) => (
+              <tr key={i}>
+                <td className="border px-3 py-2 font-medium text-left">{emp}</td>
+                {schedule.days.map((_, dayIndex) => (
+                  <td key={dayIndex} className="border px-2 py-2">
+                    {schedule.shifts[i][dayIndex]?.shift || '-'}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-6 text-dpblue">
+      <h2 className="text-xl font-heading font-semibold mb-2">Weekly Schedule</h2>
+      {renderTable()}
     </div>
   );
 };
