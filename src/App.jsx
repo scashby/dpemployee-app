@@ -13,8 +13,8 @@ function App() {
         return <Dashboard />;
       case 'schedule':
         return <ScheduleView />;
-      case 'admin':
-        return <ScheduleEditor />;
+        case 'admin':
+          return <AdminPanel />;
       default:
         return <Dashboard />;
     }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import supabase from '../supabaseClient';
+import supabase from '../supabase/supabaseClient.js';
 
 const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
