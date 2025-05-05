@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import supabase from '../supabase/supabaseClient.js';
+import { supabase } from '../supabase/supabaseClient.js';
 
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
