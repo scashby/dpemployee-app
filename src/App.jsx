@@ -1,29 +1,40 @@
 import React, { useState } from 'react';
-import Header from './components/Header.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import ScheduleView from './components/ScheduleView.jsx';
-import AdminPanel from './components/AdminPanel.jsx';
+import Header from './components/Header';
+import AdminEmployees from './components/AdminEmployees';
+import AdminEvents from './components/AdminEvents';
+import AdminDefaultSchedule from './components/AdminDefaultSchedule';
+import AdminScheduleEditor from './components/AdminScheduleEditor';
 
 function App() {
-  const [view, setView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('employees');
 
   const renderView = () => {
-    switch (view) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'schedule':
-        return <ScheduleView />;
-        case 'admin':
-          return <AdminPanel />;
+    switch (currentView) {
+      case 'employees':
+        return <AdminEmployees />;
+      case 'events':
+        return <AdminEvents />;
+      case 'defaultSchedule':
+        return <AdminDefaultSchedule />;
+      case 'scheduleEditor':
+        return <AdminScheduleEditor />;
       default:
-        return <Dashboard />;
+        return <div>Select a view from the menu.</div>;
     }
   };
 
   return (
-    <div className="min-h-screen bg-dpoffwhite text-dpblue">
-      <Header onNavigate={setView} />
-      {renderView()}
+    <div>
+      <Header />
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+        <button onClick={() => setCurrentView('employees')}>Employees</button>
+        <button onClick={() => setCurrentView('events')}>Events</button>
+        <button onClick={() => setCurrentView('defaultSchedule')}>Default Schedules</button>
+        <button onClick={() => setCurrentView('scheduleEditor')}>Edit Schedule</button>
+      </div>
+      <div style={{ padding: '20px' }}>
+        {renderView()}
+      </div>
     </div>
   );
 }
