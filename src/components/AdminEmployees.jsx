@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient.js';
+import { supabase } from '../supabaseClient';
 
 const AdminEmployees = () => {
   const [employees, setEmployees] = useState([]);
