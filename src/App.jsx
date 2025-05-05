@@ -1,31 +1,29 @@
 import React, { useState } from 'react';
-import Header from './components/Header.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import ScheduleView from './components/ScheduleView.jsx';
-import ScheduleEditor from './components/ScheduleEditor.jsx';
+import Header from './components/Header';
+import Dashboard from './pages/Dashboard';
+import AdminPanel from './components/AdminPanel';
+import ScheduleView from './components/ScheduleView';
 
-function App() {
+export default function App() {
   const [view, setView] = useState('dashboard');
 
   const renderView = () => {
     switch (view) {
-      case 'dashboard':
-        return <Dashboard />;
+      case 'admin':
+        return <AdminPanel />;
       case 'schedule':
         return <ScheduleView />;
-      case 'admin':
-        return <ScheduleEditor />;
       default:
         return <Dashboard />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-dpoffwhite text-dpblue">
+    <div className="flex flex-col h-screen">
       <Header onNavigate={setView} />
-      {renderView()}
+      <main className="flex-1 overflow-y-auto">
+        {renderView()}
+      </main>
     </div>
   );
 }
-
-export default App;
