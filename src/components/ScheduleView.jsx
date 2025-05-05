@@ -8,35 +8,32 @@ const ScheduleView = () => {
   const [weekStart, setWeekStart] = useState(null);
 
   useEffect(() => {
-    const fetchSchedule = async () => {
-      const today = new Date();
-      const start = new Date(today);
-      start.setDate(today.getDate() - today.getDay()); // Sunday
-      const isoDate = start.toISOString().split('T')[0];
-      setWeekStart(start);
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay()); // Sunday
+    setWeekStart(start);
 
-      console.log('Querying week_start:', isoDate);
+    const isoDate = start.toISOString().split('T')[0];
+    console.log('Querying week_start:', isoDate);
 
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .eq('week_start', isoDate);
-
-      if (error) {
-        console.error('Fetch error:', error.message);
-        setScheduleData([]);
-      } else {
-        console.log('Fetched schedule rows:', data);
-        setScheduleData(data);
-      }
-    };
-
-    fetchSchedule();
+    supabase
+      .from('schedules')
+      .select('*')
+      .eq('week_start', isoDate)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Supabase error:', error.message);
+          setScheduleData([]);
+        } else {
+          console.log('Fetched:', data);
+          setScheduleData(data || []);
+        }
+      });
   }, []);
 
   const getUniqueEmployees = () => {
     const names = new Set(scheduleData.map(row => row.employee_name));
-    return [...names];
+    return names.size > 0 ? [...names] : [''];
   };
 
   const getShift = (employee, day) => {
@@ -47,18 +44,16 @@ const ScheduleView = () => {
   };
 
   const renderTable = () => {
-    if (!scheduleData.length) {
-      return <p className="text-dpblue mt-4">No schedule available.</p>;
-    }
-
-    const start = new Date(weekStart);
+    const employees = getUniqueEmployees();
+    const start = weekStart || new Date();
     const dateLabels = [...Array(7)].map((_, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
-      return `${dayLabels[i]} ${d.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}`;
+      return `${dayLabels[i]} ${d.toLocaleDateString(undefined, {
+        month: '2-digit',
+        day: '2-digit',
+      })}`;
     });
-
-    const employees = getUniqueEmployees();
 
     return (
       <div className="overflow-x-auto mt-6">
@@ -74,14 +69,21 @@ const ScheduleView = () => {
           <tbody>
             {employees.map((employee, i) => (
               <tr key={i}>
-                <td className="border px-3 py-2 text-left font-medium">{employee}</td>
+                <td className="border px-3 py-2 text-left font-medium">
+                  {employee || '—'}
+                </td>
                 {dayLabels.map((day, j) => (
-                  <td key={j} className="border px-2 py-2">{getShift(employee, day)}</td>
+                  <td key={j} className="border px-2 py-2">
+                    {getShift(employee, day)}
+                  </td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
+        {scheduleData.length === 0 && (
+          <p className="text-sm italic text-dpblue mt-4">No shifts assigned for this week.</p>
+        )}
       </div>
     );
   };
