@@ -136,6 +136,52 @@ const AdminScheduleEditor = () => {
       
       if (error) throw error;
       
+      // Fetch events for this week to show event-related shifts
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('id, title, date, time, off_prem')
+        .gte('date', startDate)
+        .lte('date', endDate);
+        
+      if (eventsError) throw eventsError;
+      
+      // Fetch employee assignments for these events
+      let eventAssignments = {};
+      if (eventsData && eventsData.length > 0) {
+        const eventIds = eventsData.map(event => event.id);
+        
+        const { data: assignmentsData, error: assignmentsError } = await supabase
+          .from('event_assignments')
+          .select('*')
+          .in('event_id', eventIds);
+          
+        if (assignmentsError) throw assignmentsError;
+        
+        // Group assignments by event
+        if (assignmentsData) {
+          assignmentsData.forEach(assignment => {
+            if (!eventAssignments[assignment.event_id]) {
+              eventAssignments[assignment.event_id] = [];
+            }
+            eventAssignments[assignment.event_id].push(assignment.employee_id);
+          });
+        }
+      }
+      
+      // Create a mapping of event details by date
+      const eventsByDate = {};
+      if (eventsData) {
+        eventsData.forEach(event => {
+          if (!eventsByDate[event.date]) {
+            eventsByDate[event.date] = [];
+          }
+          eventsByDate[event.date].push({
+            ...event,
+            assignedEmployees: eventAssignments[event.id] || []
+          });
+        });
+      }
+      
       // Initialize an empty schedule grid
       const scheduleGrid = {};
       
@@ -148,7 +194,8 @@ const AdminScheduleEditor = () => {
           const dateStr = formatDateForDB(date);
           scheduleGrid[employee.id][dateStr] = {
             shift: 'Off',
-            event_type: ''
+            event_type: '',
+            event_id: null
           };
         });
       });
@@ -160,11 +207,38 @@ const AdminScheduleEditor = () => {
             scheduleGrid[item.employee_id][item.date] = {
               shift: item.shift || 'Off',
               event_type: item.event_type || '',
+              event_id: item.event_id || null,
               id: item.id // Keep track of existing record ID
             };
           }
         });
       }
+      
+      // Fill in event assignments data
+      // For each date in the week
+      Object.keys(eventsByDate).forEach(dateStr => {
+        // For each event on that date
+        eventsByDate[dateStr].forEach(event => {
+          // For each employee assigned to the event
+          event.assignedEmployees.forEach(employeeId => {
+            // If this employee is in our grid
+            if (scheduleGrid[employeeId] && scheduleGrid[employeeId][dateStr]) {
+              // If there's no existing schedule entry or it's an "Off" shift, set it based on the event
+              const currentEntry = scheduleGrid[employeeId][dateStr];
+              if (currentEntry.shift === 'Off' || !currentEntry.id) {
+                scheduleGrid[employeeId][dateStr] = {
+                  ...currentEntry,
+                  shift: event.off_prem ? 'Offsite' : 'Tasting Room',
+                  event_type: event.off_prem ? 'off-prem' : 'in-house',
+                  event_id: event.id,
+                  // Note: Leave id as is if there was one, otherwise it will be undefined
+                  // indicating we need to create a new record
+                };
+              }
+            }
+          });
+        });
+      });
       
       setSchedule(scheduleGrid);
     } catch (error) {
@@ -193,6 +267,7 @@ const AdminScheduleEditor = () => {
       
       // Collect all schedule items to update/insert
       const scheduleItems = [];
+      const eventAssignmentsToManage = {};  // Track event assignments that need to be added/removed
       const weekDates = getWeekDates().map(date => formatDateForDB(date));
       
       // Process each employee's schedule for the week
@@ -209,6 +284,18 @@ const AdminScheduleEditor = () => {
                 toDelete: true
               });
             }
+            
+            // If this was previously tied to an event, remove the assignment
+            if (scheduleItem.event_id) {
+              if (!eventAssignmentsToManage[scheduleItem.event_id]) {
+                eventAssignmentsToManage[scheduleItem.event_id] = {
+                  toAdd: [],
+                  toRemove: []
+                };
+              }
+              eventAssignmentsToManage[scheduleItem.event_id].toRemove.push(employeeId);
+            }
+            
             return;
           }
           
@@ -218,8 +305,22 @@ const AdminScheduleEditor = () => {
             employee_id: employeeId,
             date: date,
             shift: scheduleItem.shift,
-            event_type: scheduleItem.event_type
+            event_type: scheduleItem.event_type,
+            event_id: scheduleItem.event_id
           });
+          
+          // If this is tied to an event, track the assignment
+          if (scheduleItem.event_id) {
+            if (!eventAssignmentsToManage[scheduleItem.event_id]) {
+              eventAssignmentsToManage[scheduleItem.event_id] = {
+                toAdd: [],
+                toRemove: []
+              };
+            }
+            
+            // Add this employee to the event if not already assigned
+            eventAssignmentsToManage[scheduleItem.event_id].toAdd.push(employeeId);
+          }
         });
       });
       
@@ -248,6 +349,49 @@ const AdminScheduleEditor = () => {
           .upsert(itemsToUpsert);
         
         if (upsertError) throw upsertError;
+      }
+      
+      // Now handle event assignments
+      for (const eventId in eventAssignmentsToManage) {
+        const { toAdd, toRemove } = eventAssignmentsToManage[eventId];
+        
+        // Get existing assignments for this event
+        const { data: existingAssignments, error: fetchError } = await supabase
+          .from('event_assignments')
+          .select('employee_id')
+          .eq('event_id', eventId);
+        
+        if (fetchError) throw fetchError;
+        
+        // Find employees that need to be added
+        // Filter out any that already exist in the assignments
+        const existingEmployeeIds = existingAssignments.map(a => a.employee_id);
+        const employeesToAdd = [...new Set(toAdd)].filter(id => !existingEmployeeIds.includes(id));
+        
+        // Add new assignments
+        if (employeesToAdd.length > 0) {
+          const assignmentsToAdd = employeesToAdd.map(empId => ({
+            event_id: eventId,
+            employee_id: empId
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('event_assignments')
+            .insert(assignmentsToAdd);
+          
+          if (insertError) throw insertError;
+        }
+        
+        // Remove assignments
+        if (toRemove.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('event_assignments')
+            .delete()
+            .eq('event_id', eventId)
+            .in('employee_id', [...new Set(toRemove)]);
+          
+          if (deleteError) throw deleteError;
+        }
       }
       
       setSuccessMessage('Schedule saved successfully!');
@@ -409,13 +553,22 @@ const AdminScheduleEditor = () => {
                   const dateStr = formatDateForDB(date);
                   const cellData = schedule[employee.id]?.[dateStr] || { shift: 'Off', event_type: '' };
                   
+                  // Check if this cell is associated with an event
+                  const isEventCell = cellData.event_id !== null && cellData.event_id !== undefined;
+                  
                   return (
-                    <td key={index} className="py-2 px-4 border">
+                    <td key={index} className={`py-2 px-4 border ${isEventCell ? 'bg-blue-50' : ''}`}>
                       <div className="flex flex-col space-y-2">
+                        {isEventCell && (
+                          <div className="text-xs font-medium text-blue-700 mb-1">
+                            Event Assignment
+                          </div>
+                        )}
+                        
                         <select
                           value={cellData.shift || 'Off'}
                           onChange={(e) => handleShiftChange(employee.id, dateStr, 'shift', e.target.value)}
-                          className="w-full p-1 border rounded"
+                          className={`w-full p-1 border rounded ${isEventCell ? 'border-blue-300' : ''}`}
                         >
                           <option value="Off">Off</option>
                           {shiftTypes.filter(s => s !== 'Off').map(shift => (
@@ -429,12 +582,18 @@ const AdminScheduleEditor = () => {
                           <select
                             value={cellData.event_type || ''}
                             onChange={(e) => handleShiftChange(employee.id, dateStr, 'event_type', e.target.value)}
-                            className="w-full p-1 border rounded"
+                            className={`w-full p-1 border rounded ${isEventCell ? 'border-blue-300' : ''}`}
                           >
                             <option value="">Select Event Type</option>
                             <option value="in-house">In-House</option>
                             <option value="off-prem">Off-Premise</option>
                           </select>
+                        )}
+                        
+                        {isEventCell && (
+                          <div className="text-xs text-blue-600 italic mt-1">
+                            Changes will update event assignments
+                          </div>
                         )}
                       </div>
                     </td>

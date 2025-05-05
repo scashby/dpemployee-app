@@ -4,6 +4,7 @@ import { supabase } from '../supabase/supabaseClient';
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [eventAssignments, setEventAssignments] = useState({});
   const [loading, setLoading] = useState(true);
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -11,7 +12,7 @@ const AdminEvents = () => {
     time: '',
     info: '',
     off_prem: false,
-    assigned_employees: []
+    selectedEmployees: []
   });
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -32,11 +33,39 @@ const AdminEvents = () => {
 
       if (error) throw error;
       setEvents(data || []);
+      
+      // Fetch all event assignments
+      await fetchEventAssignments();
     } catch (error) {
       console.error('Error fetching events:', error);
       setError('Failed to load events. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEventAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('event_assignments')
+        .select('*');
+
+      if (error) throw error;
+      
+      // Group assignments by event_id for easier lookup
+      const assignmentsByEvent = {};
+      if (data && data.length > 0) {
+        data.forEach(assignment => {
+          if (!assignmentsByEvent[assignment.event_id]) {
+            assignmentsByEvent[assignment.event_id] = [];
+          }
+          assignmentsByEvent[assignment.event_id].push(assignment.employee_id);
+        });
+      }
+      
+      setEventAssignments(assignmentsByEvent);
+    } catch (error) {
+      console.error('Error fetching event assignments:', error);
     }
   };
 
@@ -72,13 +101,14 @@ const AdminEvents = () => {
     const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
     
     if (eventId) {
-      // Editing existing event
-      setEvents(
-        events.map((evt) => (evt.id === eventId ? { ...evt, assigned_employees: selectedOptions } : evt))
-      );
+      // Update event assignments for existing event
+      setEventAssignments({
+        ...eventAssignments,
+        [eventId]: selectedOptions
+      });
     } else {
-      // New event form
-      setNewEvent({ ...newEvent, assigned_employees: selectedOptions });
+      // Store selected employees temporarily for new event
+      setNewEvent({ ...newEvent, selectedEmployees: selectedOptions });
     }
   };
 
@@ -86,8 +116,7 @@ const AdminEvents = () => {
     try {
       const eventToUpdate = events.find(evt => evt.id === id);
       
-      // Currently, we don't have a proper schema for employee assignments
-      // So we'll only update the event details for now
+      // Update event details
       const { error } = await supabase
         .from('events')
         .update({
@@ -96,15 +125,62 @@ const AdminEvents = () => {
           time: eventToUpdate.time,
           info: eventToUpdate.info,
           off_prem: eventToUpdate.off_prem
-          // assigned_employees will be added once schema is confirmed
         })
         .eq('id', id);
 
       if (error) throw error;
       
+      // Get current assignments for this event
+      const { data: currentAssignments, error: fetchError } = await supabase
+        .from('event_assignments')
+        .select('*')
+        .eq('event_id', id);
+      
+      if (fetchError) throw fetchError;
+      
+      // Get the employee IDs that are currently assigned
+      const currentEmployeeIds = currentAssignments.map(a => a.employee_id);
+      
+      // Get the new employee IDs from the state
+      const newEmployeeIds = eventAssignments[id] || [];
+      
+      // Employees to add (in new but not in current)
+      const employeesToAdd = newEmployeeIds.filter(empId => !currentEmployeeIds.includes(empId));
+      
+      // Employees to remove (in current but not in new)
+      const employeesToRemove = currentEmployeeIds.filter(empId => !newEmployeeIds.includes(empId));
+      
+      // Add new assignments
+      if (employeesToAdd.length > 0) {
+        const assignmentsToAdd = employeesToAdd.map(empId => ({
+          event_id: id,
+          employee_id: empId
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('event_assignments')
+          .insert(assignmentsToAdd);
+        
+        if (insertError) throw insertError;
+      }
+      
+      // Remove assignments that are no longer needed
+      if (employeesToRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('event_assignments')
+          .delete()
+          .eq('event_id', id)
+          .in('employee_id', employeesToRemove);
+        
+        if (deleteError) throw deleteError;
+      }
+      
       setSuccessMessage('Event updated successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
       setEditMode(null);
+      
+      // Refresh event assignments
+      await fetchEventAssignments();
     } catch (error) {
       console.error('Error updating event:', error);
       setError('Failed to update event. Please try again.');
@@ -122,7 +198,7 @@ const AdminEvents = () => {
     }
 
     try {
-      // For now, we'll only save the basic event details
+      // First, insert the new event
       const { data, error } = await supabase
         .from('events')
         .insert([{
@@ -131,25 +207,51 @@ const AdminEvents = () => {
           time: newEvent.time,
           info: newEvent.info,
           off_prem: newEvent.off_prem
-          // assigned_employees will be added once schema is confirmed
         }])
         .select();
 
       if (error) throw error;
-
-      // We'll temporarily add the assigned_employees to the local state
-      // even though it's not being saved to the database yet
-      setEvents([...events, {...data[0], assigned_employees: newEvent.assigned_employees}]);
+      
+      const newEventId = data[0].id;
+      
+      // If employees were selected, create assignments
+      if (newEvent.selectedEmployees && newEvent.selectedEmployees.length > 0) {
+        const assignments = newEvent.selectedEmployees.map(empId => ({
+          event_id: newEventId,
+          employee_id: empId
+        }));
+        
+        const { error: assignmentError } = await supabase
+          .from('event_assignments')
+          .insert(assignments);
+        
+        if (assignmentError) throw assignmentError;
+        
+        // Update the assignments state
+        setEventAssignments({
+          ...eventAssignments,
+          [newEventId]: newEvent.selectedEmployees
+        });
+      }
+      
+      // Add the new event to the state
+      setEvents([...events, data[0]]);
+      
+      // Reset form
       setNewEvent({
         title: '',
         date: '',
         time: '',
         info: '',
         off_prem: false,
-        assigned_employees: []
+        selectedEmployees: []
       });
+      
       setSuccessMessage('Event added successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Refresh event assignments
+      await fetchEventAssignments();
     } catch (error) {
       console.error('Error adding event:', error);
       setError('Failed to add event. Please try again.');
@@ -163,6 +265,7 @@ const AdminEvents = () => {
     }
     
     try {
+      // The event_assignments will be automatically deleted due to the CASCADE constraint
       const { error } = await supabase
         .from('events')
         .delete()
@@ -170,7 +273,14 @@ const AdminEvents = () => {
 
       if (error) throw error;
       
+      // Update the local state
       setEvents(events.filter(evt => evt.id !== id));
+      
+      // Remove assignments from the state
+      const updatedAssignments = { ...eventAssignments };
+      delete updatedAssignments[id];
+      setEventAssignments(updatedAssignments);
+      
       setSuccessMessage('Event deleted successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
@@ -276,10 +386,370 @@ const AdminEvents = () => {
                 multiple
                 className="w-full p-2 border rounded"
                 onChange={(e) => handleEmployeeSelection(e, null)}
-                value={newEvent.assigned_employees}
+                value={newEvent.selectedEmployees || []}
               >
                 {employees.map(emp => (
                   <option key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+              <div className="text-sm text-gray-500 mt-1">
+                Hold Ctrl/Cmd to select multiple employees
+              </div>
+            </div>
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            >
+              Add Event
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-4">Event List</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="py-2 px-4 border text-left">Title</th>
+              <th className="py-2 px-4 border text-left">Date</th>
+              <th className="py-2 px-4 border text-left">Time</th>
+              <th className="py-2 px-4 border text-center">Off-Premise</th>
+              <th className="py-2 px-4 border text-left">Info</th>
+              <th className="py-2 px-4 border text-left">Assigned Employees</th>
+              <th className="py-2 px-4 border text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="py-4 px-4 border text-center">
+                  No events found.
+                </td>
+              </tr>
+            ) : (
+              events.map((event) => (
+                <tr key={event.id}>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <input
+                        type="text"
+                        value={event.title || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'title')}
+                        className="w-full p-1 border rounded"
+                      />
+                    ) : (
+                      event.title
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <input
+                        type="date"
+                        value={event.date || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'date')}
+                        className="w-full p-1 border rounded"
+                      />
+                    ) : (
+                      formatDate(event.date)
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <input
+                        type="text"
+                        value={event.time || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'time')}
+                        className="w-full p-1 border rounded"
+                      />
+                    ) : (
+                      event.time
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border text-center">
+                    {editMode === event.id ? (
+                      <input
+                        type="checkbox"
+                        checked={event.off_prem || false}
+                        onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
+                      />
+                    ) : (
+                      event.off_prem ? "Yes" : "No"
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <textarea
+                        value={event.info || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'info')}
+                        className="w-full p-1 border rounded"
+                        rows="2"
+                      ></textarea>
+                    ) : (
+                      <div className="max-h-20 overflow-y-auto">
+                        {event.info}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <select
+                        multiple
+                        className="w-full p-1 border rounded"
+                        onChange={(e) => handleEmployeeSelection(e, event.id)}
+                        value={eventAssignments[event.id] || []}
+                      >
+                        {employees.map(emp => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="max-h-20 overflow-y-auto">
+                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
+                          <ul className="list-disc list-inside">
+                            {(eventAssignments[event.id] || []).map(empId => {
+                              const emp = employees.find(e => e.id === empId);
+                              return emp ? (
+                                <li key={empId}>{emp.name}</li>
+                              ) : null;
+                            })}
+                          </ul>
+                        ) : (
+                          "No employees assigned"
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border text-center">
+                    {editMode === event.id ? (
+                      <>
+                        <button
+                          onClick={() => saveEventChanges(event.id)}
+                          className="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded mr-2"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditMode(null)}
+                          className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setEditMode(event.id)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteEvent(event.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default AdminEvents;={emp.id} value={emp.id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+              <div className="text-sm text-gray-500 mt-1">
+                Hold Ctrl/Cmd to select multiple employees
+              </div>
+            </div>
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            >
+              Add Event
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-4">Event List</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="py-2 px-4 border text-left">Title</th>
+              <th className="py-2 px-4 border text-left">Date</th>
+              <th className="py-2 px-4 border text-left">Time</th>
+              <th className="py-2 px-4 border text-center">Off-Premise</th>
+              <th className="py-2 px-4 border text-left">Info</th>
+              <th className="py-2 px-4 border text-left">Assigned Employees</th>
+              <th className="py-2 px-4 border text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="py-4 px-4 border text-center">
+                  No events found.
+                </td>
+              </tr>
+            ) : (
+              events.map((event) => (
+                <tr key={event.id}>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <input
+                        type="text"
+                        value={event.title || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'title')}
+                        className="w-full p-1 border rounded"
+                      />
+                    ) : (
+                      event.title
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <input
+                        type="date"
+                        value={event.date || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'date')}
+                        className="w-full p-1 border rounded"
+                      />
+                    ) : (
+                      formatDate(event.date)
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <input
+                        type="text"
+                        value={event.time || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'time')}
+                        className="w-full p-1 border rounded"
+                      />
+                    ) : (
+                      event.time
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border text-center">
+                    {editMode === event.id ? (
+                      <input
+                        type="checkbox"
+                        checked={event.off_prem || false}
+                        onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
+                      />
+                    ) : (
+                      event.off_prem ? "Yes" : "No"
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <textarea
+                        value={event.info || ''}
+                        onChange={(e) => handleInputChange(e, event.id, 'info')}
+                        className="w-full p-1 border rounded"
+                        rows="2"
+                      ></textarea>
+                    ) : (
+                      <div className="max-h-20 overflow-y-auto">
+                        {event.info}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border">
+                    {editMode === event.id ? (
+                      <select
+                        multiple
+                        className="w-full p-1 border rounded"
+                        onChange={(e) => handleEmployeeSelection(e, event.id)}
+                        value={eventAssignments[event.id] || []}
+                      >
+                        {employees.map(emp => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="max-h-20 overflow-y-auto">
+                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
+                          <ul className="list-disc list-inside">
+                            {eventAssignments[event.id].map(empId => {
+                              const emp = employees.find(e => e.id === empId);
+                              return emp ? (
+                                <li key={empId}>{emp.name}</li>
+                              ) : null;
+                            })}
+                          </ul>
+                        ) : (
+                          "No employees assigned"
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border text-center">
+                    {editMode === event.id ? (
+                      <>
+                        <button
+                          onClick={() => saveEventChanges(event.id)}
+                          className="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded mr-2"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditMode(null)}
+                          className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setEditMode(event.id)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteEvent(event.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default AdminEvents;={emp.id} value={emp.id}>
                     {emp.name}
                   </option>
                 ))}
