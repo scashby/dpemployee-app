@@ -1,138 +1,86 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabase/supabaseClient';
+import supabase from '../supabaseClient';
 
 const AdminEmployees = () => {
   const [employees, setEmployees] = useState([]);
-  const [newEmployee, setNewEmployee] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    is_admin: false,
-  });
+  const [editing, setEditing] = useState(null);
+  const [newEmployee, setNewEmployee] = useState({ name: '', email: '', phone: '', is_admin: false });
 
   useEffect(() => {
     fetchEmployees();
   }, []);
 
   const fetchEmployees = async () => {
-    const { data, error } = await supabase.from('employees').select('*');
-    if (error) console.error('Error fetching employees:', error);
-    else setEmployees(data);
+    const { data, error } = await supabase.from('employees').select('*').order('name');
+    if (!error) setEmployees(data);
   };
 
-  const handleEdit = (id, field, value) => {
-    setEmployees((prev) =>
-      prev.map((emp) => (emp.id === id ? { ...emp, [field]: value } : emp))
-    );
+  const handleChange = (index, field, value) => {
+    const updated = [...employees];
+    updated[index][field] = field === 'is_admin' ? value.target.checked : value;
+    setEmployees(updated);
   };
 
-  const saveEmployee = async (emp) => {
-    const { error } = await supabase
-      .from('employees')
-      .update({
-        name: emp.name,
-        email: emp.email,
-        phone: emp.phone,
-        is_admin: emp.is_admin,
-      })
-      .eq('id', emp.id);
-
-    if (error) console.error('Error updating employee:', error);
-    fetchEmployees();
-  };
-
-  const deleteEmployee = async (id) => {
-    const { error } = await supabase.from('employees').delete().eq('id', id);
-    if (error) console.error('Error deleting employee:', error);
+  const saveChanges = async (employee) => {
+    await supabase.from('employees').update(employee).eq('id', employee.id);
     fetchEmployees();
   };
 
   const addEmployee = async () => {
-    const { error } = await supabase.from('employees').insert([newEmployee]);
-    if (error) console.error('Error adding employee:', error);
+    if (!newEmployee.name) return;
+    await supabase.from('employees').insert([newEmployee]);
     setNewEmployee({ name: '', email: '', phone: '', is_admin: false });
     fetchEmployees();
   };
 
   return (
-    <div>
-      <h2>Manage Employees</h2>
-      <table>
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Manage Employees</h2>
+      <table className="w-full border-collapse">
         <thead>
-          <tr>
-            <th>Name</th><th>Email</th><th>Phone</th><th>Admin</th><th>Actions</th>
+          <tr className="bg-gray-200">
+            <th className="p-2 border">Name</th>
+            <th className="p-2 border">Email</th>
+            <th className="p-2 border">Phone</th>
+            <th className="p-2 border">Admin</th>
+            <th className="p-2 border">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {employees.map((emp) => (
-            <tr key={emp.id}>
-              <td>
-                <input
-                  value={emp.name}
-                  onChange={(e) => handleEdit(emp.id, 'name', e.target.value)}
-                />
+          {employees.map((emp, index) => (
+            <tr key={emp.id} className="border-t">
+              <td className="p-2 border">
+                <input value={emp.name} onChange={(e) => handleChange(index, 'name', e.target.value)} className="w-full" />
               </td>
-              <td>
-                <input
-                  value={emp.email}
-                  onChange={(e) => handleEdit(emp.id, 'email', e.target.value)}
-                />
+              <td className="p-2 border">
+                <input value={emp.email} onChange={(e) => handleChange(index, 'email', e.target.value)} className="w-full" />
               </td>
-              <td>
-                <input
-                  value={emp.phone}
-                  onChange={(e) => handleEdit(emp.id, 'phone', e.target.value)}
-                />
+              <td className="p-2 border">
+                <input value={emp.phone} onChange={(e) => handleChange(index, 'phone', e.target.value)} className="w-full" />
               </td>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={emp.is_admin}
-                  onChange={(e) => handleEdit(emp.id, 'is_admin', e.target.checked)}
-                />
+              <td className="p-2 border text-center">
+                <input type="checkbox" checked={emp.is_admin} onChange={(e) => handleChange(index, 'is_admin', e)} />
               </td>
-              <td>
-                <button onClick={() => saveEmployee(emp)}>Save</button>
-                <button onClick={() => deleteEmployee(emp.id)}>Delete</button>
+              <td className="p-2 border text-center">
+                <button onClick={() => saveChanges(emp)} className="bg-blue-600 text-white px-2 py-1 rounded">Save</button>
               </td>
             </tr>
           ))}
-          <tr>
-            <td>
-              <input
-                value={newEmployee.name}
-                onChange={(e) =>
-                  setNewEmployee({ ...newEmployee, name: e.target.value })
-                }
-              />
+          <tr className="bg-yellow-50 border-t">
+            <td className="p-2 border">
+              <input value={newEmployee.name} onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })} className="w-full" placeholder="New name" />
             </td>
-            <td>
-              <input
-                value={newEmployee.email}
-                onChange={(e) =>
-                  setNewEmployee({ ...newEmployee, email: e.target.value })
-                }
-              />
+            <td className="p-2 border">
+              <input value={newEmployee.email} onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })} className="w-full" placeholder="Email" />
             </td>
-            <td>
-              <input
-                value={newEmployee.phone}
-                onChange={(e) =>
-                  setNewEmployee({ ...newEmployee, phone: e.target.value })
-                }
-              />
+            <td className="p-2 border">
+              <input value={newEmployee.phone} onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })} className="w-full" placeholder="Phone" />
             </td>
-            <td>
-              <input
-                type="checkbox"
-                checked={newEmployee.is_admin}
-                onChange={(e) =>
-                  setNewEmployee({ ...newEmployee, is_admin: e.target.checked })
-                }
-              />
+            <td className="p-2 border text-center">
+              <input type="checkbox" checked={newEmployee.is_admin} onChange={(e) => setNewEmployee({ ...newEmployee, is_admin: e.target.checked })} />
             </td>
-            <td>
-              <button onClick={addEmployee}>Add</button>
+            <td className="p-2 border text-center">
+              <button onClick={addEmployee} className="bg-green-600 text-white px-2 py-1 rounded">Add</button>
             </td>
           </tr>
         </tbody>
