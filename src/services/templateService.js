@@ -120,19 +120,35 @@ export const convertScheduleToTemplate = (scheduleData, employees) => {
       });
     });
   });
-  
+  if (Object.keys(templateData).length === 0) {
+    // No valid template data created - add default structure
+    templateData = {
+      'Monday': [],
+      'Tuesday': [],
+      'Wednesday': [],
+      'Thursday': [],
+      'Friday': [],
+      'Saturday': [],
+      'Sunday': []
+    };
+  }
   return templateData;
 };
 
 // Save schedule as a new template
 export const saveAsNewTemplate = async (templateData, templateName) => {
   try {
+    console.log('Saving template:', {
+      name: templateName,
+      date: null,
+      template: templateData
+    });
     const { data, error } = await supabase
       .from('holidays')
       .insert([{
         name: templateName,
         date: null, // No date for regular templates
-        template: templateData
+        template: JSON.stringify(templateData)
       }])
       .select();
     
@@ -165,7 +181,7 @@ export const updateExistingTemplate = async (templateData, templateId) => {
     const { error } = await supabase
       .from('holidays')
       .update({
-        template: templateData
+        template: JSON.stringify(templateData)
       })
       .eq('id', templateId);
     
