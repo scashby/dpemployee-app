@@ -4,8 +4,8 @@ import { getWeekDateRange, formatDateForDB } from '../utils/dateUtils';
 import useWeekNavigation from '../hooks/useWeekNavigation';
 import useMessages from '../hooks/useMessages';
 import useModalState from '../hooks/useModalState';
-import * as scheduleService from '../services/scheduleService'; // declared but never read
-import * as templateService from '../services/templateService'; // declared but never read
+import * as scheduleService from '../services/scheduleService';
+import * as templateService from '../services/templateService'; 
 import StatusMessage from './shared/StatusMessage';
 import WeekNavigator from './shared/WeekNavigator';
 import ScheduleTable from './shared/ScheduleTable';
@@ -44,14 +44,14 @@ const AdminScheduleEditor = () => {
     openAddShiftModal,
     openEditShiftModal,
     closeShiftModal, 
-    openAddEmployeeModal, // declared but never read
+    openAddEmployeeModal, 
     closeAddEmployeeModal, 
-    openTemplateModal, // declared but never read
+    openTemplateModal, 
     closeTemplateModal, 
     setSelectedTemplate, 
-    openSaveAsTemplateModal, // declared but never read
+    openSaveAsTemplateModal, 
     closeSaveAsTemplateModal, 
-    handleShiftInputChange, // declared but never read
+    handleShiftInputChange, 
     handleTemplateInputChange 
   } = useModalState();
 
@@ -312,7 +312,7 @@ const AdminScheduleEditor = () => {
         showSuccess('Shift added successfully');
       }
       
-      closeShowShiftModal();
+      closeShiftModal();
       loadScheduleData();
     } catch (error) {
       console.error('Error saving shift:', error);
@@ -355,16 +355,11 @@ const AdminScheduleEditor = () => {
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
-      const { data } = await supabase
-        .from('schedules')
-        .select('id')
-        .eq('employee_name', employeeName)
-        .gte('date', startDate)
-        .lte('date', endDate);
+      // Use scheduleService instead of direct supabase calls
+      const result = await scheduleService.removeEmployeeFromSchedule(employeeName, startDate, endDate);
       
-      if (data && data.length > 0) {
-        const shiftIds = data.map(s => s.id);
-        await supabase.from('schedules').delete().in('id', shiftIds);
+      if (result.error) {
+        throw result.error;
       }
       
       // Update local state
@@ -372,7 +367,7 @@ const AdminScheduleEditor = () => {
       delete updatedScheduleData[employeeName];
       setScheduleData(updatedScheduleData);
       
-      showSuccess(`${employeeName} removed from schedule`);
+      showSuccess(result.message || `${employeeName} removed from schedule`);
     } catch (error) {
       console.error('Error removing employee:', error);
       showError('Failed to remove employee from schedule.');
@@ -403,7 +398,26 @@ const AdminScheduleEditor = () => {
         onCurrentWeek={goToCurrentWeek}
         className="my-4"
       />
-      
+      <div className="flex space-x-4 mb-4">
+        <button 
+          onClick={openTemplateModal} 
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Apply Template
+        </button>
+        <button 
+          onClick={openSaveAsTemplateModal} 
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Save as Template
+        </button>
+        <button 
+          onClick={openAddEmployeeModal} 
+          className="bg-gray-500 text-white px-4 py-2 rounded"
+        >
+          Add Employee
+        </button>
+      </div>
       <ScheduleTable
         scheduleData={scheduleData}
         employees={employees}
@@ -432,9 +446,11 @@ const AdminScheduleEditor = () => {
           disabled
         />
         <FormInput
-          label="Shift"
-          value="Tasting Room"
-          disabled
+          label="Shift Time"
+          name="shift"
+          value={modalData.shift || ''}
+          onChange={handleShiftInputChange}
+          placeholder="11am to Close"
         />
       </AdminModal>
 
@@ -474,19 +490,30 @@ const AdminScheduleEditor = () => {
         show={showTemplateModal}
         onClose={closeTemplateModal}
         title="Apply Template"
-        onSave={() => {
-          if (selectedTemplate) {
-            const template = templates.find(t => t.id == selectedTemplate);
-            if (template) {
-              // Apply template logic
-              showSuccess(`Applying template "${template.name}"`);
-              closeTemplateModal();
-              loadScheduleData();
-            }
+        // In the onSave function of the template modal
+onSave={() => {
+  if (selectedTemplate) {
+    const template = templates.find(t => t.id == selectedTemplate);
+    if (template) {
+      // Use templateService instead of just showing success
+      templateService.applyTemplateToSchedule(template, currentWeekStart, employees)
+        .then(result => {
+          if (result.success) {
+            showSuccess(result.message);
+            closeTemplateModal();
+            loadScheduleData();
           } else {
-            showError('Please select a template');
+            showError('Failed to apply template');
           }
-        }}
+        })
+        .catch(error => {
+          showError(`Error: ${error.message}`);
+        });
+          }
+        } else {
+          showError('Please select a template');
+        }
+      }}
       >
         <FormSelect
           label="Select Template"
@@ -505,10 +532,30 @@ const AdminScheduleEditor = () => {
         saveAsTemplateData={templateData}
         onChange={handleTemplateInputChange}
         onSave={() => {
-          if (templateData.name || templateData.existingTemplateId) {
-            showSuccess(`Template saved successfully`);
-            closeSaveAsTemplateModal();
-            fetchTemplates();
+          if (templateData.overwriteExisting && templateData.existingTemplateId) {
+            const templateStructure = templateService.convertScheduleToTemplate(scheduleData, employees);
+            templateService.updateExistingTemplate(templateStructure, templateData.existingTemplateId)
+              .then(result => {
+                if (result.success) {
+                  showSuccess(result.message);
+                  closeSaveAsTemplateModal();
+                  fetchTemplates();
+                } else {
+                  showError('Failed to update template');
+                }
+              });
+          } else if (templateData.name) {
+            const templateStructure = templateService.convertScheduleToTemplate(scheduleData, employees);
+            templateService.saveAsNewTemplate(templateStructure, templateData.name)
+              .then(result => {
+                if (result.success) {
+                  showSuccess(result.message);
+                  closeSaveAsTemplateModal();
+                  fetchTemplates();
+                } else {
+                  showError('Failed to save template');
+                }
+              });
           } else {
             showError('Template name is required');
           }
