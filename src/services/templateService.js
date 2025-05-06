@@ -1,6 +1,5 @@
 import { supabase } from '../supabase/supabaseClient';
-import { formatDateForDB } from '../utils/dateUtils';
-
+import { formatDateForDB, getWeekDateRange } from '../utils/dateUtils';
 /**
  * Service for handling template-related operations
  * Contains functions for CRUD operations on templates
@@ -44,16 +43,18 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
       'Friday': 4, 'Saturday': 5, 'Sunday': 6
     };
     
-    // 1. First, delete existing shifts for this week to replace instead of add
-    const dateRange = getWeekDateRange(weekStartDate);
-    const startDate = formatDateForDB(dateRange.start);
-    const endDate = formatDateForDB(dateRange.end);
+    // Get date range for deleting existing shifts
+    const startDate = formatDateForDB(weekStartDate);
+    const endDate = new Date(weekStartDate);
+    endDate.setDate(endDate.getDate() + 6);
+    const endDateFormatted = formatDateForDB(endDate);
     
+    // Clear all existing shifts for this week
     const { error: deleteError } = await supabase
       .from('schedules')
       .delete()
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDateFormatted);
     
     if (deleteError) throw deleteError;
     
@@ -72,9 +73,8 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
       const formattedDate = formatDateForDB(dayDate);
       const dayCode = day.substring(0, 3).toUpperCase();
       
-      // Process shifts
+      // Process shifts - only add employees that are in the current employees list
       for (const assignment of shifts) {
-        // 2. Only add shifts for employees that still exist (prevents deleted employees from returning)
         const employee = employees.find(emp => emp.id === assignment.employeeId);
         if (!employee) continue;
         
