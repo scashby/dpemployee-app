@@ -155,16 +155,26 @@ export const processShifts = (shifts, scheduleByEmployee, scheduledEmployees = n
 };
 
 // Process events into schedule structure
-export const processEvents = (events, employees, scheduleByEmployee, scheduledEmployees = new Set()) => {
+export const processEvents = (events, employees, scheduleByEmployee, scheduledEmployees = new Set(), dayNames) => {
   events.forEach(event => {
     if (!event.assignments) return;
     
     const eventDate = new Date(event.date);
-    const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+    // Fix day mapping to match week starting with Monday
+    const dayIndex = (eventDate.getDay() + 6) % 7; // Convert Sunday=0 to Sunday=6
+    const dayOfWeek = dayNames[dayIndex];
     
     event.assignments.forEach(assignment => {
       const employee = employees.find(emp => emp.id === assignment.employee_id);
-      if (!employee || !scheduleByEmployee[employee.name]) return;
+      if (!employee) return;
+      
+      // Add employee to schedule if not already there
+      if (!scheduleByEmployee[employee.name]) {
+        scheduleByEmployee[employee.name] = {};
+        dayNames.forEach(day => {
+          scheduleByEmployee[employee.name][day] = [];
+        });
+      }
       
       scheduleByEmployee[employee.name][dayOfWeek].push({
         id: `event_${event.id}_${assignment.employee_id}`,
@@ -174,7 +184,9 @@ export const processEvents = (events, employees, scheduleByEmployee, scheduledEm
         shift: event.time || 'Event Time TBD',
         event_name: event.title,
         event_id: event.id,
-        event_info: event.info
+        event_info: event.info,
+        event_type: event.off_prem ? 'off-premise' : 'on-premise',
+        off_prem: event.off_prem
       });
       
       scheduledEmployees.add(employee.name);
