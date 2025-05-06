@@ -157,6 +157,8 @@ export const processShifts = (shifts, scheduleByEmployee, scheduledEmployees = n
 // Process events into schedule structure
 export const processEvents = (events, employees, scheduleByEmployee, scheduledEmployees = new Set(), dayNames) => {
   events.forEach(event => {
+    console.log("Processing events:", events);
+    console.log("Current scheduleByEmployee:", scheduleByEmployee);
     if (!event.assignments) return;
     
     const eventDate = new Date(event.date);
@@ -192,6 +194,7 @@ export const processEvents = (events, employees, scheduleByEmployee, scheduledEm
       scheduledEmployees.add(employee.name);
     });
   });
-  
+  console.log("Final scheduleByEmployee after processing events:", scheduleByEmployee);
+  console.log("Employees with events:", scheduledEmployees);
   return { scheduleByEmployee, scheduledEmployees };
 };
