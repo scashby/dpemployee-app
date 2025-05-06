@@ -215,17 +215,23 @@ const AdminScheduleEditor = () => {
         const { scheduleByEmployee: updatedSchedule, scheduledEmployees } = 
           scheduleService.processShifts(data, scheduleByEmployee, employeesWithShifts);
         
-        Object.assign(scheduleByEmployee, updatedSchedule);
+        // Instead of Object.assign(scheduleByEmployee, updatedSchedule);
+        // Use a new reference:
+        scheduleByEmployee = { ...scheduleByEmployee, ...updatedSchedule };
+        
         // Merge the sets
         scheduledEmployees.forEach(emp => employeesWithShifts.add(emp));
       }
-      
+
       // Process events - now with fixed day mapping
       if (events && events.length > 0) {
         const { scheduleByEmployee: scheduleWithEvents, scheduledEmployees: employeesWithEvents } = 
           scheduleService.processEvents(events, employees, scheduleByEmployee, employeesWithShifts, dayNames);
         
-        Object.assign(scheduleByEmployee, scheduleWithEvents);
+        // Instead of Object.assign(scheduleByEmployee, scheduleWithEvents);
+        // Use a new reference:
+        scheduleByEmployee = { ...scheduleByEmployee, ...scheduleWithEvents };
+        
         // Merge the sets
         employeesWithEvents.forEach(emp => employeesWithShifts.add(emp));
       }
@@ -369,6 +375,8 @@ const AdminScheduleEditor = () => {
       showError('Failed to remove employee from schedule.');
     }
   };
+  console.log("ScheduleData state:", scheduleData);
+  console.log("Is scheduleData empty?", Object.keys(scheduleData).length === 0);
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
