@@ -410,123 +410,67 @@ const AdminEvents = () => {
         </form>
       </div>
 
->
-                        <button
-                          onClick={() => setEditMode(null)}
-                          className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setEditMode(event.id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteEvent(event.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-export default AdminEvents;={emp.id} value={emp.id}>
-                    {emp.name}
-                  </option>
-                ))}
-              </select>
-              <div className="text-sm text-gray-500 mt-1">
-                Hold Ctrl/Cmd to select multiple employees
-              </div>
-            </div>
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-            >
-              Add Event
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <h3 className="text-xl font-semibold mb-4">Event List</h3>
+       <h3 className="admin-subtitle">Event List</h3>
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
+        <table className="admin-table">
           <thead>
-            <tr className="bg-gray-200">
-              <th className="py-2 px-4 border text-left">Title</th>
-              <th className="py-2 px-4 border text-left">Date</th>
-              <th className="py-2 px-4 border text-left">Time</th>
-              <th className="py-2 px-4 border text-center">Off-Premise</th>
-              <th className="py-2 px-4 border text-left">Info</th>
-              <th className="py-2 px-4 border text-left">Assigned Employees</th>
-              <th className="py-2 px-4 border text-center">Actions</th>
+            <tr>
+              <th>Title</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th style={{textAlign: 'center'}}>Off-Premise</th>
+              <th>Info</th>
+              <th>Assigned Employees</th>
+              <th style={{textAlign: 'center'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {events.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-4 px-4 border text-center">
+                <td colSpan="7" style={{textAlign: 'center', padding: '1rem'}}>
                   No events found.
                 </td>
               </tr>
             ) : (
               events.map((event) => (
                 <tr key={event.id}>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {editMode === event.id ? (
                       <input
                         type="text"
                         value={event.title || ''}
                         onChange={(e) => handleInputChange(e, event.id, 'title')}
-                        className="w-full p-1 border rounded"
+                        className="table-input"
                       />
                     ) : (
                       event.title
                     )}
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {editMode === event.id ? (
                       <input
                         type="date"
                         value={event.date || ''}
                         onChange={(e) => handleInputChange(e, event.id, 'date')}
-                        className="w-full p-1 border rounded"
+                        className="table-input"
                       />
                     ) : (
                       formatDate(event.date)
                     )}
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {editMode === event.id ? (
                       <input
                         type="text"
                         value={event.time || ''}
                         onChange={(e) => handleInputChange(e, event.id, 'time')}
-                        className="w-full p-1 border rounded"
+                        className="table-input"
                       />
                     ) : (
                       event.time
                     )}
                   </td>
-                  <td className="py-2 px-4 border text-center">
+                  <td style={{textAlign: 'center'}}>
                     {editMode === event.id ? (
                       <input
                         type="checkbox"
@@ -537,25 +481,25 @@ export default AdminEvents;={emp.id} value={emp.id}>
                       event.off_prem ? "Yes" : "No"
                     )}
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {editMode === event.id ? (
                       <textarea
                         value={event.info || ''}
                         onChange={(e) => handleInputChange(e, event.id, 'info')}
-                        className="w-full p-1 border rounded"
+                        className="table-input"
                         rows="2"
                       ></textarea>
                     ) : (
-                      <div className="max-h-20 overflow-y-auto">
+                      <div style={{maxHeight: '5rem', overflowY: 'auto'}}>
                         {event.info}
                       </div>
                     )}
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {editMode === event.id ? (
                       <select
                         multiple
-                        className="w-full p-1 border rounded"
+                        className="table-input"
                         onChange={(e) => handleEmployeeSelection(e, event.id)}
                         value={eventAssignments[event.id] || []}
                       >
@@ -566,10 +510,10 @@ export default AdminEvents;={emp.id} value={emp.id}>
                         ))}
                       </select>
                     ) : (
-                      <div className="max-h-20 overflow-y-auto">
+                      <div style={{maxHeight: '5rem', overflowY: 'auto'}}>
                         {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
                           <ul className="list-disc list-inside">
-                            {eventAssignments[event.id].map(empId => {
+                            {(eventAssignments[event.id] || []).map(empId => {
                               const emp = employees.find(e => e.id === empId);
                               return emp ? (
                                 <li key={empId}>{emp.name}</li>
@@ -582,18 +526,18 @@ export default AdminEvents;={emp.id} value={emp.id}>
                       </div>
                     )}
                   </td>
-                  <td className="py-2 px-4 border text-center">
+                  <td className="cell-actions">
                     {editMode === event.id ? (
                       <>
                         <button
                           onClick={() => saveEventChanges(event.id)}
-                          className="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded mr-2"
+                          className="btn btn-success btn-sm"
                         >
                           Save
                         </button>
                         <button
                           onClick={() => setEditMode(null)}
-                          className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded"
+                          className="btn btn-secondary btn-sm"
                         >
                           Cancel
                         </button>
@@ -602,13 +546,13 @@ export default AdminEvents;={emp.id} value={emp.id}>
                       <>
                         <button
                           onClick={() => setEditMode(event.id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded mr-2"
+                          className="btn btn-primary btn-sm"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => deleteEvent(event.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
+                          className="btn btn-danger btn-sm"
                         >
                           Delete
                         </button>
@@ -620,198 +564,6 @@ export default AdminEvents;={emp.id} value={emp.id}>
             )}
           </tbody>
         </table>
-      </div>
-    </div>
-  );
-};
-
-export default AdminEvents;={emp.id} value={emp.id}>
-                    {emp.name}
-                  </option>
-                ))}
-              </select>
-              <div className="text-sm text-gray-500 mt-1">
-                Hold Ctrl/Cmd to select multiple employees
-              </div>
-              <div className="text-sm text-orange-500 mt-1">
-                Note: Employee assignments will be saved once the schema structure is confirmed
-              </div>
-            </div>
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-            >
-              Add Event
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <h3 className="text-xl font-semibold mb-4">Event List</h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="py-2 px-4 border text-left">Title</th>
-              <th className="py-2 px-4 border text-left">Date</th>
-              <th className="py-2 px-4 border text-left">Time</th>
-              <th className="py-2 px-4 border text-center">Off-Premise</th>
-              <th className="py-2 px-4 border text-left">Info</th>
-              <th className="py-2 px-4 border text-left">Assigned Employees</th>
-              <th className="py-2 px-4 border text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="py-4 px-4 border text-center">
-                  No events found.
-                </td>
-              </tr>
-            ) : (
-              events.map((event) => (
-                <tr key={event.id}>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <input
-                        type="text"
-                        value={event.title || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'title')}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      event.title
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <input
-                        type="date"
-                        value={event.date || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'date')}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      formatDate(event.date)
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <input
-                        type="text"
-                        value={event.time || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'time')}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      event.time
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border text-center">
-                    {editMode === event.id ? (
-                      <input
-                        type="checkbox"
-                        checked={event.off_prem || false}
-                        onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
-                      />
-                    ) : (
-                      event.off_prem ? "Yes" : "No"
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <textarea
-                        value={event.info || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'info')}
-                        className="w-full p-1 border rounded"
-                        rows="2"
-                      ></textarea>
-                    ) : (
-                      <div className="max-h-20 overflow-y-auto">
-                        {event.info}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <select
-                        multiple
-                        className="w-full p-1 border rounded"
-                        onChange={(e) => handleEmployeeSelection(e, event.id)}
-                        value={event.assigned_employees || []}
-                      >
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="max-h-20 overflow-y-auto">
-                        {event.assigned_employees && event.assigned_employees.length > 0 ? (
-                          <ul className="list-disc list-inside">
-                            {event.assigned_employees.map(empId => {
-                              const emp = employees.find(e => e.id === empId);
-                              return emp ? (
-                                <li key={empId}>{emp.name}</li>
-                              ) : null;
-                            })}
-                          </ul>
-                        ) : (
-                          "No employees assigned"
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border text-center">
-                    {editMode === event.id ? (
-                      <>
-                        <button
-                          onClick={() => saveEventChanges(event.id)}
-                          className="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded mr-2"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditMode(null)}
-                          className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setEditMode(event.id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteEvent(event.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      
-      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-300 rounded">
-        <h4 className="font-semibold text-yellow-800">Note on Employee Assignment</h4>
-        <p className="text-yellow-800">
-          This feature requires a schema update to store the employee-event assignments.
-          Options include: adding an <code>assigned_employees</code> column (UUID array) to the events table or 
-          creating a join table to track assignments. Please confirm your preferred schema to enable this feature fully.
-        </p>
       </div>
     </div>
   );
