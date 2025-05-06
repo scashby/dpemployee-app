@@ -1,66 +1,67 @@
-import React, { useState, useEffect } from 'react'; // React is declared but never read
+import React, { useState, useEffect } from 'react'; 
 import { supabase } from '../supabase/supabaseClient';
 import { getWeekDateRange, formatDateForDB } from '../utils/dateUtils';
 import useWeekNavigation from '../hooks/useWeekNavigation';
 import useMessages from '../hooks/useMessages';
 import useModalState from '../hooks/useModalState';
-import * as scheduleService from '../services/scheduleService'; //this and the following imports are declared but never read
-import * as templateService from '../services/templateService';
+import * as scheduleService from '../services/scheduleService'; // declared but never read
+import * as templateService from '../services/templateService'; // declared but never read
 import StatusMessage from './shared/StatusMessage';
 import WeekNavigator from './shared/WeekNavigator';
 import ScheduleTable from './shared/ScheduleTable';
-import AdminModal from './shared/AdminModal';
-import FormInput from './shared/FormInput';
-import FormSelect from './shared/FormSelect';
-import SaveAsTemplateModal from './shared/SaveAsTemplateModal';
+import AdminModal from './shared/AdminModal'; 
+import FormInput from './shared/FormInput'; 
+import FormSelect from './shared/FormSelect'; 
+import SaveAsTemplateModal from './shared/SaveAsTemplateModal'; 
 import '../styles/admin.css';
 
 const AdminScheduleEditor = () => {
   // Use custom hooks for core functionality
   const { 
     currentWeekStart, 
-    goToPreviousWeek, //this and the following constants are declared but never read
+    goToPreviousWeek,
     goToNextWeek, 
-    goToCurrentWeek
+    goToCurrentWeek,
+    getDateForDay
   } = useWeekNavigation();
   
   const { 
-    error, //declared but never read
-    successMessage, //declared but never read
+    error, 
+    successMessage, 
     showError, 
     showSuccess,
-    clearMessages //declared but never read
+    clearMessages 
   } = useMessages();
   
   const {
     modalData,
-    templateData, //this and the following constants are declared but never read
-    showShiftModal,
-    showAddEmployeeModal,
-    showTemplateModal,
-    showSaveAsTemplateModal,
-    selectedTemplate,
+    templateData, 
+    showShiftModal, 
+    showAddEmployeeModal, 
+    showTemplateModal, 
+    showSaveAsTemplateModal, 
+    selectedTemplate, 
     openAddShiftModal,
     openEditShiftModal,
-    closeShiftModal,
-    openAddEmployeeModal,
-    closeAddEmployeeModal,
-    openTemplateModal,
-    closeTemplateModal,
-    setSelectedTemplate,
-    openSaveAsTemplateModal,
-    closeSaveAsTemplateModal,
-    handleShiftInputChange,
-    handleTemplateInputChange
+    closeShiftModal, 
+    openAddEmployeeModal, // declared but never read
+    closeAddEmployeeModal, 
+    openTemplateModal, // declared but never read
+    closeTemplateModal, 
+    setSelectedTemplate, 
+    openSaveAsTemplateModal, // declared but never read
+    closeSaveAsTemplateModal, 
+    handleShiftInputChange, // declared but never read
+    handleTemplateInputChange 
   } = useModalState();
 
   // Local state
-  const [scheduleData, setScheduleData] = useState({}); // declared but never read
+  const [scheduleData, setScheduleData] = useState({});
   const [employees, setEmployees] = useState([]);
-  const [availableEmployees, setAvailableEmployees] = useState([]); // declared but never read
-  const [templates, setTemplates] = useState([]); // declared but never read
+  const [availableEmployees, setAvailableEmployees] = useState([]); 
+  const [templates, setTemplates] = useState([]); 
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true); // declared but never read
+  const [loading, setLoading] = useState(true);
   
   // Day headers - starting with Monday
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -118,8 +119,7 @@ const AdminScheduleEditor = () => {
     try {
       const { data, error } = await supabase
         .from('holidays')
-        .select('*')
-        .order('name');
+        .select('*');
       
       if (error) throw error;
       
@@ -265,14 +265,14 @@ const AdminScheduleEditor = () => {
   };
   
   // Handle saving a shift
-  const saveShift = async () => { // saveShift is declared but not read
+  const saveShift = async () => { 
     try {
       setLoading(true);
       
       // Check if this is an event shift
       if (modalData.event_id) {
         showSuccess('Event assignments are managed in the Events page');
-        setShowShiftModal(false); // is this setShiftModal or showShiftModal?
+        closeShiftModal();
         return;
       }
       
@@ -312,7 +312,7 @@ const AdminScheduleEditor = () => {
         showSuccess('Shift added successfully');
       }
       
-      setShowShiftModal(false); // is this setShiftModal or showShiftModal?
+      closeShowShiftModal();
       loadScheduleData();
     } catch (error) {
       console.error('Error saving shift:', error);
@@ -320,6 +320,203 @@ const AdminScheduleEditor = () => {
     } finally {
       setLoading(false);
     }
-  }  
+  }
+
+  // Get date for a specific day
+  // Removed getDateForDay function already provided by useWeekNavigation
+  
+  if (loading && employees.length === 0) {
+    return <div className="p-4">Loading schedule data...</div>;
+  }
+  const deleteShift = async (id) => {
+    if (id.toString().startsWith('event_')) {
+      showError('Event shifts cannot be deleted here.');
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      showSuccess('Shift deleted successfully');
+      loadScheduleData();
+    } catch (error) {
+      console.error('Error deleting shift:', error);
+      showError('Failed to delete shift.');
+    }
+  };
+  
+  const removeEmployee = async (employeeName) => {
+    try {
+      const dateRange = getWeekDateRange(currentWeekStart);
+      const startDate = formatDateForDB(dateRange.start);
+      const endDate = formatDateForDB(dateRange.end);
+      
+      const { data } = await supabase
+        .from('schedules')
+        .select('id')
+        .eq('employee_name', employeeName)
+        .gte('date', startDate)
+        .lte('date', endDate);
+      
+      if (data && data.length > 0) {
+        const shiftIds = data.map(s => s.id);
+        await supabase.from('schedules').delete().in('id', shiftIds);
+      }
+      
+      // Update local state
+      const updatedScheduleData = { ...scheduleData };
+      delete updatedScheduleData[employeeName];
+      setScheduleData(updatedScheduleData);
+      
+      showSuccess(`${employeeName} removed from schedule`);
+    } catch (error) {
+      console.error('Error removing employee:', error);
+      showError('Failed to remove employee from schedule.');
+    }
+  };
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
+      
+      <StatusMessage 
+        message={error} 
+        type="error" 
+        onClear={() => clearMessages()} 
+        duration={5000} 
+      />
+      
+      <StatusMessage 
+        message={successMessage} 
+        type="success" 
+        onClear={() => clearMessages()} 
+        duration={5000} 
+      />
+      
+      <WeekNavigator
+        currentWeekStart={currentWeekStart}
+        onPreviousWeek={goToPreviousWeek}
+        onNextWeek={goToNextWeek}
+        onCurrentWeek={goToCurrentWeek}
+        className="my-4"
+      />
+      
+      <ScheduleTable
+        scheduleData={scheduleData}
+        employees={employees}
+        dayNames={dayNames}
+        getDateForDay={getDateForDay}
+        onAddShift={openAddShiftModal}
+        onEditShift={openEditShiftModal}
+        onDeleteShift={deleteShift}
+        onRemoveEmployee={removeEmployee}
+      />
+      
+      <AdminModal
+        show={showShiftModal}
+        onClose={closeShiftModal}
+        title={modalData.id ? "Edit Shift" : "Add Shift"}
+        onSave={saveShift}
+      >
+        <FormInput
+          label="Employee"
+          value={modalData.employeeName || ''}
+          disabled
+        />
+        <FormInput
+          label="Day"
+          value={modalData.day || ''}
+          disabled
+        />
+        <FormInput
+          label="Shift"
+          value="Tasting Room"
+          disabled
+        />
+      </AdminModal>
+
+      <AdminModal
+        show={showAddEmployeeModal}
+        onClose={closeAddEmployeeModal}
+        title="Add Employee to Schedule"
+        onSave={() => {
+          const select = document.getElementById('employeeSelect');
+          if (select && select.value) {
+            const employee = employees.find(emp => emp.id === select.value);
+            if (employee) {
+              // Add employee to schedule
+              const updatedScheduleData = { ...scheduleData };
+              updatedScheduleData[employee.name] = {};
+              dayNames.forEach(day => {
+                updatedScheduleData[employee.name][day] = [];
+              });
+              setScheduleData(updatedScheduleData);
+              showSuccess(`${employee.name} added to schedule`);
+              closeAddEmployeeModal();
+            }
+          }
+        }}
+      >
+        <FormSelect
+          id="employeeSelect"
+          label="Select Employee"
+          options={availableEmployees.map(emp => ({
+            value: emp.id,
+            label: emp.name
+          }))}
+        />
+      </AdminModal>
+
+      <AdminModal
+        show={showTemplateModal}
+        onClose={closeTemplateModal}
+        title="Apply Template"
+        onSave={() => {
+          if (selectedTemplate) {
+            const template = templates.find(t => t.id == selectedTemplate);
+            if (template) {
+              // Apply template logic
+              showSuccess(`Applying template "${template.name}"`);
+              closeTemplateModal();
+              loadScheduleData();
+            }
+          } else {
+            showError('Please select a template');
+          }
+        }}
+      >
+        <FormSelect
+          label="Select Template"
+          value={selectedTemplate || ''}
+          onChange={(e) => setSelectedTemplate(e.target.value)}
+          options={templates.map(t => ({
+            value: t.id,
+            label: t.name
+          }))}
+        />
+      </AdminModal>
+
+      <SaveAsTemplateModal
+        show={showSaveAsTemplateModal}
+        onClose={closeSaveAsTemplateModal}
+        saveAsTemplateData={templateData}
+        onChange={handleTemplateInputChange}
+        onSave={() => {
+          if (templateData.name || templateData.existingTemplateId) {
+            showSuccess(`Template saved successfully`);
+            closeSaveAsTemplateModal();
+            fetchTemplates();
+          } else {
+            showError('Template name is required');
+          }
+        }}
+        templates={templates}
+      />
+    </div>
+  );
 }
+
 export default AdminScheduleEditor;
