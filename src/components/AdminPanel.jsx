@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import AdminEmployees from './AdminEmployees';
 import AdminEvents from './AdminEvents';
 import AdminDefaultSchedule from './AdminDefaultSchedule';
