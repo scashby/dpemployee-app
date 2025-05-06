@@ -3,11 +3,9 @@ import { supabase } from '../supabase/supabaseClient';
 import '../styles/admin.css';
 
 const AdminScheduleEditor = () => {
-  const [schedule, setSchedule] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   
   // Week navigation state
   const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
@@ -19,43 +17,21 @@ const AdminScheduleEditor = () => {
     return new Date(date.setDate(diff));
   }
   
-  // Format date to YYYY-MM-DD for database
-  function formatDateForDB(date) {
-    return date.toISOString().split('T')[0];
-  }
-  
-  // Get date for display (MM/DD)
+  // Format date for display (M/D)
   function formatDateForDisplay(date) {
-    const month = date.getMonth() + 1; // getMonth is zero-based
-    const day = date.getDate();
-    return `${month}/${day}`;
-  }
-  
-  // Get formatted date range for the week
-  function getWeekRangeDisplay() {
-    const endDate = new Date(currentWeekStart);
-    endDate.setDate(endDate.getDate() + 6);
-    
-    const startMonth = currentWeekStart.getMonth() + 1;
-    const startDay = currentWeekStart.getDate();
-    const endMonth = endDate.getMonth() + 1;
-    const endDay = endDate.getDate();
-    
-    return `${startMonth}/${startDay} thrugo ${endMonth}/${endDay}`;
+    return `${date.getMonth() + 1}/${date.getDate()}`;
   }
   
   // Get dates for the current week
   function getWeekDates() {
-    const dates = [];
-    const currentDate = new Date(currentWeekStart);
+    const startDate = new Date(currentWeekStart);
+    const endDate = new Date(currentWeekStart);
+    endDate.setDate(endDate.getDate() + 6);
     
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentDate);
-      date.setDate(currentDate.getDate() + i);
-      dates.push(date);
-    }
-    
-    return dates;
+    return {
+      start: startDate,
+      end: endDate
+    };
   }
   
   // Previous week
@@ -78,14 +54,6 @@ const AdminScheduleEditor = () => {
     fetchEmployees();
   }, []);
   
-  // Fetch schedule whenever week changes
-  useEffect(() => {
-    console.log("AdminScheduleEditor - Week changed, fetching schedule");
-    if (employees.length > 0) {
-      fetchSchedule();
-    }
-  }, [currentWeekStart, employees]);
-  
   const fetchEmployees = async () => {
     console.log("Fetching employees...");
     try {
@@ -97,167 +65,89 @@ const AdminScheduleEditor = () => {
       if (error) throw error;
       console.log("Fetched employees:", data);
       setEmployees(data || []);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching employees:', error);
       setError('Failed to load employees. Please try again.');
-    }
-  };
-  
-  const fetchSchedule = async () => {
-    console.log("Fetching schedule...");
-    try {
-      setLoading(true);
-      
-      // Get dates for the week
-      const weekDates = getWeekDates();
-      const startDate = formatDateForDB(weekDates[0]);
-      const endDate = formatDateForDB(weekDates[6]);
-      
-      console.log(`Fetching schedule from ${startDate} to ${endDate}`);
-      
-      // Fetch existing schedule for the week
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate);
-      
-      if (error) throw error;
-      
-      console.log("Schedule data from DB:", data);
-      
-      // Initialize an empty schedule
-      const scheduleData = [];
-      
-      // For each employee, create a row with their shifts
-      employees.forEach(employee => {
-        const employeeRow = {
-          employee: employee,
-          shifts: Array(7).fill(null) // One for each day of the week
-        };
-        
-        // Fill in existing shifts
-        if (data) {
-          weekDates.forEach((date, dayIndex) => {
-            const dateStr = formatDateForDB(date);
-            const shift = data.find(s => s.employee_id === employee.id && s.date === dateStr);
-            
-            if (shift) {
-              employeeRow.shifts[dayIndex] = {
-                id: shift.id,
-                type: shift.shift,
-                time: shift.time,
-                event_type: shift.event_type,
-                event_id: shift.event_id
-              };
-            }
-          });
-        }
-        
-        scheduleData.push(employeeRow);
-      });
-      
-      console.log("Processed schedule data:", scheduleData);
-      setSchedule(scheduleData);
-    } catch (error) {
-      console.error('Error fetching schedule:', error);
-      setError('Failed to load schedule. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
   
   const addEmployee = () => {
-    // This would open a dialog to add employee to this week's schedule
-    alert('Add employee functionality will be implemented here');
+    // Placeholder for add employee functionality
+    console.log('Add Employee clicked');
   };
   
-  const saveChanges = async () => {
-    alert('Save changes functionality will be implemented here');
-    // This would save any changes made to the schedule
+  const saveChanges = () => {
+    // Placeholder for save changes functionality
+    console.log('Save Changes clicked');
   };
   
-  // Function to get the appropriate CSS class for a shift
-  const getShiftClass = (shift) => {
-    if (!shift) return '';
-    
-    switch (shift.type) {
-      case 'Tasting Room':
-        return 'tasting-room-shift';
-      case 'Offsite':
-        return 'offsite-shift';
-      case 'Packaging':
-        return 'packaging-shift';
-      default:
-        return '';
-    }
+  const removeEmployee = (employeeId) => {
+    // This would remove an employee from the current schedule
+    console.log(`Remove employee ${employeeId} from schedule`);
   };
   
-  if (loading && employees.length === 0) {
-    return <div className="admin-section">Loading schedule data...</div>;
+  if (loading) {
+    return <div className="p-4">Loading schedule data...</div>;
   }
+  
+  const weekDates = getWeekDates();
+  const dateRange = `${formatDateForDisplay(weekDates.start)} thrugo ${formatDateForDisplay(weekDates.end)}`;
   
   // Days of the week
   const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   
   return (
-    <div className="admin-section">
-      <h2 className="page-title">Edit Weekly Schedule</h2>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
       
-      {error && (
-        <div className="alert alert-error">
-          {error}
-        </div>
-      )}
-      
-      {successMessage && (
-        <div className="alert alert-success">
-          {successMessage}
-        </div>
-      )}
-      
-      <div className="week-navigation">
-        <button className="nav-button" onClick={goToPreviousWeek}>
+      <div className="flex items-center mb-4">
+        <button 
+          onClick={goToPreviousWeek} 
+          className="bg-gray-200 hover:bg-gray-300 py-1 px-4 rounded mr-2"
+        >
           ←Previous
         </button>
         
-        <div className="current-week">
-          {getWeekRangeDisplay()}
-        </div>
+        <div className="text-lg">{dateRange}</div>
         
-        <button className="nav-button" onClick={goToNextWeek}>
+        <button 
+          onClick={goToNextWeek} 
+          className="bg-gray-200 hover:bg-gray-300 py-1 px-4 rounded ml-2"
+        >
           Next→
         </button>
       </div>
       
-      <div className="schedule-table-container">
-        <table className="schedule-table">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse mb-4">
           <thead>
-            <tr>
-              <th className="employee-header">EMPLOYEE</th>
+            <tr className="bg-gray-100">
+              <th className="text-left py-2 px-4 border-b border-gray-200">EMPLOYEE</th>
               {days.map(day => (
-                <th key={day} className="day-header">{day}</th>
+                <th key={day} className="py-2 px-4 border-b border-gray-200 text-center">{day}</th>
               ))}
-              <th className="remove-header">REMOVE</th>
+              <th className="py-2 px-4 border-b border-gray-200 text-center">REMOVE</th>
             </tr>
           </thead>
           <tbody>
-            {schedule.map((row, index) => (
-              <tr key={row.employee.id} className="employee-row">
-                <td className="employee-cell">{row.employee.name}</td>
-                {row.shifts.map((shift, dayIndex) => (
-                  <td key={dayIndex} className="shift-cell">
-                    {shift && (
-                      <div className={`shift-box ${getShiftClass(shift)}`}>
-                        {shift.type}
-                        <br />
-                        {shift.time}
-                      </div>
-                    )}
-                  </td>
+            {employees.map(employee => (
+              <tr key={employee.id} className="hover:bg-gray-50">
+                <td className="py-2 px-4 border-b border-gray-200">{employee.name}</td>
+                {days.map(day => (
+                  <td 
+                    key={day} 
+                    className="py-2 px-4 border-b border-gray-200 text-center cursor-pointer"
+                  ></td>
                 ))}
-                <td className="remove-cell">
-                  <button className="remove-button">✕</button>
+                <td className="py-2 px-4 border-b border-gray-200 text-center">
+                  <button 
+                    onClick={() => removeEmployee(employee.id)}
+                    className="text-gray-500 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
                 </td>
               </tr>
             ))}
@@ -265,12 +155,18 @@ const AdminScheduleEditor = () => {
         </table>
       </div>
       
-      <div className="schedule-actions">
-        <button className="action-button add-employee" onClick={addEmployee}>
+      <div className="mt-4 flex">
+        <button 
+          onClick={addEmployee}
+          className="bg-gray-200 hover:bg-gray-300 py-2 px-4 rounded mr-2"
+        >
           + Add Employee
         </button>
         
-        <button className="action-button save-changes" onClick={saveChanges}>
+        <button 
+          onClick={saveChanges}
+          className="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded"
+        >
           Save Changes
         </button>
       </div>
