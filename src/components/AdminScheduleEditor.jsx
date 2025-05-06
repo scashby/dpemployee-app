@@ -452,7 +452,7 @@ const AdminScheduleEditor = () => {
   }
   
   const dateRange = getWeekDateRange();
-  const displayRange = `${formatDateForDisplay(dateRange.start)} thrugo ${formatDateForDisplay(dateRange.end)}`;
+  const displayRange = `${formatDateForDisplay(dateRange.start)} - ${formatDateForDisplay(dateRange.end)}`;
   
   // Day headers - starting with Monday
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
