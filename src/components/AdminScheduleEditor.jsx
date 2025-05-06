@@ -7,14 +7,8 @@ const AdminScheduleEditor = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [debug, setDebug] = useState({
-    rawData: [],
-    groupedData: {},
-    queryParams: {},
-    employeeMatches: []
-  });
   
-  // Week navigation state
+  // Week navigation state - starting with Monday
   const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
   
   // Gets Monday of the current week
@@ -29,10 +23,21 @@ const AdminScheduleEditor = () => {
     return `${date.getMonth() + 1}/${date.getDate()}`;
   }
   
-  // Format week start date for database (YYYY-MM-DD)
-  function formatWeekStartForDB(date) {
-    const weekStart = getMonday(date);
-    return weekStart.toISOString().split('T')[0];
+  // Get date range for the week (Monday to Sunday)
+  function getWeekDateRange() {
+    const startDate = new Date(currentWeekStart);
+    const endDate = new Date(currentWeekStart);
+    endDate.setDate(endDate.getDate() + 6); // 6 days after Monday = Sunday
+    
+    return {
+      start: startDate,
+      end: endDate
+    };
+  }
+  
+  // Format date string for database queries (YYYY-MM-DD)
+  function formatDateForDB(date) {
+    return date.toISOString().split('T')[0];
   }
   
   // Previous week
@@ -85,81 +90,67 @@ const AdminScheduleEditor = () => {
       console.log("Fetching schedule...");
       setLoading(true);
       
-      // Get the week start date in YYYY-MM-DD format
-      const weekStart = formatWeekStartForDB(currentWeekStart);
-      console.log(`Fetching schedule for week starting: ${weekStart}`);
+      // Calculate date range for the week
+      const dateRange = getWeekDateRange();
+      const startDate = formatDateForDB(dateRange.start);
+      const endDate = formatDateForDB(dateRange.end);
       
-      setDebug(prev => ({
-        ...prev,
-        queryParams: { week_start: weekStart }
-      }));
+      console.log(`Fetching schedule from ${startDate} to ${endDate}`);
       
-      // Fetch schedule for the current week
+      // Fetch schedule for the current week using date range
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
-        .eq('week_start', weekStart);
+        .gte('date', startDate)
+        .lte('date', endDate);
       
       if (error) throw error;
       console.log("Raw schedule data:", data);
       
-      setDebug(prev => ({
-        ...prev,
-        rawData: data || []
-      }));
-      
       // Group schedules by employee name
-      const schedulesGroupedByEmployee = {};
-      const employeeMatches = [];
+      const scheduleByEmployee = {};
       
-      // Create an entry for each employee
+      // Initialize with all employees
       employees.forEach(emp => {
-        schedulesGroupedByEmployee[emp.name] = [];
+        scheduleByEmployee[emp.name] = {};
+        
+        // Initialize days - starting with Monday
+        ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].forEach(day => {
+          scheduleByEmployee[emp.name][day] = [];
+        });
       });
       
       // Fill in shifts from data
       if (data && data.length > 0) {
         data.forEach(shift => {
-          // Check for exact match with employee name
-          if (schedulesGroupedByEmployee.hasOwnProperty(shift.employee_name)) {
-            schedulesGroupedByEmployee[shift.employee_name].push(shift);
-            employeeMatches.push({
-              shift_employee: shift.employee_name,
-              matched_employee: shift.employee_name,
-              status: 'Exact match'
-            });
+          const empName = shift.employee_name;
+          const day = shift.day;
+          
+          // Find matching employee (exact match or partial match)
+          let matchedEmployee = null;
+          
+          // Try exact match first
+          if (scheduleByEmployee[empName]) {
+            matchedEmployee = empName;
           } else {
-            // Log the miss for debugging
-            employeeMatches.push({
-              shift_employee: shift.employee_name,
-              available_employees: Object.keys(schedulesGroupedByEmployee),
-              status: 'No match'
-            });
-            
-            // Try to find a close match
-            const employeeNames = Object.keys(schedulesGroupedByEmployee);
-            for (const empName of employeeNames) {
-              if (empName.includes(shift.employee_name) || 
-                  shift.employee_name.includes(empName)) {
-                schedulesGroupedByEmployee[empName].push(shift);
-                employeeMatches[employeeMatches.length - 1].status = 
-                  `Partial match with ${empName}`;
-                employeeMatches[employeeMatches.length - 1].matched_employee = empName;
+            // Try to find close match if no exact match
+            for (const name of Object.keys(scheduleByEmployee)) {
+              if (name.includes(empName) || empName.includes(name)) {
+                matchedEmployee = name;
                 break;
               }
             }
           }
+          
+          // If we found a match, add the shift
+          if (matchedEmployee && scheduleByEmployee[matchedEmployee][day]) {
+            scheduleByEmployee[matchedEmployee][day].push(shift);
+          }
         });
       }
       
-      console.log("Grouped by employee:", schedulesGroupedByEmployee);
-      setScheduleData(schedulesGroupedByEmployee);
-      
-      setDebug(prev => ({
-        ...prev,
-        groupedData: schedulesGroupedByEmployee,
-        employeeMatches: employeeMatches
-      }));
+      console.log("Grouped schedule data:", scheduleByEmployee);
+      setScheduleData(scheduleByEmployee);
     } catch (error) {
       console.error('Error fetching schedule:', error);
       setError('Failed to load schedule. Please try again.');
@@ -168,28 +159,19 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  // Direct query for debugging
-  const testQuery = async () => {
-    try {
-      // Try querying with different column
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .limit(10);
-      
-      if (error) {
-        alert(`Error: ${error.message}`);
-      } else {
-        alert(`Found ${data.length} records.
-First record: ${JSON.stringify(data[0], null, 2)}
-        
-To check for name matching issues, compare these values:
-- Employee names in schedules table: ${[...new Set(data.map(d => d.employee_name))].join(', ')}
-- Employee names in our employees state: ${employees.map(e => e.name).join(', ')}`);
-      }
-    } catch (err) {
-      alert(`Exception: ${err.message}`);
-    }
+  const addEmployee = () => {
+    console.log('Add Employee clicked');
+    // This would open a dialog to select an employee to add to the schedule
+  };
+  
+  const saveChanges = () => {
+    console.log('Save Changes clicked');
+    // This would save any changes to the schedule
+  };
+  
+  const removeEmployee = (employeeName) => {
+    console.log(`Remove employee ${employeeName} from schedule`);
+    // This would remove an employee from the current schedule
   };
   
   // Helper to get CSS class for different shift types
@@ -210,46 +192,15 @@ To check for name matching issues, compare these values:
     return <div className="p-4">Loading schedule data...</div>;
   }
   
-  const dateRange = `${formatDateForDisplay(currentWeekStart)} thrugo ${formatDateForDisplay(new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000))}`;
+  const dateRange = getWeekDateRange();
+  const displayRange = `${formatDateForDisplay(dateRange.start)} thrugo ${formatDateForDisplay(dateRange.end)}`;
   
-  // Day headers
-  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  // Day headers - starting with Monday
+  const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold">Edit Weekly Schedule</h1>
-      
-      {/* Debug Information Panel */}
-      <div className="my-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-        <h2 className="font-bold mb-2">Debug Info</h2>
-        <div><strong>Week Start:</strong> {formatWeekStartForDB(currentWeekStart)}</div>
-        <div><strong>Employees Count:</strong> {employees.length}</div>
-        <div><strong>Raw Schedule Data:</strong> {debug.rawData.length} records</div>
-        <div><strong>Grouped Data Keys:</strong> {Object.keys(debug.groupedData).join(', ')}</div>
-        
-        <div className="mt-2">
-          <button
-            onClick={testQuery}
-            className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
-          >
-            Test Direct Query
-          </button>
-        </div>
-        
-        <div className="mt-2">
-          <h3 className="font-semibold">Employee Name Matching:</h3>
-          <pre className="bg-gray-100 p-2 mt-1 text-xs overflow-auto max-h-40">
-            {JSON.stringify(debug.employeeMatches, null, 2)}
-          </pre>
-        </div>
-        
-        <div className="mt-2">
-          <h3 className="font-semibold">Employee List:</h3>
-          <pre className="bg-gray-100 p-2 mt-1 text-xs overflow-auto max-h-40">
-            {JSON.stringify(employees.map(e => e.name), null, 2)}
-          </pre>
-        </div>
-      </div>
       
       <div className="flex items-center my-4">
         <button 
@@ -259,7 +210,7 @@ To check for name matching issues, compare these values:
           ←Previous
         </button>
         
-        <span className="mx-4 text-lg">{dateRange}</span>
+        <span className="mx-4 text-lg">{displayRange}</span>
         
         <button 
           onClick={goToNextWeek} 
@@ -274,7 +225,7 @@ To check for name matching issues, compare these values:
           <thead>
             <tr>
               <th className="text-left py-2 px-4 border-b">Employee</th>
-              {dayNames.map((day, index) => (
+              {dayNames.map((day) => (
                 <th key={day} className="py-2 px-4 border-b text-center">{day}</th>
               ))}
               <th className="py-2 px-4 border-b text-center">REMOVE</th>
@@ -286,8 +237,7 @@ To check for name matching issues, compare these values:
                 <td className="py-3 px-4">{employee.name}</td>
                 
                 {dayNames.map((day) => {
-                  // Find shifts for this employee on this day
-                  const shifts = scheduleData[employee.name]?.filter(shift => shift.day === day) || [];
+                  const shifts = scheduleData?.[employee.name]?.[day] || [];
                   
                   return (
                     <td key={day} className="py-2 px-2 align-top min-w-[100px]">
@@ -307,6 +257,7 @@ To check for name matching issues, compare these values:
                 
                 <td className="py-3 px-4 text-center">
                   <button 
+                    onClick={() => removeEmployee(employee.name)}
                     className="text-black hover:text-red-600 font-bold"
                   >
                     ✕
@@ -320,12 +271,14 @@ To check for name matching issues, compare these values:
       
       <div className="mt-4 flex">
         <button 
+          onClick={addEmployee}
           className="mr-2 border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
         >
           + Add Employee
         </button>
         
         <button 
+          onClick={saveChanges}
           className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
         >
           Save Changes
