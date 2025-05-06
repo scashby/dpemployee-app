@@ -37,7 +37,9 @@ export const useMessages = (duration = 5000) => {
     successMessage,
     showError,
     showSuccess,
-    clearMessages
+    clearMessages,
+    setError,
+    setSuccessMessage
   };
 };
 

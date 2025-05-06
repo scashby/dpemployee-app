@@ -116,7 +116,6 @@ const AdminScheduleEditor = () => {
   // Fetch templates data
   const fetchTemplates = async () => {
     try {
-      // Direct Supabase query rather than using templateService
       const { data, error } = await supabase
         .from('holidays')
         .select('*')
@@ -272,15 +271,14 @@ const AdminScheduleEditor = () => {
       
       // Check if this is an event shift
       if (modalData.event_id) {
-        showSuccess('Event assignments are managed in the Events page');
+        setSuccessMessage('Event assignments are managed in the Events page');
         setShowShiftModal(false);
         return;
       }
       
-      // Format the date properly or get it from the day of week
+      // Ensure date is valid
       let shiftDate = modalData.date;
       if (!shiftDate || shiftDate === '') {
-        // If date is empty, calculate it from the day and current week
         const dayDate = getDateForDay(modalData.day);
         if (dayDate) {
           shiftDate = formatDateForDB(dayDate);
@@ -292,7 +290,7 @@ const AdminScheduleEditor = () => {
       const shiftData = {
         employee_name: modalData.employeeName,
         day: modalData.day,
-        date: shiftDate, // Use the properly formatted date
+        date: shiftDate,
         shift: modalData.shift
       };
       
@@ -315,7 +313,7 @@ const AdminScheduleEditor = () => {
       }
       
       setShowShiftModal(false);
-      fetchSchedule();
+      loadScheduleData();
     } catch (error) {
       console.error('Error saving shift:', error);
       setError(`Failed to save shift: ${error.message}`);
