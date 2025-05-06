@@ -150,7 +150,7 @@ export const processShifts = (shifts, scheduleByEmployee, scheduledEmployees = n
       }
     }
   });
-  
+  console.log("Result from processShifts:", result);
   return { scheduleByEmployee, scheduledEmployees };
 };
 

@@ -175,7 +175,7 @@ const AdminScheduleEditor = () => {
       return [];
     }
   };
-  
+  console.log("Fetched events:", events);
   // Load schedule data - modified to only include employees with shifts
   
   const loadScheduleData = async () => {
@@ -193,7 +193,7 @@ const AdminScheduleEditor = () => {
         .lte('date', endDate);
       
       if (error) throw error;
-      
+      console.log("Fetched regular shifts:", data);
       // Initialize schedule structure
       let scheduleByEmployee = {};
       
