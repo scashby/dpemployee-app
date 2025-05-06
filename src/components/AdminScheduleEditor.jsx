@@ -292,7 +292,9 @@ const AdminScheduleEditor = () => {
         day: modalData.day,
         date: shiftDate,
         shift: modalData.shift,
-        week_start: formatDateForDB(currentWeekStart)
+        week_start: formatDateForDB(currentWeekStart),
+        event_type: 'tasting',  // Add this to specify the type for styling
+        event_name: 'Tasting Room' // Add this for the title display
       };
       
       // Update or create shift
