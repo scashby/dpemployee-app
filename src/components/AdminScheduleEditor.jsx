@@ -217,9 +217,8 @@ const AdminScheduleEditor = () => {
         result.scheduledEmployees.forEach(emp => employeesWithShifts.add(emp));
       }
       
-      // Process events
+      // Process events for these employees
       if (events && events.length > 0) {
-        // For now, let's go back to inline processing for events to see if that fixes the issue
         events.forEach(event => {
           if (!event.assignments) return;
           
@@ -228,15 +227,7 @@ const AdminScheduleEditor = () => {
           
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
-            if (!employee) return;
-            
-            // Add employee to schedule if not already there
-            if (!scheduleByEmployee[employee.name]) {
-              scheduleByEmployee[employee.name] = {};
-              dayNames.forEach(day => {
-                scheduleByEmployee[employee.name][day] = [];
-              });
-            }
+            if (!employee || !scheduleByEmployee[employee.name]) return;
             
             scheduleByEmployee[employee.name][dayOfWeek].push({
               id: `event_${event.id}_${assignment.employee_id}`,
@@ -246,11 +237,8 @@ const AdminScheduleEditor = () => {
               shift: event.time || 'Event Time TBD',
               event_name: event.title,
               event_id: event.id,
-              event_info: event.info,
-              event_type: event.off_prem ? 'offsite' : 'event'
+              event_info: event.info
             });
-            
-            employeesWithShifts.add(employee.name);
           });
         });
       }

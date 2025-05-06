@@ -174,8 +174,7 @@ export const processEvents = (events, employees, scheduleByEmployee, scheduledEm
         shift: event.time || 'Event Time TBD',
         event_name: event.title,
         event_id: event.id,
-        event_info: event.info,
-        event_type: event.off_prem ? 'offsite' : 'event'
+        event_info: event.info
       });
       
       scheduledEmployees.add(employee.name);
