@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Header from './components/Header.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import ScheduleView from './components/ScheduleView.jsx';
-import ScheduleEditor from './components/ScheduleEditor.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
 
 function App() {
   const [view, setView] = useState('dashboard');
@@ -14,7 +14,7 @@ function App() {
       case 'schedule':
         return <ScheduleView />;
       case 'admin':
-        return <ScheduleEditor />;
+        return <AdminPanel />;
       default:
         return <Dashboard />;
     }
