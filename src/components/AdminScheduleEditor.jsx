@@ -116,14 +116,31 @@ const AdminScheduleEditor = () => {
   // Fetch templates data
   const fetchTemplates = async () => {
     try {
-      const { data, error } = await templateService.fetchTemplates();
+      // Direct Supabase query rather than using templateService
+      const { data, error } = await supabase
+        .from('holidays')
+        .select('*')
+        .order('name');
+      
       if (error) throw error;
-      setTemplates(data || []);
-      return data;
+      
+      // Parse template JSON if needed
+      const parsedData = data.map(item => {
+        if (typeof item.template === 'string') {
+          try {
+            item.template = JSON.parse(item.template);
+          } catch (e) {
+            console.error('Error parsing template:', e);
+            item.template = {};
+          }
+        }
+        return item;
+      });
+      
+      setTemplates(parsedData || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
-      showError('Failed to load templates');
-      return [];
+      setError('Failed to load templates. Please try again.');
     }
   };
   
@@ -168,16 +185,75 @@ const AdminScheduleEditor = () => {
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
-      const { data, error } = await scheduleService.fetchScheduleForWeek(startDate, endDate);
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
+      
       if (error) throw error;
       
-      const result = scheduleService.processScheduleData(data, events, employees, dayNames);
+      // Initialize schedule structure
+      const scheduleByEmployee = {};
+      employees.forEach(emp => {
+        scheduleByEmployee[emp.name] = {};
+        dayNames.forEach(day => {
+          scheduleByEmployee[emp.name][day] = [];
+        });
+      });
       
-      setScheduleData(result.scheduleByEmployee);
-      updateAvailableEmployees(result.scheduledEmployees);
+      const scheduledEmployees = new Set();
+      
+      // Process regular shifts
+      if (data && data.length > 0) {
+        data.forEach(shift => {
+          const empName = shift.employee_name;
+          const day = shift.day;
+          
+          // Find matching employee
+          for (const name of Object.keys(scheduleByEmployee)) {
+            if (name === empName || name.includes(empName) || empName.includes(name)) {
+              scheduleByEmployee[name][day].push(shift);
+              scheduledEmployees.add(name);
+              break;
+            }
+          }
+        });
+      }
+      
+      // Process events
+      if (events && events.length > 0) {
+        events.forEach(event => {
+          if (!event.assignments) return;
+          
+          const eventDate = new Date(event.date);
+          const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+          
+          event.assignments.forEach(assignment => {
+            const employee = employees.find(emp => emp.id === assignment.employee_id);
+            if (!employee || !scheduleByEmployee[employee.name]) return;
+            
+            scheduleByEmployee[employee.name][dayOfWeek].push({
+              id: `event_${event.id}_${assignment.employee_id}`,
+              employee_name: employee.name,
+              day: dayOfWeek,
+              date: event.date,
+              shift: event.time || 'Event Time TBD',
+              event_name: event.title,
+              event_id: event.id,
+              event_info: event.info
+            });
+            
+            scheduledEmployees.add(employee.name);
+          });
+        });
+      }
+      
+      setScheduleData(scheduleByEmployee);
+      updateAvailableEmployees(scheduledEmployees);
     } catch (error) {
       console.error('Error loading schedule data:', error);
-      showError('Failed to load schedule');
+      setError('Failed to load schedule. Please try again.');
     } finally {
       setLoading(false);
     }
