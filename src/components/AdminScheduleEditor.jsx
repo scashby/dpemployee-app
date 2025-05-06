@@ -314,10 +314,21 @@ const AdminScheduleEditor = () => {
       
       setShowShiftModal(false);
       loadScheduleData();
-    } catch (error) {
-      console.error('Error saving shift:', error);
-      setError(`Failed to save shift: ${error.message}`);
-    } finally {
+      catch (error) {
+        console.error('Error saving shift:', error);
+        // Using a try-catch to handle potential undefined function
+        try {
+          if (showError) {
+            showError(`Failed to save shift: ${error.message}`);
+          } else if (setError) {
+            setError(`Failed to save shift: ${error.message}`);
+          } else {
+            console.error('No error handling function available');
+          }
+        } catch (e) {
+          console.error('Error handling not available:', e);
+        }
+      } finally {
       setLoading(false);
     }
   };
