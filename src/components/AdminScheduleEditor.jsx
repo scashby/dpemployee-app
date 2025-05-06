@@ -176,87 +176,116 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  // Load schedule data
-  const loadScheduleData = async () => {
-    try {
-      setLoading(true);
-      const dateRange = getWeekDateRange(currentWeekStart);
-      const startDate = formatDateForDB(dateRange.start);
-      const endDate = formatDateForDB(dateRange.end);
-      
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate);
-      
-      if (error) throw error;
-      
-      // Initialize schedule structure
-      const scheduleByEmployee = {};
-      employees.forEach(emp => {
-        scheduleByEmployee[emp.name] = {};
-        dayNames.forEach(day => {
-          scheduleByEmployee[emp.name][day] = [];
-        });
+  // Load schedule data - modified to only include employees with shifts
+const loadScheduleData = async () => {
+  try {
+    setLoading(true);
+    const dateRange = getWeekDateRange(currentWeekStart);
+    const startDate = formatDateForDB(dateRange.start);
+    const endDate = formatDateForDB(dateRange.end);
+    
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (error) throw error;
+    
+    // Track which employees have shifts
+    const employeesWithShifts = new Set();
+    
+    // Initialize schedule structure (only for employees with shifts)
+    const scheduleByEmployee = {};
+    
+    // Process regular shifts to identify employees with shifts
+    if (data && data.length > 0) {
+      data.forEach(shift => {
+        const empName = shift.employee_name;
+        employeesWithShifts.add(empName);
       });
-      
-      const scheduledEmployees = new Set();
-      
-      // Process regular shifts
-      if (data && data.length > 0) {
-        data.forEach(shift => {
-          const empName = shift.employee_name;
-          const day = shift.day;
-          
-          // Find matching employee
-          for (const name of Object.keys(scheduleByEmployee)) {
-            if (name === empName || name.includes(empName) || empName.includes(name)) {
-              scheduleByEmployee[name][day].push(shift);
-              scheduledEmployees.add(name);
-              break;
-            }
+    }
+    
+    // Process events to identify employees with event shifts
+    if (events && events.length > 0) {
+      events.forEach(event => {
+        if (!event.assignments) return;
+        
+        event.assignments.forEach(assignment => {
+          const employee = employees.find(emp => emp.id === assignment.employee_id);
+          if (employee) {
+            employeesWithShifts.add(employee.name);
           }
         });
-      }
+      });
+    }
+    
+    // Only include employees that have shifts
+    const scheduledEmployees = [...employeesWithShifts];
+    scheduledEmployees.forEach(empName => {
+      const matchingEmployee = employees.find(emp => 
+        emp.name === empName || emp.name.includes(empName) || empName.includes(emp.name)
+      );
       
-      // Process events
-      if (events && events.length > 0) {
-        events.forEach(event => {
-          if (!event.assignments) return;
-          
-          const eventDate = new Date(event.date);
-          const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
-          
-          event.assignments.forEach(assignment => {
-            const employee = employees.find(emp => emp.id === assignment.employee_id);
-            if (!employee || !scheduleByEmployee[employee.name]) return;
-            
-            scheduleByEmployee[employee.name][dayOfWeek].push({
-              id: `event_${event.id}_${assignment.employee_id}`,
-              employee_name: employee.name,
-              day: dayOfWeek,
-              date: event.date,
-              shift: event.time || 'Event Time TBD',
-              event_name: event.title,
-              event_id: event.id,
-              event_info: event.info
-            });
-            
-            scheduledEmployees.add(employee.name);
-          });
+      if (matchingEmployee) {
+        scheduleByEmployee[matchingEmployee.name] = {};
+        dayNames.forEach(day => {
+          scheduleByEmployee[matchingEmployee.name][day] = [];
         });
       }
-      
-      setScheduleData(scheduleByEmployee);
-      updateAvailableEmployees(scheduledEmployees);
-    } catch (error) {
-      console.error('Error loading schedule data:', error);
-      showError('Failed to load schedule. Please try again.');
-    } finally {
-      setLoading(false);
+    });
+    
+    // Now process shifts for these employees
+    if (data && data.length > 0) {
+      data.forEach(shift => {
+        const empName = shift.employee_name;
+        const day = shift.day;
+        
+        // Find matching employee
+        for (const name of Object.keys(scheduleByEmployee)) {
+          if (name === empName || name.includes(empName) || empName.includes(name)) {
+            scheduleByEmployee[name][day].push(shift);
+            break;
+          }
+        }
+      });
     }
-  };
+    
+    // Process events for these employees
+    if (events && events.length > 0) {
+      events.forEach(event => {
+        if (!event.assignments) return;
+        
+        const eventDate = new Date(event.date);
+        const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+        
+        event.assignments.forEach(assignment => {
+          const employee = employees.find(emp => emp.id === assignment.employee_id);
+          if (!employee || !scheduleByEmployee[employee.name]) return;
+          
+          scheduleByEmployee[employee.name][dayOfWeek].push({
+            id: `event_${event.id}_${assignment.employee_id}`,
+            employee_name: employee.name,
+            day: dayOfWeek,
+            date: event.date,
+            shift: event.time || 'Event Time TBD',
+            event_name: event.title,
+            event_id: event.id,
+            event_info: event.info
+          });
+        });
+      });
+    }
+    
+    setScheduleData(scheduleByEmployee);
+    updateAvailableEmployees(new Set(Object.keys(scheduleByEmployee)));
+  } catch (error) {
+    console.error('Error loading schedule data:', error);
+    showError('Failed to load schedule. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
   
   // Update available employees list
   const updateAvailableEmployees = (scheduledEmployees) => {
@@ -358,19 +387,30 @@ const AdminScheduleEditor = () => {
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
-      // Use scheduleService instead of direct supabase calls
-      const result = await scheduleService.removeEmployeeFromSchedule(employeeName, startDate, endDate);
+      const { data } = await supabase
+        .from('schedules')
+        .select('id')
+        .eq('employee_name', employeeName)
+        .gte('date', startDate)
+        .lte('date', endDate);
       
-      if (result.error) {
-        throw result.error;
+      if (data && data.length > 0) {
+        const shiftIds = data.map(s => s.id);
+        await supabase.from('schedules').delete().in('id', shiftIds);
       }
       
-      // Update local state
+      // Update local state by creating a new object without the removed employee
       const updatedScheduleData = { ...scheduleData };
       delete updatedScheduleData[employeeName];
       setScheduleData(updatedScheduleData);
       
-      showSuccess(result.message || `${employeeName} removed from schedule`);
+      // Add to available employees list
+      const employee = employees.find(emp => emp.name === employeeName);
+      if (employee) {
+        setAvailableEmployees([...availableEmployees, employee]);
+      }
+      
+      showSuccess(`${employeeName} removed from schedule`);
     } catch (error) {
       console.error('Error removing employee:', error);
       showError('Failed to remove employee from schedule.');
