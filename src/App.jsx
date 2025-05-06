@@ -1,18 +1,29 @@
-import { useState } from 'react';
-import Header from './components/Header';
-import AdminPanel from './components/AdminPanel';
-import './styles/admin.css';
+import React, { useState } from 'react';
+import Header from './components/Header.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import ScheduleView from './components/ScheduleView.jsx';
+import ScheduleEditor from './components/ScheduleEditor.jsx';
 
 function App() {
-  // Set initial view to 'admin' for testing purposes
-  const [currentView, setCurrentView] = useState('admin');
-  
+  const [view, setView] = useState('dashboard');
+
+  const renderView = () => {
+    switch (view) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'schedule':
+        return <ScheduleView />;
+      case 'admin':
+        return <ScheduleEditor />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div className="app">
-      <Header />
-      <div className="content">
-        {currentView === 'admin' && <AdminPanel />}
-      </div>
+    <div className="min-h-screen bg-dpoffwhite text-dpblue">
+      <Header onNavigate={setView} />
+      {renderView()}
     </div>
   );
 }
