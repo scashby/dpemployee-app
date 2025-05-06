@@ -74,13 +74,11 @@ const AdminScheduleEditor = () => {
   // Fetch schedule when week changes
   useEffect(() => {
     if (employees.length > 0) {
-      // First fetch events for the new week, then load the schedule data
-      const updateWeekData = async () => {
-        await fetchEvents(); // Refresh events for the new week
-        await loadScheduleData(); // Then load schedule with the updated events
-      };
-      
-      updateWeekData();
+      // First fetch events for the current week
+      fetchEvents().then(() => {
+        // Then load the schedule data with the updated events
+        loadScheduleData();
+      });
     }
   }, [currentWeekStart, employees]);
   
