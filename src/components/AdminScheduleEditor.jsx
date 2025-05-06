@@ -469,52 +469,52 @@ const AdminScheduleEditor = () => {
   };
   
   if (loading && employees.length === 0) {
-    return <div className="p-4">Loading schedule data...</div>;
+    return <div className="admin-section">Loading schedule data...</div>;
   }
   
   // Get dates for the current week
   const weekDates = getWeekDates();
   
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Schedule Editor</h2>
+    <div className="admin-section">
+      <h2 className="admin-title">Schedule Editor</h2>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
       
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="alert alert-success">
           {successMessage}
         </div>
       )}
       
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
+      <div className="week-nav">
+        <div className="week-controls">
           <button
             onClick={goToPreviousWeek}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded"
+            className="btn btn-secondary"
           >
             ← Previous
           </button>
-          <h3 className="text-lg font-semibold">
+          <h3 className="week-dates">
             {formatDateForDisplay(weekDates[0])} to {formatDateForDisplay(weekDates[6])}
           </h3>
           <button
             onClick={goToNextWeek}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded"
+            className="btn btn-secondary"
           >
             Next →
           </button>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="template-controls">
           <select
             value={selectedTemplate}
             onChange={(e) => setSelectedTemplate(e.target.value)}
-            className="p-2 border rounded"
+            className="form-select"
           >
             <option value="">Select Template...</option>
             {templates.map(template => (
@@ -525,7 +525,7 @@ const AdminScheduleEditor = () => {
           </select>
           <button
             onClick={applyTemplate}
-            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            className="btn btn-primary"
             disabled={!selectedTemplate}
           >
             Apply Template
@@ -533,13 +533,13 @@ const AdminScheduleEditor = () => {
         </div>
       </div>
       
-      <div className="overflow-x-auto bg-white rounded border shadow-sm">
-        <table className="min-w-full border-collapse">
+      <div className="schedule-table-container">
+        <table className="admin-table">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="py-2 px-4 border text-left font-medium">Employee</th>
+            <tr>
+              <th>Employee</th>
               {weekDates.map((date, index) => (
-                <th key={index} className="py-2 px-4 border text-center font-medium">
+                <th key={index} style={{textAlign: 'center'}}>
                   {formatDateForDisplay(date)}
                 </th>
               ))}
@@ -548,7 +548,7 @@ const AdminScheduleEditor = () => {
           <tbody>
             {employees.map(employee => (
               <tr key={employee.id}>
-                <td className="py-2 px-4 border font-medium">{employee.name}</td>
+                <td className="employee-name">{employee.name}</td>
                 {weekDates.map((date, index) => {
                   const dateStr = formatDateForDB(date);
                   const cellData = schedule[employee.id]?.[dateStr] || { shift: 'Off', event_type: '' };
@@ -557,10 +557,10 @@ const AdminScheduleEditor = () => {
                   const isEventCell = cellData.event_id !== null && cellData.event_id !== undefined;
                   
                   return (
-                    <td key={index} className={`py-2 px-4 border ${isEventCell ? 'bg-blue-50' : ''}`}>
-                      <div className="flex flex-col space-y-2">
+                    <td key={index} className={isEventCell ? 'event-cell' : ''}>
+                      <div className="shift-editor">
                         {isEventCell && (
-                          <div className="text-xs font-medium text-blue-700 mb-1">
+                          <div className="event-indicator">
                             Event Assignment
                           </div>
                         )}
@@ -568,7 +568,7 @@ const AdminScheduleEditor = () => {
                         <select
                           value={cellData.shift || 'Off'}
                           onChange={(e) => handleShiftChange(employee.id, dateStr, 'shift', e.target.value)}
-                          className={`w-full p-1 border rounded ${isEventCell ? 'border-blue-300' : ''}`}
+                          className={`table-input ${isEventCell ? 'event-border' : ''}`}
                         >
                           <option value="Off">Off</option>
                           {shiftTypes.filter(s => s !== 'Off').map(shift => (
@@ -582,7 +582,7 @@ const AdminScheduleEditor = () => {
                           <select
                             value={cellData.event_type || ''}
                             onChange={(e) => handleShiftChange(employee.id, dateStr, 'event_type', e.target.value)}
-                            className={`w-full p-1 border rounded ${isEventCell ? 'border-blue-300' : ''}`}
+                            className={`table-input ${isEventCell ? 'event-border' : ''}`}
                           >
                             <option value="">Select Event Type</option>
                             <option value="in-house">In-House</option>
@@ -591,8 +591,8 @@ const AdminScheduleEditor = () => {
                         )}
                         
                         {isEventCell && (
-                          <div className="text-xs text-blue-600 italic mt-1">
-                            Changes will update event assignments
+                          <div className="event-note">
+                            Updates event assignments
                           </div>
                         )}
                       </div>
@@ -608,7 +608,7 @@ const AdminScheduleEditor = () => {
       <div className="mt-4">
         <button
           onClick={saveScheduleChanges}
-          className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
+          className="btn btn-success"
           disabled={loading}
         >
           {loading ? 'Saving...' : 'Save Schedule'}

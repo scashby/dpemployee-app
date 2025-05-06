@@ -131,80 +131,80 @@ const AdminEmployees = () => {
   };
 
   if (loading) {
-    return <div className="p-4">Loading employees...</div>;
+    return <div className="admin-section">Loading employees...</div>;
   }
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Manage Employees</h2>
+    <div className="admin-section">
+      <h2 className="admin-title">Manage Employees</h2>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
       
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="alert alert-success">
           {successMessage}
         </div>
       )}
 
       <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-2">Add New Employee</h3>
-        <form onSubmit={addEmployee} className="bg-gray-50 p-4 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+        <h3 className="admin-subtitle">Add New Employee</h3>
+        <form onSubmit={addEmployee} className="admin-form">
+          <div className="form-row" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'}}>
+            <div className="form-group">
+              <label className="form-label">
                 Name*
               </label>
               <input
                 type="text"
                 value={newEmployee.name}
                 onChange={(e) => handleInputChange(e, null, 'name')}
-                className="w-full p-2 border rounded"
+                className="form-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label className="form-label">
                 Email*
               </label>
               <input
                 type="email"
                 value={newEmployee.email}
                 onChange={(e) => handleInputChange(e, null, 'email')}
-                className="w-full p-2 border rounded"
+                className="form-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label className="form-label">
                 Phone
               </label>
               <input
                 type="tel"
                 value={newEmployee.phone}
                 onChange={(e) => handleInputChange(e, null, 'phone')}
-                className="w-full p-2 border rounded"
+                className="form-input"
               />
             </div>
-            <div className="flex items-end">
-              <label className="flex items-center">
+            <div className="form-group" style={{display: 'flex', alignItems: 'flex-end'}}>
+              <label className="form-checkbox-label">
                 <input
                   type="checkbox"
                   checked={newEmployee.is_admin}
                   onChange={(e) => handleInputChange(e, null, 'is_admin')}
-                  className="mr-2"
+                  className="form-checkbox"
                 />
-                <span className="text-sm font-medium text-gray-700">Admin</span>
+                <span>Admin</span>
               </label>
             </div>
           </div>
           <div>
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              className="btn btn-primary"
             >
               Add Employee
             </button>
@@ -212,69 +212,69 @@ const AdminEmployees = () => {
         </form>
       </div>
 
-      <h3 className="text-xl font-semibold mb-4">Employee List</h3>
+      <h3 className="admin-subtitle">Employee List</h3>
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
+        <table className="admin-table">
           <thead>
-            <tr className="bg-gray-200">
-              <th className="py-2 px-4 border text-left">Name</th>
-              <th className="py-2 px-4 border text-left">Email</th>
-              <th className="py-2 px-4 border text-left">Phone</th>
-              <th className="py-2 px-4 border text-center">Admin</th>
-              <th className="py-2 px-4 border text-center">Actions</th>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th style={{textAlign: 'center'}}>Admin</th>
+              <th style={{textAlign: 'center'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {employees.length === 0 ? (
               <tr>
-                <td colSpan="5" className="py-4 px-4 border text-center">
+                <td colSpan="5" style={{textAlign: 'center', padding: '1rem'}}>
                   No employees found.
                 </td>
               </tr>
             ) : (
               employees.map((employee) => (
                 <tr key={employee.id}>
-                  <td className="py-2 px-4 border">
+                  <td>
                     <input
                       type="text"
                       value={employee.name || ''}
                       onChange={(e) => handleInputChange(e, employee.id, 'name')}
-                      className="w-full p-1 border rounded"
+                      className="table-input"
                     />
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     <input
                       type="email"
                       value={employee.email || ''}
                       onChange={(e) => handleInputChange(e, employee.id, 'email')}
-                      className="w-full p-1 border rounded"
+                      className="table-input"
                     />
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     <input
                       type="tel"
                       value={employee.phone || ''}
                       onChange={(e) => handleInputChange(e, employee.id, 'phone')}
-                      className="w-full p-1 border rounded"
+                      className="table-input"
                     />
                   </td>
-                  <td className="py-2 px-4 border text-center">
+                  <td style={{textAlign: 'center'}}>
                     <input
                       type="checkbox"
                       checked={employee.is_admin || false}
                       onChange={(e) => handleInputChange(e, employee.id, 'is_admin')}
                     />
                   </td>
-                  <td className="py-2 px-4 border text-center">
+                  <td className="cell-actions">
                     <button
                       onClick={() => saveEmployeeChanges(employee.id)}
-                      className="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded mr-2"
+                      className="btn btn-success btn-sm"
                     >
                       Save
                     </button>
                     <button
                       onClick={() => deleteEmployee(employee.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
+                      className="btn btn-danger btn-sm"
                     >
                       Delete
                     </button>

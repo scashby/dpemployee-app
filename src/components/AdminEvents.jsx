@@ -297,55 +297,55 @@ const AdminEvents = () => {
   };
 
   if (loading) {
-    return <div className="p-4">Loading events...</div>;
+    return <div className="admin-section">Loading events...</div>;
   }
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Manage Events</h2>
+    <div className="admin-section">
+      <h2 className="admin-title">Manage Events</h2>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
       
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="alert alert-success">
           {successMessage}
         </div>
       )}
 
       <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-2">Add New Event</h3>
-        <form onSubmit={addEvent} className="bg-gray-50 p-4 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+        <h3 className="admin-subtitle">Add New Event</h3>
+        <form onSubmit={addEvent} className="admin-form">
+          <div className="form-row" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'}}>
+            <div className="form-group">
+              <label className="form-label">
                 Title*
               </label>
               <input
                 type="text"
                 value={newEvent.title}
                 onChange={(e) => handleInputChange(e, null, 'title')}
-                className="w-full p-2 border rounded"
+                className="form-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label className="form-label">
                 Date*
               </label>
               <input
                 type="date"
                 value={newEvent.date}
                 onChange={(e) => handleInputChange(e, null, 'date')}
-                className="w-full p-2 border rounded"
+                className="form-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label className="form-label">
                 Time
               </label>
               <input
@@ -353,38 +353,38 @@ const AdminEvents = () => {
                 value={newEvent.time}
                 placeholder="e.g. 3:00 PM - 7:00 PM"
                 onChange={(e) => handleInputChange(e, null, 'time')}
-                className="w-full p-2 border rounded"
+                className="form-input"
               />
             </div>
-            <div className="flex items-end">
-              <label className="flex items-center">
+            <div className="form-group" style={{display: 'flex', alignItems: 'flex-end'}}>
+              <label className="form-checkbox-label">
                 <input
                   type="checkbox"
                   checked={newEvent.off_prem}
                   onChange={(e) => handleInputChange(e, null, 'off_prem')}
-                  className="mr-2"
+                  className="form-checkbox"
                 />
-                <span className="text-sm font-medium text-gray-700">Off-Premise Event</span>
+                <span>Off-Premise Event</span>
               </label>
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group" style={{gridColumn: '1 / -1'}}>
+              <label className="form-label">
                 Information
               </label>
               <textarea
                 value={newEvent.info}
                 onChange={(e) => handleInputChange(e, null, 'info')}
-                className="w-full p-2 border rounded"
+                className="form-textarea"
                 rows="3"
               ></textarea>
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group" style={{gridColumn: '1 / -1'}}>
+              <label className="form-label">
                 Assign Employees
               </label>
               <select
                 multiple
-                className="w-full p-2 border rounded"
+                className="form-select"
                 onChange={(e) => handleEmployeeSelection(e, null)}
                 value={newEvent.selectedEmployees || []}
               >
@@ -394,7 +394,7 @@ const AdminEvents = () => {
                   </option>
                 ))}
               </select>
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="form-help-text">
                 Hold Ctrl/Cmd to select multiple employees
               </div>
             </div>
@@ -402,7 +402,7 @@ const AdminEvents = () => {
           <div>
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              className="btn btn-primary"
             >
               Add Event
             </button>
@@ -410,131 +410,7 @@ const AdminEvents = () => {
         </form>
       </div>
 
-      <h3 className="text-xl font-semibold mb-4">Event List</h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="py-2 px-4 border text-left">Title</th>
-              <th className="py-2 px-4 border text-left">Date</th>
-              <th className="py-2 px-4 border text-left">Time</th>
-              <th className="py-2 px-4 border text-center">Off-Premise</th>
-              <th className="py-2 px-4 border text-left">Info</th>
-              <th className="py-2 px-4 border text-left">Assigned Employees</th>
-              <th className="py-2 px-4 border text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="py-4 px-4 border text-center">
-                  No events found.
-                </td>
-              </tr>
-            ) : (
-              events.map((event) => (
-                <tr key={event.id}>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <input
-                        type="text"
-                        value={event.title || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'title')}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      event.title
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <input
-                        type="date"
-                        value={event.date || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'date')}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      formatDate(event.date)
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <input
-                        type="text"
-                        value={event.time || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'time')}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      event.time
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border text-center">
-                    {editMode === event.id ? (
-                      <input
-                        type="checkbox"
-                        checked={event.off_prem || false}
-                        onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
-                      />
-                    ) : (
-                      event.off_prem ? "Yes" : "No"
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <textarea
-                        value={event.info || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'info')}
-                        className="w-full p-1 border rounded"
-                        rows="2"
-                      ></textarea>
-                    ) : (
-                      <div className="max-h-20 overflow-y-auto">
-                        {event.info}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {editMode === event.id ? (
-                      <select
-                        multiple
-                        className="w-full p-1 border rounded"
-                        onChange={(e) => handleEmployeeSelection(e, event.id)}
-                        value={eventAssignments[event.id] || []}
-                      >
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="max-h-20 overflow-y-auto">
-                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
-                          <ul className="list-disc list-inside">
-                            {(eventAssignments[event.id] || []).map(empId => {
-                              const emp = employees.find(e => e.id === empId);
-                              return emp ? (
-                                <li key={empId}>{emp.name}</li>
-                              ) : null;
-                            })}
-                          </ul>
-                        ) : (
-                          "No employees assigned"
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border text-center">
-                    {editMode === event.id ? (
-                      <>
-                        <button
-                          onClick={() => saveEventChanges(event.id)}
-                          className="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded mr-2"
-                        >
-                          Save
-                        </button>
+>
                         <button
                           onClick={() => setEditMode(null)}
                           className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded"
