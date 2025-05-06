@@ -1,146 +1,214 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase/supabaseClient';
+import { 
+  fetchEmployees, 
+  fetchTemplates,
+  fetchEvents,
+  fetchEventAssignments,
+  fetchScheduleForWeek,
+  createShift,
+  updateShift,
+  deleteShift,
+  deleteEmployeeShifts
+} from '../services/api';
+import { 
+  getMonday, 
+  getWeekDateRange, 
+  formatDateForDB,
+  getDayCode
+} from '../utils/dateUtils';
+import { 
+  groupShiftsByEmployee, 
+  templateToShifts, 
+  isEventShift 
+} from '../utils/shiftUtils';
+
+import StatusMessage from './shared/StatusMessage';
+import AdminModal from './shared/AdminModal';
+import WeekNavigator from './shared/WeekNavigator';
+import ShiftCard from './shared/ShiftCard';
+import FormInput from './shared/FormInput';
+import FormSelect from './shared/FormSelect';
+
 import '../styles/admin.css';
+import '../styles/forms.css';
+import '../styles/tables.css';
+import '../styles/modals.css';
 
 const AdminScheduleEditor = () => {
+  // State management
   const [scheduleData, setScheduleData] = useState({});
   const [employees, setEmployees] = useState([]);
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [templates, setTemplates] = useState([]);
+  const [events, setEvents] = useState([]);
   
   // Modal states
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  
   const [modalData, setModalData] = useState({
     employeeName: '',
     day: '',
     shift: '11-Close',
     event_type: 'tasting',
+    event_id: null,
     id: null // Set if editing an existing shift
   });
   
   // Week navigation state
   const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
   
-  // Gets Monday of the current week
-  function getMonday(date) {
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-    return new Date(date.setDate(diff));
-  }
-  
-  // Format date for display (M/D)
-  function formatDateForDisplay(date) {
-    return `${date.getMonth() + 1}/${date.getDate()}`;
-  }
-  
-  // Get date range for the week (Monday to Sunday)
-  function getWeekDateRange() {
-    const startDate = new Date(currentWeekStart);
-    const endDate = new Date(currentWeekStart);
-    endDate.setDate(endDate.getDate() + 6); // 6 days after Monday = Sunday
-    
-    return {
-      start: startDate,
-      end: endDate
-    };
-  }
-  
-  // Format date string for database queries (YYYY-MM-DD)
-  function formatDateForDB(date) {
-    return date.toISOString().split('T')[0];
-  }
-  
-  // Get date for a specific day of the week
-  function getDateForDay(day) {
-    const dayIndex = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].indexOf(day);
-    if (dayIndex === -1) return null;
-    
-    const date = new Date(currentWeekStart);
-    date.setDate(date.getDate() + dayIndex);
-    return date;
-  }
-  
-  // Previous week
+  // Navigate to previous week
   const goToPreviousWeek = () => {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(currentWeekStart.getDate() - 7);
     setCurrentWeekStart(newDate);
   };
   
-  // Next week
+  // Navigate to next week
   const goToNextWeek = () => {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(currentWeekStart.getDate() + 7);
     setCurrentWeekStart(newDate);
   };
   
+  // Navigate to current week
+  const goToCurrentWeek = () => {
+    setCurrentWeekStart(getMonday(new Date()));
+  };
+  
   // Initial data loading
   useEffect(() => {
-    console.log("Initial load - fetching employees");
-    fetchEmployees();
+    console.log("Initial load - fetching data");
+    loadInitialData();
   }, []);
   
   // Fetch schedule whenever week changes
   useEffect(() => {
     if (employees.length > 0) {
       console.log("Week changed or employees loaded - fetching schedule");
-      fetchSchedule();
+      loadScheduleData();
     }
   }, [currentWeekStart, employees]);
   
-  const fetchEmployees = async () => {
+  // Load all initial data
+  const loadInitialData = async () => {
+    await Promise.all([
+      loadEmployees(),
+      loadTemplates(),
+      loadEvents()
+    ]);
+  };
+  
+  // Load employees data
+  const loadEmployees = async () => {
     try {
       console.log("Fetching employees...");
-      const { data, error } = await supabase
-        .from('employees')
-        .select('id, name')
-        .order('name');
+      const { data, error } = await fetchEmployees();
       
       if (error) throw error;
       console.log("Employees data:", data);
       setEmployees(data || []);
       setAvailableEmployees(data || []);
+      return data;
     } catch (error) {
       console.error('Error fetching employees:', error);
       setError('Failed to load employees. Please try again.');
+      return [];
     }
   };
   
-  const fetchSchedule = async () => {
+  // Load templates data
+  const loadTemplates = async () => {
+    try {
+      console.log("Fetching templates...");
+      const { data, error } = await fetchTemplates();
+      
+      if (error) throw error;
+      console.log("Templates data:", data);
+      setTemplates(data || []);
+      return data;
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      setError('Failed to load templates. Please try again.');
+      return [];
+    }
+  };
+  
+  // Load events data
+  const loadEvents = async () => {
+    try {
+      console.log("Fetching events...");
+      const dateRange = getWeekDateRange(currentWeekStart);
+      const startDate = formatDateForDB(dateRange.start);
+      const endDate = formatDateForDB(dateRange.end);
+      
+      // Fetch events for the current week
+      const { data, error } = await fetchEvents(startDate, endDate);
+      
+      if (error) throw error;
+      
+      console.log("Events data:", data);
+      
+      // Also fetch event assignments
+      const { data: assignmentsData, error: assignmentsError } = await fetchEventAssignments();
+      
+      if (assignmentsError) throw assignmentsError;
+      console.log("Event assignments:", assignmentsData);
+      
+      // Store event assignments with the events
+      if (data && assignmentsData) {
+        const eventsWithAssignments = data.map(event => {
+          const eventAssignments = assignmentsData.filter(a => a.event_id === event.id);
+          return { ...event, assignments: eventAssignments };
+        });
+        setEvents(eventsWithAssignments);
+        return eventsWithAssignments;
+      }
+      
+      setEvents(data || []);
+      return data;
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setError('Failed to load events. Please try again.');
+      return [];
+    }
+  };
+  
+  // Load schedule data
+  const loadScheduleData = async () => {
     try {
       console.log("Fetching schedule...");
       setLoading(true);
       
       // Calculate date range for the week
-      const dateRange = getWeekDateRange();
+      const dateRange = getWeekDateRange(currentWeekStart);
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
       console.log(`Fetching schedule from ${startDate} to ${endDate}`);
       
       // Fetch schedule for the current week using date range
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate);
+      const { data, error } = await fetchScheduleForWeek(startDate, endDate);
       
       if (error) throw error;
       console.log("Raw schedule data:", data);
       
-      // Group schedules by employee name
+      // Initialize with all employees
       const scheduleByEmployee = {};
       const scheduledEmployees = new Set();
+      const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
       
-      // Initialize with all employees
       employees.forEach(emp => {
         scheduleByEmployee[emp.name] = {};
         
-        // Initialize days - starting with Monday
-        ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].forEach(day => {
+        // Initialize days
+        days.forEach(day => {
           scheduleByEmployee[emp.name][day] = [];
         });
       });
@@ -176,6 +244,40 @@ const AdminScheduleEditor = () => {
         });
       }
       
+      // Add event shifts to the schedule
+      if (events && events.length > 0) {
+        events.forEach(event => {
+          if (event.assignments) {
+            // Convert event date to day of week
+            const eventDate = new Date(event.date);
+            const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+            
+            // Find the employee names for the assigned employee IDs
+            event.assignments.forEach(assignment => {
+              const employee = employees.find(emp => emp.id === assignment.employee_id);
+              if (employee && scheduleByEmployee[employee.name]) {
+                // Create an event shift
+                const eventShift = {
+                  id: `event_${event.id}_${assignment.employee_id}`,
+                  employee_name: employee.name,
+                  day: dayOfWeek,
+                  date: event.date,
+                  shift: event.time || 'Event Time TBD',
+                  event_type: event.off_prem ? 'offsite' : 'event',
+                  event_name: event.title,
+                  event_id: event.id,
+                  event_info: event.info
+                };
+                
+                // Add to the schedule
+                scheduleByEmployee[employee.name][dayOfWeek].push(eventShift);
+                scheduledEmployees.add(employee.name);
+              }
+            });
+          }
+        });
+      }
+      
       console.log("Grouped schedule data:", scheduleByEmployee);
       setScheduleData(scheduleByEmployee);
       
@@ -190,6 +292,16 @@ const AdminScheduleEditor = () => {
     }
   };
   
+  // Get date for a specific day of the week
+  const getDateForDay = (day) => {
+    const dayIndex = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].indexOf(day);
+    if (dayIndex === -1) return null;
+    
+    const date = new Date(currentWeekStart);
+    date.setDate(date.getDate() + dayIndex);
+    return date;
+  };
+  
   // Open modal to add a new shift
   const openAddShiftModal = (employeeName, day) => {
     const date = getDateForDay(day);
@@ -200,7 +312,9 @@ const AdminScheduleEditor = () => {
       day,
       date: formattedDate,
       shift: '11-Close',
-      event_type: 'tasting',
+      event_type: 'tasting', // Default to Tasting Room
+      event_name: null,
+      event_id: null,
       id: null
     });
     
@@ -208,13 +322,15 @@ const AdminScheduleEditor = () => {
   };
   
   // Open modal to edit an existing shift
-  const openEditShiftModal = (shift, employeeName, day) => {
+  const openEditShiftModal = (shift) => {
     setModalData({
-      employeeName,
-      day,
+      employeeName: shift.employee_name,
+      day: shift.day,
       date: shift.date,
       shift: shift.shift,
       event_type: shift.event_type,
+      event_name: shift.event_name,
+      event_id: shift.event_id,
       id: shift.id
     });
     
@@ -241,28 +357,38 @@ const AdminScheduleEditor = () => {
         date: modalData.date,
         shift: modalData.shift,
         event_type: modalData.event_type,
-        event_name: null
+        event_name: modalData.event_name
       };
       
       let result;
       
-      if (modalData.id) {
+      // Check if this is an event-related shift
+      if (modalData.event_id) {
+        // For event shifts, we don't save in schedules table - we update the event_assignments
+        setSuccessMessage('Event assignments are managed in the Events page');
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
+        setShowShiftModal(false);
+        return;
+      }
+      
+      // Regular shift
+      if (modalData.id && !modalData.id.toString().startsWith('event_')) {
         // Update existing shift
-        const { data, error } = await supabase
-          .from('schedules')
-          .update(shiftData)
-          .eq('id', modalData.id)
-          .select();
+        const { data, error } = await updateShift(modalData.id, shiftData);
         
         if (error) throw error;
         result = data;
         setSuccessMessage('Shift updated successfully');
       } else {
-        // Add new shift
-        const { data, error } = await supabase
-          .from('schedules')
-          .insert(shiftData)
-          .select();
+        // Add new shift - explicitly only allow adding Tasting Room shifts
+        const newShiftData = {
+          ...shiftData,
+          event_type: 'tasting' // Force tasting room type for new shifts
+        };
+        
+        const { data, error } = await createShift(newShiftData);
         
         if (error) throw error;
         result = data;
@@ -273,27 +399,23 @@ const AdminScheduleEditor = () => {
       
       // Close modal and refresh schedule
       setShowShiftModal(false);
-      fetchSchedule();
-      
-      // Clear success message after a delay
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
+      loadScheduleData();
     } catch (error) {
       console.error('Error saving shift:', error);
-      setError('Failed to save shift. Please try again.');
-      
-      // Clear error message after a delay
-      setTimeout(() => {
-        setError(null);
-      }, 3000);
+      setError(`Failed to save shift: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
   
   // Delete a shift
-  const deleteShift = async (shiftId) => {
+  const handleDeleteShift = async (shiftId) => {
+    // Check if this is an event shift
+    if (shiftId.toString().startsWith('event_')) {
+      setError('Event shifts can only be modified in the Events page');
+      return;
+    }
+    
     if (!window.confirm('Are you sure you want to delete this shift?')) {
       return;
     }
@@ -301,28 +423,15 @@ const AdminScheduleEditor = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from('schedules')
-        .delete()
-        .eq('id', shiftId);
+      const { error } = await deleteShift(shiftId);
       
       if (error) throw error;
       
       setSuccessMessage('Shift deleted successfully');
-      fetchSchedule();
-      
-      // Clear success message after a delay
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
+      loadScheduleData();
     } catch (error) {
       console.error('Error deleting shift:', error);
       setError('Failed to delete shift. Please try again.');
-      
-      // Clear error message after a delay
-      setTimeout(() => {
-        setError(null);
-      }, 3000);
     } finally {
       setLoading(false);
     }
@@ -331,6 +440,62 @@ const AdminScheduleEditor = () => {
   // Open modal to add an employee to the schedule
   const openAddEmployeeModal = () => {
     setShowAddEmployeeModal(true);
+  };
+  
+  // Open template selection modal
+  const openTemplateModal = () => {
+    setSelectedTemplate(null);
+    setShowTemplateModal(true);
+  };
+  
+  // Handle template selection
+  const handleTemplateChange = (e) => {
+    setSelectedTemplate(e.target.value);
+  };
+  
+  // Apply selected template to the current week
+  const applyTemplate = async () => {
+    if (!selectedTemplate) {
+      setError('Please select a template to apply');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Get the template details
+      const template = templates.find(t => t.id === parseInt(selectedTemplate));
+      if (!template || !template.template) {
+        throw new Error('Template not found or invalid');
+      }
+      
+      // Convert template to shifts for the current week
+      const shiftsToAdd = templateToShifts(template.template, currentWeekStart, employees);
+      
+      // Batch insert all the new shifts
+      if (shiftsToAdd.length > 0) {
+        for (const shift of shiftsToAdd) {
+          const { error } = await createShift(shift);
+          if (error) throw error;
+        }
+        
+        console.log(`Added ${shiftsToAdd.length} shifts from template`);
+        setSuccessMessage(`Applied template "${template.name}" to the current week`);
+        
+        // Refresh the schedule
+        loadScheduleData();
+      } else {
+        setError('No shifts to add from this template');
+      }
+      
+      // Close the modal
+      setShowTemplateModal(false);
+    } catch (error) {
+      console.error('Error applying template:', error);
+      setError(`Failed to apply template: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Add an employee to the schedule
@@ -367,31 +532,14 @@ const AdminScheduleEditor = () => {
     try {
       setLoading(true);
       
-      // Get all shifts for this employee in the current week
-      const dateRange = getWeekDateRange();
+      // Delete all shifts for this employee in the current week
+      const dateRange = getWeekDateRange(currentWeekStart);
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('id')
-        .eq('employee_name', employeeName)
-        .gte('date', startDate)
-        .lte('date', endDate);
+      const { error } = await deleteEmployeeShifts(employeeName, startDate, endDate);
       
       if (error) throw error;
-      
-      // Delete all shifts for this employee
-      if (data && data.length > 0) {
-        const shiftIds = data.map(s => s.id);
-        
-        const { error: deleteError } = await supabase
-          .from('schedules')
-          .delete()
-          .in('id', shiftIds);
-        
-        if (deleteError) throw deleteError;
-      }
       
       // Update the schedule data
       const updatedScheduleData = { ...scheduleData };
@@ -405,94 +553,56 @@ const AdminScheduleEditor = () => {
       }
       
       setSuccessMessage(`${employeeName} removed from schedule`);
-      
-      // Clear success message after a delay
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
     } catch (error) {
       console.error('Error removing employee from schedule:', error);
       setError('Failed to remove employee. Please try again.');
-      
-      // Clear error message after a delay
-      setTimeout(() => {
-        setError(null);
-      }, 3000);
     } finally {
       setLoading(false);
     }
   };
   
-  // Save all changes
+  // Save all changes - not really needed now as changes are saved immediately
   const saveChanges = () => {
-    setSuccessMessage('All changes saved successfully');
-    
-    // Clear success message after a delay
-    setTimeout(() => {
-      setSuccessMessage(null);
-    }, 3000);
-  };
-  
-  // Helper to get CSS class for different shift types
-  const getShiftClass = (eventType) => {
-    switch (eventType) {
-      case 'tasting':
-        return 'bg-emerald-500 text-white';
-      case 'offsite':
-        return 'bg-blue-500 text-white';
-      case 'packaging':
-        return 'bg-gray-500 text-white';
-      default:
-        return 'bg-gray-300';
-    }
+    setSuccessMessage('All changes have been saved');
   };
   
   if (loading && employees.length === 0) {
     return <div className="p-4">Loading schedule data...</div>;
   }
   
-  const dateRange = getWeekDateRange();
-  const displayRange = `${formatDateForDisplay(dateRange.start)} - ${formatDateForDisplay(dateRange.end)}`;
+  // Get the scheduled employees (those who have shifts in the current schedule)
+  const scheduledEmployeeNames = Object.keys(scheduleData);
   
   // Day headers - starting with Monday
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   
-  // Get the scheduled employees (those who have shifts in the current schedule)
-  const scheduledEmployeeNames = Object.keys(scheduleData);
-  
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold">Edit Weekly Schedule</h1>
+      <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
       
       {error && (
-        <div className="my-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
+        <StatusMessage
+          message={error}
+          type="error"
+          onClear={() => setError(null)}
+        />
       )}
       
       {successMessage && (
-        <div className="my-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          {successMessage}
-        </div>
+        <StatusMessage
+          message={successMessage}
+          type="success"
+          onClear={() => setSuccessMessage(null)}
+        />
       )}
       
-      <div className="flex items-center my-4">
-        <button 
-          onClick={goToPreviousWeek} 
-          className="border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
-        >
-          ←Previous
-        </button>
-        
-        <span className="mx-4 text-lg">{displayRange}</span>
-        
-        <button 
-          onClick={goToNextWeek} 
-          className="border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
-        >
-          Next→
-        </button>
-      </div>
+      <WeekNavigator
+        currentWeekStart={currentWeekStart}
+        onPreviousWeek={goToPreviousWeek}
+        onNextWeek={goToNextWeek}
+        onCurrentWeek={goToCurrentWeek}
+        className="my-4"
+      />
       
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
@@ -520,38 +630,12 @@ const AdminScheduleEditor = () => {
                       onClick={() => shifts.length === 0 && openAddShiftModal(employeeName, day)}
                     >
                       {shifts.map((shift, index) => (
-                        <div 
-                          key={index} 
-                          className={`p-2 rounded mb-1 relative ${getShiftClass(shift.event_type)}`}
-                        >
-                          <div className="flex justify-between">
-                            <span>
-                              {shift.event_type === 'tasting' ? 'Tasting Room' : shift.event_type}
-                              <br />
-                              {shift.shift}
-                            </span>
-                            <div className="flex space-x-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEditShiftModal(shift, employeeName, day);
-                                }}
-                                className="text-white hover:text-gray-200"
-                              >
-                                ✎
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteShift(shift.id);
-                                }}
-                                className="text-white hover:text-gray-200"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        <ShiftCard 
+                          key={index}
+                          shift={shift}
+                          onEdit={() => openEditShiftModal(shift)}
+                          onDelete={handleDeleteShift}
+                        />
                       ))}
                       
                       {shifts.length === 0 && (
@@ -586,6 +670,13 @@ const AdminScheduleEditor = () => {
         </button>
         
         <button 
+          onClick={openTemplateModal}
+          className="mr-2 border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
+        >
+          Apply Template
+        </button>
+        
+        <button 
           onClick={saveChanges}
           className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
         >
@@ -593,128 +684,132 @@ const AdminScheduleEditor = () => {
         </button>
       </div>
       
-      <div className="mt-6">
-        <a href="#" className="text-blue-600 hover:underline">Download Personal Schedule</a>
-      </div>
-      
       {/* Add/Edit Shift Modal */}
-      {showShiftModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              {modalData.id ? 'Edit Shift' : 'Add Shift'}
-            </h2>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Employee
-              </label>
-              <input
-                type="text"
-                value={modalData.employeeName}
-                disabled
-                className="w-full p-2 border rounded bg-gray-100"
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Day
-              </label>
-              <input
-                type="text"
-                value={modalData.day}
-                disabled
-                className="w-full p-2 border rounded bg-gray-100"
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Shift Time
-              </label>
-              <input
-                type="text"
-                name="shift"
-                value={modalData.shift}
-                onChange={handleModalInputChange}
-                placeholder="e.g. 11-Close, 9:00-5:15 PM"
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type
-              </label>
-              <select
-                name="event_type"
-                value={modalData.event_type}
-                onChange={handleModalInputChange}
-                className="w-full p-2 border rounded"
-              >
-                <option value="tasting">Tasting Room</option>
-                <option value="offsite">Offsite</option>
-                <option value="packaging">Packaging</option>
-              </select>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowShiftModal(false)}
-                className="border border-gray-300 rounded px-4 py-2 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveShift}
-                className="bg-blue-500 text-white rounded px-4 py-2 hover:bg-blue-600"
-              >
-                {modalData.id ? 'Update' : 'Add'}
-              </button>
-            </div>
+      <AdminModal
+        show={showShiftModal}
+        onClose={() => setShowShiftModal(false)}
+        title={modalData.id ? 'Edit Shift' : 'Add Shift'}
+        onSave={saveShift}
+      >
+        <FormInput
+          label="Employee"
+          value={modalData.employeeName}
+          disabled={true}
+        />
+        
+        <FormInput
+          label="Day"
+          value={modalData.day}
+          disabled={true}
+        />
+        
+        <FormInput
+          label="Shift Time"
+          name="shift"
+          value={modalData.shift}
+          onChange={handleModalInputChange}
+          placeholder="e.g. 11-Close, 9:00-5:15 PM"
+        />
+        
+        {!modalData.event_id && (
+          <FormSelect
+            label="Type"
+            name="event_type"
+            value={modalData.event_type}
+            onChange={handleModalInputChange}
+            options={[
+              { value: 'tasting', label: 'Tasting Room' }
+            ]}
+            helpText="All manually added shifts are Tasting Room shifts"
+            disabled={!modalData.id || modalData.id.toString().startsWith('event_')}
+          />
+        )}
+        
+        {modalData.event_id && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-sm text-yellow-700">
+              This is an event shift. Event assignments are managed in the Events page.
+            </p>
           </div>
-        </div>
-      )}
+        )}
+      </AdminModal>
       
       {/* Add Employee Modal */}
-      {showAddEmployeeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add Employee to Schedule</h2>
-            
-            {availableEmployees.length === 0 ? (
-              <p className="mb-4 text-gray-600">All employees are already on the schedule.</p>
-            ) : (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Employee
-                </label>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {availableEmployees.map(employee => (
-                    <div
-                      key={employee.id}
-                      onClick={() => addEmployeeToSchedule(employee.id)}
-                      className="p-2 border rounded cursor-pointer hover:bg-gray-100"
-                    >
-                      {employee.name}
-                    </div>
-                  ))}
+      <AdminModal
+        show={showAddEmployeeModal}
+        onClose={() => setShowAddEmployeeModal(false)}
+        title="Add Employee to Schedule"
+        showFooter={false}
+      >
+        {availableEmployees.length === 0 ? (
+          <p className="mb-4 text-gray-600">All employees are already on the schedule.</p>
+        ) : (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Employee
+            </label>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {availableEmployees.map(employee => (
+                <div
+                  key={employee.id}
+                  onClick={() => addEmployeeToSchedule(employee.id)}
+                  className="p-2 border rounded cursor-pointer hover:bg-gray-100"
+                >
+                  {employee.name}
                 </div>
-              </div>
-            )}
-            
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowAddEmployeeModal(false)}
-                className="border border-gray-300 rounded px-4 py-2 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
+              ))}
             </div>
           </div>
+        )}
+      </AdminModal>
+      
+      {/* Template Modal */}
+      <AdminModal
+        show={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        title="Apply Schedule Template"
+        onSave={applyTemplate}
+        saveButtonText="Apply Template"
+      >
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Select Template
+          </label>
+          
+          {templates.length === 0 ? (
+            <p className="text-gray-500">No templates found. Create templates in the Default Schedules page.</p>
+          ) : (
+            <FormSelect
+              name="template"
+              value={selectedTemplate || ''}
+              onChange={handleTemplateChange}
+              options={templates.map(template => ({
+                value: template.id,
+                label: template.name
+              }))}
+              required={true}
+            />
+          )}
+          
+          <p className="mt-2 text-sm text-gray-500">
+            Applying a template will add shifts to the current schedule without removing existing shifts.
+          </p>
+          
+          {selectedTemplate && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="font-medium text-sm text-blue-700">
+                Template: {templates.find(t => t.id === parseInt(selectedTemplate))?.name}
+              </p>
+              <p className="text-sm text-blue-600 mt-1">
+                This will add approximately {
+                  Object.values(templates.find(t => t.id === parseInt(selectedTemplate))?.template || {})
+                    .flat().length
+                } shifts to the schedule.
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 };
