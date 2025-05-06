@@ -194,8 +194,8 @@ const AdminScheduleEditor = () => {
       
       if (error) throw error;
       
-      // Initialize schedule for all employees
-      const scheduleByEmployee = {};
+      // Initialize schedule structure
+      let scheduleByEmployee = {};
       
       // Track which employees have shifts or are manually added to schedule
       const employeesWithShifts = new Set();
@@ -212,28 +212,47 @@ const AdminScheduleEditor = () => {
       
       // Process regular shifts
       if (data && data.length > 0) {
-        const { scheduleByEmployee: updatedSchedule, scheduledEmployees } = 
-          scheduleService.processShifts(data, scheduleByEmployee, employeesWithShifts);
-        
-        // Instead of Object.assign(scheduleByEmployee, updatedSchedule);
-        // Use a new reference:
-        scheduleByEmployee = { ...scheduleByEmployee, ...updatedSchedule };
-        
-        // Merge the sets
-        scheduledEmployees.forEach(emp => employeesWithShifts.add(emp));
+        const result = scheduleService.processShifts(data, scheduleByEmployee, employeesWithShifts);
+        scheduleByEmployee = result.scheduleByEmployee;
+        result.scheduledEmployees.forEach(emp => employeesWithShifts.add(emp));
       }
-
-      // Process events - now with fixed day mapping
+      
+      // Process events
       if (events && events.length > 0) {
-        const { scheduleByEmployee: scheduleWithEvents, scheduledEmployees: employeesWithEvents } = 
-          scheduleService.processEvents(events, employees, scheduleByEmployee, employeesWithShifts, dayNames);
-        
-        // Instead of Object.assign(scheduleByEmployee, scheduleWithEvents);
-        // Use a new reference:
-        scheduleByEmployee = { ...scheduleByEmployee, ...scheduleWithEvents };
-        
-        // Merge the sets
-        employeesWithEvents.forEach(emp => employeesWithShifts.add(emp));
+        // For now, let's go back to inline processing for events to see if that fixes the issue
+        events.forEach(event => {
+          if (!event.assignments) return;
+          
+          const eventDate = new Date(event.date);
+          const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+          
+          event.assignments.forEach(assignment => {
+            const employee = employees.find(emp => emp.id === assignment.employee_id);
+            if (!employee) return;
+            
+            // Add employee to schedule if not already there
+            if (!scheduleByEmployee[employee.name]) {
+              scheduleByEmployee[employee.name] = {};
+              dayNames.forEach(day => {
+                scheduleByEmployee[employee.name][day] = [];
+              });
+            }
+            
+            scheduleByEmployee[employee.name][dayOfWeek].push({
+              id: `event_${event.id}_${assignment.employee_id}`,
+              employee_name: employee.name,
+              day: dayOfWeek,
+              date: event.date,
+              shift: event.time || 'Event Time TBD',
+              event_name: event.title,
+              event_id: event.id,
+              event_info: event.info,
+              event_type: event.off_prem ? 'offsite' : 'event'
+            });
+            
+            employeesWithShifts.add(employee.name);
+          });
+        });
       }
       
       setScheduleData(scheduleByEmployee);
