@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // React is declared but never read
 import { supabase } from '../supabase/supabaseClient';
 import { getWeekDateRange, formatDateForDB } from '../utils/dateUtils';
 import useWeekNavigation from '../hooks/useWeekNavigation';
 import useMessages from '../hooks/useMessages';
 import useModalState from '../hooks/useModalState';
-import * as scheduleService from '../services/scheduleService';
+import * as scheduleService from '../services/scheduleService'; //this and the following imports are declared but never read
 import * as templateService from '../services/templateService';
 import StatusMessage from './shared/StatusMessage';
 import WeekNavigator from './shared/WeekNavigator';
@@ -19,22 +19,22 @@ const AdminScheduleEditor = () => {
   // Use custom hooks for core functionality
   const { 
     currentWeekStart, 
-    goToPreviousWeek, 
+    goToPreviousWeek, //this and the following constants are declared but never read
     goToNextWeek, 
     goToCurrentWeek
   } = useWeekNavigation();
   
   const { 
-    error, 
-    successMessage, 
+    error, //declared but never read
+    successMessage, //declared but never read
     showError, 
     showSuccess,
-    clearMessages 
+    clearMessages //declared but never read
   } = useMessages();
   
   const {
     modalData,
-    templateData,
+    templateData, //this and the following constants are declared but never read
     showShiftModal,
     showAddEmployeeModal,
     showTemplateModal,
@@ -55,12 +55,12 @@ const AdminScheduleEditor = () => {
   } = useModalState();
 
   // Local state
-  const [scheduleData, setScheduleData] = useState({});
+  const [scheduleData, setScheduleData] = useState({}); // declared but never read
   const [employees, setEmployees] = useState([]);
-  const [availableEmployees, setAvailableEmployees] = useState([]);
-  const [templates, setTemplates] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]); // declared but never read
+  const [templates, setTemplates] = useState([]); // declared but never read
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // declared but never read
   
   // Day headers - starting with Monday
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -265,14 +265,14 @@ const AdminScheduleEditor = () => {
   };
   
   // Handle saving a shift
-  const saveShift = async () => {
+  const saveShift = async () => { // saveShift is declared but not read
     try {
       setLoading(true);
       
       // Check if this is an event shift
       if (modalData.event_id) {
         showSuccess('Event assignments are managed in the Events page');
-        setShowShiftModal(false);
+        setShowShiftModal(false); // is this setShiftModal or showShiftModal?
         return;
       }
       
@@ -312,7 +312,7 @@ const AdminScheduleEditor = () => {
         showSuccess('Shift added successfully');
       }
       
-      setShowShiftModal(false);
+      setShowShiftModal(false); // is this setShiftModal or showShiftModal?
       loadScheduleData();
     } catch (error) {
       console.error('Error saving shift:', error);
@@ -320,5 +320,6 @@ const AdminScheduleEditor = () => {
     } finally {
       setLoading(false);
     }
-
+  }  
+}
 export default AdminScheduleEditor;
