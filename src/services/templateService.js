@@ -92,7 +92,19 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
 
 // Convert current schedule to template format
 export const convertScheduleToTemplate = (scheduleData, employees) => {
-  const templateData = {};
+  // Create a simpler template format
+  const templateData = {
+    days: {
+      'Monday': [],
+      'Tuesday': [],
+      'Wednesday': [],
+      'Thursday': [],
+      'Friday': [],
+      'Saturday': [],
+      'Sunday': []
+    }
+  };
+  
   const dayCodeToName = {
     'MON': 'Monday', 'TUE': 'Tuesday', 'WED': 'Wednesday', 
     'THU': 'Thursday', 'FRI': 'Friday', 'SAT': 'Saturday', 'SUN': 'Sunday'
@@ -107,31 +119,18 @@ export const convertScheduleToTemplate = (scheduleData, employees) => {
       const dayName = dayCodeToName[dayCode];
       if (!dayName) return;
       
-      if (!templateData[dayName]) templateData[dayName] = [];
-      
       shifts.forEach(shift => {
         // Skip event shifts
         if (shift.event_id || shift.id?.toString().startsWith('event_')) return;
         
-        templateData[dayName].push({
+        templateData.days[dayName].push({
           employeeId: employee.id,
           shift: 'Tasting Room'
         });
       });
     });
   });
-  if (Object.keys(templateData).length === 0) {
-    // No valid template data created - add default structure
-    templateData = {
-      'Monday': [],
-      'Tuesday': [],
-      'Wednesday': [],
-      'Thursday': [],
-      'Friday': [],
-      'Saturday': [],
-      'Sunday': []
-    };
-  }
+  
   return templateData;
 };
 
@@ -143,6 +142,8 @@ export const saveAsNewTemplate = async (templateData, templateName) => {
       date: null,
       template: templateData
     });
+    console.log('Saving template - Name:', templateName);
+    console.log('Saving template - Data:', JSON.stringify(templateData, null, 2));
     const { data, error } = await supabase
       .from('holidays')
       .insert([{
