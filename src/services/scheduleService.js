@@ -155,28 +155,16 @@ export const processShifts = (shifts, scheduleByEmployee, scheduledEmployees = n
 };
 
 // Process events into schedule structure
-export const processEvents = (events, employees, scheduleByEmployee, scheduledEmployees = new Set(), dayNames) => {
+export const processEvents = (events, employees, scheduleByEmployee, scheduledEmployees = new Set()) => {
   events.forEach(event => {
-    console.log("Processing events:", events);
-    console.log("Current scheduleByEmployee:", scheduleByEmployee);
     if (!event.assignments) return;
     
     const eventDate = new Date(event.date);
-    // Fix day mapping to match week starting with Monday
-    const dayIndex = (eventDate.getDay() + 6) % 7; // Convert Sunday=0 to Sunday=6
-    const dayOfWeek = dayNames[dayIndex];
+    const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
     
     event.assignments.forEach(assignment => {
       const employee = employees.find(emp => emp.id === assignment.employee_id);
-      if (!employee) return;
-      
-      // Add employee to schedule if not already there
-      if (!scheduleByEmployee[employee.name]) {
-        scheduleByEmployee[employee.name] = {};
-        dayNames.forEach(day => {
-          scheduleByEmployee[employee.name][day] = [];
-        });
-      }
+      if (!employee || !scheduleByEmployee[employee.name]) return;
       
       scheduleByEmployee[employee.name][dayOfWeek].push({
         id: `event_${event.id}_${assignment.employee_id}`,
@@ -187,14 +175,12 @@ export const processEvents = (events, employees, scheduleByEmployee, scheduledEm
         event_name: event.title,
         event_id: event.id,
         event_info: event.info,
-        event_type: event.off_prem ? 'offsite' : 'event',  // Use 'offsite' for off-premise events
-        off_prem: event.off_prem
+        event_type: event.off_prem ? 'offsite' : 'event'
       });
       
       scheduledEmployees.add(employee.name);
     });
   });
-  console.log("Final scheduleByEmployee after processing events:", scheduleByEmployee);
-  console.log("Employees with events:", scheduledEmployees);
+  
   return { scheduleByEmployee, scheduledEmployees };
 };
