@@ -273,14 +273,26 @@ const AdminScheduleEditor = () => {
       // Check if this is an event shift
       if (modalData.event_id) {
         showSuccess('Event assignments are managed in the Events page');
-        closeShiftModal();
+        setShowShiftModal(false);
         return;
+      }
+      
+      // Format the date properly or get it from the day of week
+      let shiftDate = modalData.date;
+      if (!shiftDate || shiftDate === '') {
+        // If date is empty, calculate it from the day and current week
+        const dayDate = getDateForDay(modalData.day);
+        if (dayDate) {
+          shiftDate = formatDateForDB(dayDate);
+        } else {
+          throw new Error('Invalid day selected');
+        }
       }
       
       const shiftData = {
         employee_name: modalData.employeeName,
         day: modalData.day,
-        date: modalData.date,
+        date: shiftDate, // Use the properly formatted date
         shift: modalData.shift
       };
       
@@ -292,21 +304,21 @@ const AdminScheduleEditor = () => {
           .eq('id', modalData.id);
           
         if (error) throw error;
-        showSuccess('Shift updated successfully');
+        setSuccessMessage('Shift updated successfully');
       } else {
         const { error } = await supabase
           .from('schedules')
           .insert([shiftData]);
           
         if (error) throw error;
-        showSuccess('Shift added successfully');
+        setSuccessMessage('Shift added successfully');
       }
       
-      closeShiftModal();
-      loadScheduleData();
+      setShowShiftModal(false);
+      fetchSchedule();
     } catch (error) {
       console.error('Error saving shift:', error);
-      showError(`Failed to save shift: ${error.message}`);
+      setError(`Failed to save shift: ${error.message}`);
     } finally {
       setLoading(false);
     }
