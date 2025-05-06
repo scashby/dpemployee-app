@@ -429,6 +429,26 @@ const AdminScheduleEditor = () => {
           Add Employee
         </button>
       </div>
+      <div className="flex space-x-4 mb-4">
+        <button 
+          onClick={openTemplateModal} 
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Apply Template
+        </button>
+        <button 
+          onClick={openSaveAsTemplateModal} 
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Save as Template
+        </button>
+        <button 
+          onClick={openAddEmployeeModal} 
+          className="bg-gray-500 text-white px-4 py-2 rounded"
+        >
+          Add Employee
+        </button>
+      </div>
       <ScheduleTable
         scheduleData={scheduleData}
         employees={employees}
