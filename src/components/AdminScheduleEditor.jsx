@@ -291,7 +291,8 @@ const AdminScheduleEditor = () => {
         employee_name: modalData.employeeName,
         day: modalData.day,
         date: shiftDate,
-        shift: modalData.shift
+        shift: modalData.shift,
+        week_start: formatDateForDB(currentWeekStart)
       };
       
       // Update or create shift
