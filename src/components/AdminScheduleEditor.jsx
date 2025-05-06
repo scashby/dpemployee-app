@@ -6,6 +6,13 @@ const AdminScheduleEditor = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState({
+    supabaseConnection: 'Testing...',
+    employeesTable: 'Testing...',
+    schedulesTable: 'Testing...',
+    currentWeek: '',
+    rawScheduleData: []
+  });
   
   // Week navigation state
   const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
@@ -55,6 +62,24 @@ const AdminScheduleEditor = () => {
     setCurrentWeekStart(newDate);
   };
   
+  // Test Supabase connection
+  useEffect(() => {
+    const testSupabase = async () => {
+      try {
+        const { data, error } = await supabase.from('employees').select('count');
+        if (error) {
+          setDebugInfo(prev => ({ ...prev, supabaseConnection: `Error: ${error.message}` }));
+        } else {
+          setDebugInfo(prev => ({ ...prev, supabaseConnection: 'Connected successfully' }));
+        }
+      } catch (err) {
+        setDebugInfo(prev => ({ ...prev, supabaseConnection: `Exception: ${err.message}` }));
+      }
+    };
+    
+    testSupabase();
+  }, []);
+  
   // Initial data loading
   useEffect(() => {
     fetchEmployees();
@@ -62,6 +87,15 @@ const AdminScheduleEditor = () => {
   
   // Fetch schedule whenever week changes
   useEffect(() => {
+    const weekDates = getWeekDates();
+    const startDate = formatDateForDB(weekDates[0]);
+    const endDate = formatDateForDB(weekDates[6]);
+    
+    setDebugInfo(prev => ({ 
+      ...prev, 
+      currentWeek: `${startDate} to ${endDate}` 
+    }));
+    
     if (employees.length > 0) {
       fetchSchedule();
     }
@@ -77,11 +111,16 @@ const AdminScheduleEditor = () => {
       
       if (error) {
         console.error("Error fetching employees:", error);
+        setDebugInfo(prev => ({ ...prev, employeesTable: `Error: ${error.message}` }));
         throw error;
       }
       
       console.log("Employees data:", data);
       setEmployees(data || []);
+      setDebugInfo(prev => ({ 
+        ...prev, 
+        employeesTable: `Success: ${data ? data.length : 0} employees found` 
+      }));
     } catch (error) {
       console.error('Error fetching employees:', error);
       setError('Failed to load employees. Please try again.');
@@ -100,6 +139,24 @@ const AdminScheduleEditor = () => {
       
       console.log(`Fetching schedule from ${startDate} to ${endDate}`);
       
+      // *** EXTRA DEBUG INFO ***
+      // Try to get ALL schedule records first to see if table exists and has data
+      const { data: allSchedules, error: allError } = await supabase
+        .from('schedules')
+        .select('count');
+      
+      if (allError) {
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          schedulesTable: `Table error: ${allError.message}` 
+        }));
+      } else {
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          schedulesTable: `Table exists: ${allSchedules[0].count} total records` 
+        }));
+      }
+      
       // Fetch schedule for the week
       const { data, error } = await supabase
         .from('schedules')
@@ -109,10 +166,19 @@ const AdminScheduleEditor = () => {
       
       if (error) {
         console.error("Error fetching schedules:", error);
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          schedulesTable: `${prev.schedulesTable}. Week query error: ${error.message}` 
+        }));
         throw error;
       }
       
       console.log("Schedule data:", data);
+      setDebugInfo(prev => ({ 
+        ...prev, 
+        rawScheduleData: data || [],
+        schedulesTable: `${prev.schedulesTable}. Found ${data ? data.length : 0} shifts for this week.` 
+      }));
       
       // Organize schedule data by employee and day
       const organized = [];
@@ -160,21 +226,6 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  const addEmployee = () => {
-    console.log('Add Employee clicked');
-    // This would open a dialog to select an employee to add to the schedule
-  };
-  
-  const saveChanges = () => {
-    console.log('Save Changes clicked');
-    // This would save any changes to the schedule
-  };
-  
-  const removeEmployee = (employeeId) => {
-    console.log(`Remove employee ${employeeId} from schedule`);
-    // This would remove an employee from the current schedule
-  };
-  
   // Helper to get CSS class for different shift types
   const getShiftClass = (shiftType) => {
     switch (shiftType) {
@@ -189,19 +240,54 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  if (loading && employees.length === 0) {
-    return <div className="p-4">Loading schedule data...</div>;
-  }
-  
   const weekDates = getWeekDates();
   const dateRange = `${formatDateForDisplay(weekDates[0])} thrugo ${formatDateForDisplay(weekDates[6])}`;
   
   // Day headers
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   
+  // Check database table and query
+  const runDatabaseTest = async () => {
+    // Attempt to directly query raw data from schedules table
+    try {
+      const { data, error } = await supabase.from('schedules').select('*').limit(5);
+      
+      if (error) {
+        alert(`Error querying schedules: ${error.message}`);
+      } else {
+        alert(`Success! Found ${data.length} records. First record: ${JSON.stringify(data[0])}`);
+      }
+    } catch (err) {
+      alert(`Exception: ${err.message}`);
+    }
+  };
+  
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold">Edit Weekly Schedule</h1>
+      
+      {/* Debug Information */}
+      <div className="my-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+        <h2 className="font-bold text-lg mb-2">Debug Information</h2>
+        <div><strong>Supabase Connection:</strong> {debugInfo.supabaseConnection}</div>
+        <div><strong>Employees Table:</strong> {debugInfo.employeesTable}</div>
+        <div><strong>Schedules Table:</strong> {debugInfo.schedulesTable}</div>
+        <div><strong>Current Week:</strong> {debugInfo.currentWeek}</div>
+        <div className="mt-2">
+          <button 
+            onClick={runDatabaseTest}
+            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+          >
+            Test Database
+          </button>
+        </div>
+        <div className="mt-2">
+          <strong>Raw Schedule Data ({debugInfo.rawScheduleData.length} items):</strong>
+          <pre className="bg-gray-100 p-2 mt-1 text-xs overflow-auto max-h-40">
+            {JSON.stringify(debugInfo.rawScheduleData, null, 2)}
+          </pre>
+        </div>
+      </div>
       
       <div className="flex items-center my-4">
         <button 
@@ -258,12 +344,7 @@ const AdminScheduleEditor = () => {
                 })}
                 
                 <td className="py-3 px-4 text-center">
-                  <button 
-                    onClick={() => removeEmployee(employee.id)}
-                    className="text-black hover:text-red-600 font-bold"
-                  >
-                    ✕
-                  </button>
+                  <button className="text-black hover:text-red-600 font-bold">✕</button>
                 </td>
               </tr>
             ))}
@@ -272,17 +353,11 @@ const AdminScheduleEditor = () => {
       </div>
       
       <div className="mt-4 flex">
-        <button 
-          onClick={addEmployee}
-          className="mr-2 border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
-        >
+        <button className="mr-2 border border-gray-300 rounded px-3 py-1 hover:bg-gray-100">
           + Add Employee
         </button>
         
-        <button 
-          onClick={saveChanges}
-          className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
-        >
+        <button className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700">
           Save Changes
         </button>
       </div>
