@@ -4,9 +4,9 @@ import './styles/admin.css';
 
 // Import components
 import Header from './components/Header';
-import Dashboard from './pages/Dashboard';
-import Schedule from './pages/Schedule';
-import Events from './pages/Events';
+import Dashboard from './components/Dashboard';
+import Schedule from './components/Schedule';
+import Events from './components/Events';
 import AdminPanel from './components/AdminPanel';
 
 function App() {
