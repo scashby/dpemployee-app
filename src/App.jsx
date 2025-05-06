@@ -1,41 +1,18 @@
-import React, { useState } from 'react';
-import { supabase } from './supabase/supabaseClient';
+import { useState } from 'react';
+import Header from './components/Header';
+import AdminPanel from './components/AdminPanel';
 import './styles/admin.css';
 
-// Import components
-import Header from './components/Header';
-import Dashboard from './components/Dashboard';
-import Schedule from './components/Schedule';
-import Events from './components/Events';
-import AdminPanel from './components/AdminPanel';
-
 function App() {
-  const [currentView, setCurrentView] = useState('dashboard');
-
-  const renderView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'schedule':
-        return <Schedule />;
-      case 'events':
-        return <Events />;
-      case 'admin':
-        return <AdminPanel />;
-      default:
-        return <Dashboard />;
-    }
-  };
+  // Set initial view to 'admin' for testing purposes
+  const [currentView, setCurrentView] = useState('admin');
   
   return (
     <div className="app">
-      <Header 
-        setCurrentView={setCurrentView} 
-        currentView={currentView}
-      />
-      <main>
-        {renderView()}
-      </main>
+      <Header />
+      <div className="content">
+        {currentView === 'admin' && <AdminPanel />}
+      </div>
     </div>
   );
 }
