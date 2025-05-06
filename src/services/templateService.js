@@ -46,8 +46,11 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
     
     const shiftsToAdd = [];
     
+    // Check if the template has the "days" wrapper
+    const templateData = template.template.days || template.template;
+    
     // Process each day in template
-    for (const [day, shifts] of Object.entries(template.template)) {
+    for (const [day, shifts] of Object.entries(templateData)) {
       const dayIndex = dayMap[day];
       if (dayIndex === undefined) continue;
       
@@ -65,7 +68,10 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
           employee_name: employee.name,
           day: dayCode,
           date: formattedDate,
-          shift: '11-Close'
+          shift: '11-Close',
+          week_start: formatDateForDB(weekStartDate), // Add week_start
+          event_type: 'tasting', // Add event_type for styling
+          event_name: 'Tasting Room' // Add event_name for display
         });
       }
     }
