@@ -139,7 +139,7 @@ const AdminScheduleEditor = () => {
       setTemplates(parsedData || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
-      setError('Failed to load templates. Please try again.');
+      showError('Failed to load templates. Please try again.');
     }
   };
   
@@ -252,7 +252,7 @@ const AdminScheduleEditor = () => {
       updateAvailableEmployees(scheduledEmployees);
     } catch (error) {
       console.error('Error loading schedule data:', error);
-      setError('Failed to load schedule. Please try again.');
+      showError('Failed to load schedule. Please try again.');
     } finally {
       setLoading(false);
     }
