@@ -1,5 +1,6 @@
 import { supabase } from '../supabase/supabaseClient';
 import { formatDateForDB, getWeekDateRange } from '../utils/dateUtils';
+
 /**
  * Service for handling template-related operations
  * Contains functions for CRUD operations on templates
@@ -157,11 +158,6 @@ export const convertScheduleToTemplate = (scheduleData, employees) => {
 // Save schedule as a new template
 export const saveAsNewTemplate = async (templateData, templateName) => {
   try {
-    console.log('Saving template:', {
-      name: templateName,
-      date: null,
-      template: templateData
-    });
     console.log('Saving template - Name:', templateName);
     console.log('Saving template - Data:', JSON.stringify(templateData, null, 2));
     const { data, error } = await supabase

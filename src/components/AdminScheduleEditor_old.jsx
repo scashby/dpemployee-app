@@ -4,8 +4,8 @@ import { getWeekDateRange, formatDateForDB } from '../utils/dateUtils';
 import useWeekNavigation from '../hooks/useWeekNavigation';
 import useMessages from '../hooks/useMessages';
 import useModalState from '../hooks/useModalState';
-import * as scheduleService from '../services/scheduleService'; // declared but never read
-import * as templateService from '../services/templateService'; // declared but never read
+import * as scheduleService from '../services/scheduleService';
+import * as templateService from '../services/templateService'; 
 import StatusMessage from './shared/StatusMessage';
 import WeekNavigator from './shared/WeekNavigator';
 import ScheduleTable from './shared/ScheduleTable';
@@ -44,14 +44,14 @@ const AdminScheduleEditor = () => {
     openAddShiftModal,
     openEditShiftModal,
     closeShiftModal, 
-    openAddEmployeeModal, // declared but never read
+    openAddEmployeeModal, 
     closeAddEmployeeModal, 
-    openTemplateModal, // declared but never read
+    openTemplateModal, 
     closeTemplateModal, 
     setSelectedTemplate, 
-    openSaveAsTemplateModal, // declared but never read
+    openSaveAsTemplateModal, 
     closeSaveAsTemplateModal, 
-    handleShiftInputChange, // declared but never read
+    handleShiftInputChange, 
     handleTemplateInputChange 
   } = useModalState();
 
@@ -175,15 +175,17 @@ const AdminScheduleEditor = () => {
       return [];
     }
   };
-  
+  console.log("Fetched events:", events);
   // Load schedule data - modified to only include employees with shifts
-const loadScheduleData = async () => {
+  
+  const loadScheduleData = async () => {
     try {
       setLoading(true);
       const dateRange = getWeekDateRange(currentWeekStart);
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
+      // Fetch schedule data from database
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -191,64 +193,28 @@ const loadScheduleData = async () => {
         .lte('date', endDate);
       
       if (error) throw error;
+      console.log("Fetched regular shifts:", data);
+      // Initialize schedule structure
+      let scheduleByEmployee = {};
       
-      // Track which employees have shifts
+      // Track which employees have shifts or are manually added to schedule
       const employeesWithShifts = new Set();
       
-      // Initialize schedule structure (only for employees with shifts)
-      const scheduleByEmployee = {};
-      
-      // Process regular shifts to identify employees with shifts
-      if (data && data.length > 0) {
-        data.forEach(shift => {
-          const empName = shift.employee_name;
-          employeesWithShifts.add(empName);
+      // First, add any employees that were manually added to the schedule
+      // This ensures they appear even without shifts
+      Object.keys(scheduleData).forEach(empName => {
+        scheduleByEmployee[empName] = {};
+        dayNames.forEach(day => {
+          scheduleByEmployee[empName][day] = [];
         });
-      }
-      
-      // Process events to identify employees with event shifts
-      if (events && events.length > 0) {
-        events.forEach(event => {
-          if (!event.assignments) return;
-          
-          event.assignments.forEach(assignment => {
-            const employee = employees.find(emp => emp.id === assignment.employee_id);
-            if (employee) {
-              employeesWithShifts.add(employee.name);
-            }
-          });
-        });
-      }
-      
-      // Only include employees that have shifts
-      const scheduledEmployees = [...employeesWithShifts];
-      scheduledEmployees.forEach(empName => {
-        const matchingEmployee = employees.find(emp => 
-          emp.name === empName || emp.name.includes(empName) || empName.includes(emp.name)
-        );
-        
-        if (matchingEmployee) {
-          scheduleByEmployee[matchingEmployee.name] = {};
-          dayNames.forEach(day => {
-            scheduleByEmployee[matchingEmployee.name][day] = [];
-          });
-        }
+        employeesWithShifts.add(empName);
       });
       
-      // Now process shifts for these employees
+      // Process regular shifts
       if (data && data.length > 0) {
-        data.forEach(shift => {
-          const empName = shift.employee_name;
-          const day = shift.day;
-          
-          // Find matching employee
-          for (const name of Object.keys(scheduleByEmployee)) {
-            if (name === empName || name.includes(empName) || empName.includes(name)) {
-              scheduleByEmployee[name][day].push(shift);
-              break;
-            }
-          }
-        });
+        const result = scheduleService.processShifts(data, scheduleByEmployee, employeesWithShifts);
+        scheduleByEmployee = result.scheduleByEmployee;
+        result.scheduledEmployees.forEach(emp => employeesWithShifts.add(emp));
       }
       
       // Process events for these employees
@@ -278,7 +244,7 @@ const loadScheduleData = async () => {
       }
       
       setScheduleData(scheduleByEmployee);
-      updateAvailableEmployees(new Set(Object.keys(scheduleByEmployee)));
+      updateAvailableEmployees(employeesWithShifts);
     } catch (error) {
       console.error('Error loading schedule data:', error);
       showError('Failed to load schedule. Please try again.');
@@ -361,15 +327,19 @@ const loadScheduleData = async () => {
     return <div className="p-4">Loading schedule data...</div>;
   }
   const deleteShift = async (id) => {
+    if (id.toString().startsWith('event_')) {
+      showError('Event shifts cannot be deleted here.');
+      return;
+    }
+    
     try {
-      // Use scheduleService instead of direct supabase calls
-      const result = await scheduleService.deleteShift(id);
+      const { error } = await supabase
+        .from('schedules')
+        .delete()
+        .eq('id', id);
       
-      if (result.error) {
-        throw result.error;
-      }
-      
-      showSuccess(result.message || 'Shift deleted successfully');
+      if (error) throw error;
+      showSuccess('Shift deleted successfully');
       loadScheduleData();
     } catch (error) {
       console.error('Error deleting shift:', error);
@@ -412,6 +382,8 @@ const loadScheduleData = async () => {
       showError('Failed to remove employee from schedule.');
     }
   };
+  console.log("ScheduleData state:", scheduleData);
+  console.log("Is scheduleData empty?", Object.keys(scheduleData).length === 0);
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
@@ -437,7 +409,26 @@ const loadScheduleData = async () => {
         onCurrentWeek={goToCurrentWeek}
         className="my-4"
       />
-      
+      <div className="flex space-x-4 mb-4">
+        <button 
+          onClick={openTemplateModal} 
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Apply Template
+        </button>
+        <button 
+          onClick={openSaveAsTemplateModal} 
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Save as Template
+        </button>
+        <button 
+          onClick={openAddEmployeeModal} 
+          className="bg-gray-500 text-white px-4 py-2 rounded"
+        >
+          Add Employee
+        </button>
+      </div>
       <ScheduleTable
         scheduleData={scheduleData}
         employees={employees}
@@ -466,11 +457,11 @@ const loadScheduleData = async () => {
           disabled
         />
         <FormInput
-        label="Shift Time"
-        name="shift"
-        value={modalData.shift || ''}
-        onChange={handleShiftInputChange}
-        placeholder="11am to Close"
+          label="Shift Time"
+          name="shift"
+          value={modalData.shift || ''}
+          onChange={handleShiftInputChange}
+          placeholder="11am to Close"
         />
       </AdminModal>
 
@@ -510,29 +501,30 @@ const loadScheduleData = async () => {
         show={showTemplateModal}
         onClose={closeTemplateModal}
         title="Apply Template"
-        onSave={() => {
-            if (selectedTemplate) {
-              const template = templates.find(t => t.id == selectedTemplate);
-              if (template) {
-                // Use templateService instead of just showing success
-                templateService.applyTemplateToSchedule(template, currentWeekStart, employees)
-                  .then(result => {
-                    if (result.success) {
-                      showSuccess(result.message);
-                      closeTemplateModal();
-                      loadScheduleData();
-                    } else {
-                      showError('Failed to apply template');
-                    }
-                  })
-                  .catch(error => {
-                    showError(`Error: ${error.message}`);
-                  });
-              }
-            } else {
-              showError('Please select a template');
-            }
-          }}
+        // In the onSave function of the template modal
+onSave={() => {
+  if (selectedTemplate) {
+    const template = templates.find(t => t.id == selectedTemplate);
+    if (template) {
+      // Use templateService instead of just showing success
+      templateService.applyTemplateToSchedule(template, currentWeekStart, employees)
+        .then(result => {
+          if (result.success) {
+            showSuccess(result.message);
+            closeTemplateModal();
+            loadScheduleData();
+          } else {
+            showError('Failed to apply template');
+          }
+        })
+        .catch(error => {
+          showError(`Error: ${error.message}`);
+        });
+          }
+        } else {
+          showError('Please select a template');
+        }
+      }}
       >
         <FormSelect
           label="Select Template"
@@ -551,34 +543,34 @@ const loadScheduleData = async () => {
         saveAsTemplateData={templateData}
         onChange={handleTemplateInputChange}
         onSave={() => {
-            if (templateData.overwriteExisting && templateData.existingTemplateId) {
-              const templateStructure = templateService.convertScheduleToTemplate(scheduleData, employees);
-              templateService.updateExistingTemplate(templateStructure, templateData.existingTemplateId)
-                .then(result => {
-                  if (result.success) {
-                    showSuccess(result.message);
-                    closeSaveAsTemplateModal();
-                    fetchTemplates();
-                  } else {
-                    showError('Failed to update template');
-                  }
-                });
-            } else if (templateData.name) {
-              const templateStructure = templateService.convertScheduleToTemplate(scheduleData, employees);
-              templateService.saveAsNewTemplate(templateStructure, templateData.name)
-                .then(result => {
-                  if (result.success) {
-                    showSuccess(result.message);
-                    closeSaveAsTemplateModal();
-                    fetchTemplates();
-                  } else {
-                    showError('Failed to save template');
-                  }
-                });
-            } else {
-              showError('Template name is required');
-            }
-          }}
+          if (templateData.overwriteExisting && templateData.existingTemplateId) {
+            const templateStructure = templateService.convertScheduleToTemplate(scheduleData, employees);
+            templateService.updateExistingTemplate(templateStructure, templateData.existingTemplateId)
+              .then(result => {
+                if (result.success) {
+                  showSuccess(result.message);
+                  closeSaveAsTemplateModal();
+                  fetchTemplates();
+                } else {
+                  showError('Failed to update template');
+                }
+              });
+          } else if (templateData.name) {
+            const templateStructure = templateService.convertScheduleToTemplate(scheduleData, employees);
+            templateService.saveAsNewTemplate(templateStructure, templateData.name)
+              .then(result => {
+                if (result.success) {
+                  showSuccess(result.message);
+                  closeSaveAsTemplateModal();
+                  fetchTemplates();
+                } else {
+                  showError('Failed to save template');
+                }
+              });
+          } else {
+            showError('Template name is required');
+          }
+        }}
         templates={templates}
       />
     </div>
