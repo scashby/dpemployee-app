@@ -44,6 +44,19 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
       'Friday': 4, 'Saturday': 5, 'Sunday': 6
     };
     
+    // 1. First, delete existing shifts for this week to replace instead of add
+    const dateRange = getWeekDateRange(weekStartDate);
+    const startDate = formatDateForDB(dateRange.start);
+    const endDate = formatDateForDB(dateRange.end);
+    
+    const { error: deleteError } = await supabase
+      .from('schedules')
+      .delete()
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (deleteError) throw deleteError;
+    
     const shiftsToAdd = [];
     
     // Check if the template has the "days" wrapper
@@ -61,6 +74,7 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
       
       // Process shifts
       for (const assignment of shifts) {
+        // 2. Only add shifts for employees that still exist (prevents deleted employees from returning)
         const employee = employees.find(emp => emp.id === assignment.employeeId);
         if (!employee) continue;
         
@@ -69,9 +83,9 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
           day: dayCode,
           date: formattedDate,
           shift: '11-Close',
-          week_start: formatDateForDB(weekStartDate), // Add week_start
-          event_type: 'tasting', // Add event_type for styling
-          event_name: 'Tasting Room' // Add event_name for display
+          week_start: formatDateForDB(weekStartDate),
+          event_type: 'tasting',
+          event_name: 'Tasting Room'
         });
       }
     }
@@ -83,7 +97,7 @@ export const applyTemplateToSchedule = async (template, weekStartDate, employees
       
       return { 
         success: true, 
-        message: `Applied template "${template.name}"`,
+        message: `Applied template "${template.name}" (replaced ${shiftsToAdd.length} shifts)`,
         shiftsAdded: shiftsToAdd.length,
         error: null
       };
