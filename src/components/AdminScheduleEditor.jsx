@@ -146,13 +146,13 @@ const AdminScheduleEditor = () => {
   };
   
   const fetchEvents = async () => {
-    console.log('Date range:', startDate, endDate);
     try {
       const dateRange = getWeekDateRange(currentWeekStart);
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
-      // Modified this section to filter event_assignments by date
+      console.log('Date range:', startDate, endDate);
+      
       const [eventsResponse, assignmentsResponse] = await Promise.all([
         supabase.from('events')
           .select('*')
@@ -165,12 +165,12 @@ const AdminScheduleEditor = () => {
       if (eventsResponse.error) throw eventsResponse.error;
       if (assignmentsResponse.error) throw assignmentsResponse.error;
       
+      console.log('Events found:', eventsResponse.data);
+      
       const events = eventsResponse.data?.map(event => ({
         ...event,
         assignments: assignmentsResponse.data?.filter(a => a.event_id === event.id) || []
       })) || [];
-      
-      console.log('Events with assignments:', events);
       
       setEvents(events);
       return events;
@@ -180,7 +180,7 @@ const AdminScheduleEditor = () => {
       return [];
     }
   };
-  console.log('Events found:', eventsResponse.data);
+
   // Update the loadScheduleData function
   const loadScheduleData = async () => {
     try {
