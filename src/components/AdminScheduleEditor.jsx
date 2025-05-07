@@ -255,7 +255,7 @@ const AdminScheduleEditor = () => {
           }
         });
       }
-      
+      console.log('Events being processed:', events);
       // Process events for these employees
       if (events && events.length > 0) {
         events.forEach(event => {
@@ -282,7 +282,7 @@ const AdminScheduleEditor = () => {
           });
         });
       }
-      console.log('Processed schedule data:', scheduleByEmployee);
+      console.log('Processed schedule data:', JSON.stringify(scheduleByEmployee, null, 2));
       setScheduleData(scheduleByEmployee);
       updateAvailableEmployees(employeesWithShifts);
     } catch (error) {
