@@ -514,7 +514,6 @@ const AdminScheduleEditor = () => {
         onClose={closeAddEmployeeModal}
         title="Add Employee to Schedule"
         onSave={() => {
-          // Get values directly from the DOM when Save is clicked
           const employeeValue = document.getElementById('employeeSelect').value;
           const dateValue = document.getElementById('dateInput').value;
           const shiftValue = document.getElementById('shiftTimeInput').value;
@@ -523,14 +522,11 @@ const AdminScheduleEditor = () => {
             const employee = employees.find(emp => emp.id === employeeValue);
             const selectedDate = new Date(dateValue);
             
-            // Calculate the day code (MON, TUE, etc.) from the selected date
-            const dayIndex = (selectedDate.getDay() + 6) % 7; // Convert from Sunday=0 to Monday=0
+            const dayIndex = (selectedDate.getDay() + 6) % 7;
             const selectedDay = dayNames[dayIndex];
             
-            // Format date for database
             const formattedDate = formatDateForDB(selectedDate);
             
-            // Create shift data object
             const shiftData = {
               employee_name: employee.name,
               day: selectedDay,
@@ -541,13 +537,12 @@ const AdminScheduleEditor = () => {
               event_name: 'Tasting Room'
             };
             
-            // Insert the shift into the database
             supabase.from('schedules')
               .insert([shiftData])
               .then(() => {
                 showSuccess(`${employee.name} added to schedule with shift on ${selectedDay}`);
                 closeAddEmployeeModal();
-                loadScheduleData(); // Refresh the schedule
+                loadScheduleData();
               })
               .catch(error => {
                 console.error('Error saving shift:', error);
@@ -558,11 +553,25 @@ const AdminScheduleEditor = () => {
           }
         }}
       >
-        <div className="form-group">
-          <label className="form-label" htmlFor="employeeSelect">Select Employee</label>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+            Select Employee
+          </label>
           <select 
             id="employeeSelect" 
-            className="form-select"
+            style={{ 
+              width: '100%', 
+              padding: '0.5rem', 
+              border: '1px solid #d1d5db', 
+              borderRadius: '0.25rem',
+              backgroundColor: '#fff',
+              appearance: 'none',
+              backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
+              backgroundPosition: 'right 0.5rem center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '1.5em 1.5em',
+              paddingRight: '2.5rem'
+            }}
           >
             <option value="">Select...</option>
             {availableEmployees.map(emp => (
@@ -571,22 +580,38 @@ const AdminScheduleEditor = () => {
           </select>
         </div>
         
-        <div className="form-group">
-          <label className="form-label" htmlFor="dateInput">Select Date</label>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+            Select Date
+          </label>
           <input 
             type="date" 
             id="dateInput" 
-            className="form-input"
+            style={{ 
+              width: '100%', 
+              padding: '0.5rem', 
+              border: '1px solid #d1d5db', 
+              borderRadius: '0.25rem',
+              backgroundColor: '#fff'
+            }}
           />
         </div>
         
-        <div className="form-group">
-          <label className="form-label" htmlFor="shiftTimeInput">Shift Time</label>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+            Shift Time
+          </label>
           <input 
             type="text" 
             id="shiftTimeInput" 
-            className="form-input" 
-            placeholder="e.g. 11am to Close"
+            placeholder="e.g. 11am to Close" 
+            style={{ 
+              width: '100%', 
+              padding: '0.5rem', 
+              border: '1px solid #d1d5db', 
+              borderRadius: '0.25rem',
+              backgroundColor: '#fff'
+            }}
           />
         </div>
       </AdminModal>
