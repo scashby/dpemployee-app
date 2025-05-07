@@ -237,7 +237,8 @@
   
   /* Table Styling */
   .dp-table-container {
-    overflow: hidden;
+    max-width: 100%;
+    overflow-x: auto;
     margin-bottom: 1.5rem;
     border-radius: 5px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
