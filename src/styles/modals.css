@@ -1,4 +1,4 @@
-/* Modal Styles */
+/* Modal Styles - Updated for Devil's Purse Theme */
 
 .modal-backdrop {
   position: fixed;
@@ -12,12 +12,13 @@
 
 .modal {
   background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 5px; /* Match radius-md */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 28rem; /* Default size - md */
   max-height: 90vh;
   overflow-y: auto;
+  border: 1px solid #e0e0e0; /* Match border color */
 }
 
 .modal.modal-sm {
@@ -37,14 +38,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e0e0e0; /* Match border color */
+  background-color: #2b2b2b; /* Match primary color */
+  color: #ffffff;
+  border-top-left-radius: 5px; /* Match radius-md */
+  border-top-right-radius: 5px; /* Match radius-md */
 }
 
 .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: #ffffff;
   margin: 0;
+  font-family: 'Georgia', serif; /* Match primary font */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .modal-close {
@@ -54,17 +62,21 @@
   line-height: 1;
   padding: 0.25rem;
   cursor: pointer;
-  color: #6b7280;
+  color: #ffffff;
+  opacity: 0.7;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .modal-close:hover {
-  color: #111827;
+  opacity: 1;
 }
 
 .modal-body {
   padding: 1.5rem;
   max-height: 70vh;
   overflow-y: auto;
+  color: #2b2b2b; /* Match primary color */
+  font-family: 'Helvetica', 'Arial', sans-serif; /* Match secondary font */
 }
 
 .modal-footer {
@@ -72,7 +84,44 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #e0e0e0; /* Match border color */
+  background-color: #f5f5f5; /* Match light color */
+  border-bottom-left-radius: 5px; /* Match radius-md */
+  border-bottom-right-radius: 5px; /* Match radius-md */
+}
+
+/* Modal Buttons */
+.modal-btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 3px; /* Match radius-sm */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.875rem;
+}
+
+.modal-btn-primary {
+  background-color: #c0984b; /* Match secondary color */
+  color: #ffffff;
+}
+
+.modal-btn-primary:hover {
+  background-color: #b08a43; /* Slightly darker */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-btn-secondary {
+  background-color: #6c757d; /* Match muted color */
+  color: #ffffff;
+}
+
+.modal-btn-secondary:hover {
+  background-color: #5a6268; /* Slightly darker */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 /* Animation classes */
