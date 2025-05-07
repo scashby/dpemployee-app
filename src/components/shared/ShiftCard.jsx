@@ -46,7 +46,7 @@ const ShiftCard = ({
           )}
         </span>
         
-        {showActions && !isEvent && (
+        {showActions && shift.event_type === 'tasting' && (
           <div className="dp-shift-actions">
             <button 
               onClick={handleEdit}
