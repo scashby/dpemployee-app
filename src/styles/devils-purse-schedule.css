@@ -347,13 +347,15 @@
     font-size: 0.8rem;
     color: white;
     font-weight: bold;
+    text-align: center;
   }
-
+  
   .dp-shift-time {
     font-weight: normal;
     display: block;
     margin-bottom: 0.25rem;
     color: white;
+    text-align: center;
   }
 
   .dp-shift[data-event-type="offsite"] {
