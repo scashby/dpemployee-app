@@ -575,7 +575,7 @@ const AdminScheduleEditor = () => {
           label="Select Day"
           options={dayNames.map(day => ({
             value: day,
-            label: `${day} (${formatDateForDisplay(getDateForDay(day))})`
+            label: day
           }))}
         />
         <FormInput
