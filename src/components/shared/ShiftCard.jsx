@@ -32,12 +32,15 @@ const ShiftCard = ({
   };
 
   return (
-    <div className={`dp-shift ${shiftClass} ${className}`}>
+    <div 
+      className={`dp-shift ${shiftClass} ${className}`} 
+      onClick={isEvent && onEdit ? () => onEdit(shift) : undefined}
+    >
       <div className="dp-shift-content">
         <div className="dp-shift-info-container">
           <div className="dp-shift-title">{title}</div>
           <div className="dp-shift-time">{subtitle}</div>
-          {shift.event_info && (
+          {!isEvent && shift.event_info && (
             <span className="dp-shift-info">
               {shift.event_info?.length > 50 
                 ? `${shift.event_info.substring(0, 50)}...` 
