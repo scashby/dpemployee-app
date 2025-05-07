@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
+import '../styles/devils-purse.css';
 
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
