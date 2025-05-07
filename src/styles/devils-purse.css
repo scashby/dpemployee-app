@@ -35,7 +35,7 @@
   
   /* Container and Section Layout */
   .dp-container {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
     padding: var(--dp-spacing-lg);
     background-color: var(--dp-light);
