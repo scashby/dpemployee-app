@@ -35,15 +35,27 @@ const WeekNavigator = ({
   
   return (
     <div className={`flex items-center mb-4 ${className}`}>
-      <button 
-        onClick={onPreviousWeek}
-        className="border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
-        aria-label="Previous week"
-      >
-        ←Previous
-      </button>
+      <div className="flex gap-2">
+        <button 
+          onClick={onPreviousWeek}
+          className="border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
+          aria-label="Previous week"
+        >
+          ←Previous
+        </button>
+        
+        {onCurrentWeek && !isCurrentWeek() && (
+          <button
+            onClick={onCurrentWeek}
+            className="border border-gray-300 rounded px-3 py-1 hover:bg-gray-100"
+            aria-label="Current week"
+          >
+            Current Week
+          </button>
+        )}
+      </div>
       
-      <span className="mx-4 text-lg font-medium">{displayRange}</span>
+      <span className="mx-4 text-lg font-medium flex-grow text-center">{displayRange}</span>
       
       <button 
         onClick={onNextWeek}
@@ -52,16 +64,6 @@ const WeekNavigator = ({
       >
         Next→
       </button>
-      
-      {onCurrentWeek && !isCurrentWeek() && (
-        <button
-          onClick={onCurrentWeek}
-          className="border border-gray-300 rounded px-3 py-1 hover:bg-gray-100 ml-4"
-          aria-label="Current week"
-        >
-          Current Week
-        </button>
-      )}
     </div>
   );
 };
