@@ -186,6 +186,7 @@ const AdminScheduleEditor = () => {
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
+      // Fetch schedule data from database
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -194,38 +195,61 @@ const AdminScheduleEditor = () => {
       
       if (error) throw error;
       
-      // Track which employees have shifts
+      // Track which employees have shifts in THIS week only
       const employeesWithShifts = new Set();
       
-      // Initialize schedule structure with the CURRENT scheduleData
-      // This preserves manually added employees
+      // Process regular shifts to identify employees with shifts this week
+      if (data && data.length > 0) {
+        data.forEach(shift => {
+          const empName = shift.employee_name;
+          employeesWithShifts.add(empName);
+        });
+      }
+      
+      // Process events to identify employees with event shifts this week
+      if (events && events.length > 0) {
+        events.forEach(event => {
+          if (!event.assignments) return;
+          
+          event.assignments.forEach(assignment => {
+            const employee = employees.find(emp => emp.id === assignment.employee_id);
+            if (employee) {
+              employeesWithShifts.add(employee.name);
+            }
+          });
+        });
+      }
+      
+      // Initialize schedule structure ONLY for employees with shifts THIS week
       const scheduleByEmployee = {};
       
-      // First, add any employees that were already in the schedule
-      // This ensures manually added employees remain
-      Object.keys(scheduleData).forEach(empName => {
-        scheduleByEmployee[empName] = {};
-        dayNames.forEach(day => {
-          scheduleByEmployee[empName][day] = [];
-        });
-        employeesWithShifts.add(empName);
+      // Only include employees that have shifts in this week's date range
+      [...employeesWithShifts].forEach(empName => {
+        const matchingEmployee = employees.find(emp => 
+          emp.name === empName || emp.name.includes(empName) || empName.includes(emp.name)
+        );
+        
+        if (matchingEmployee) {
+          scheduleByEmployee[matchingEmployee.name] = {};
+          dayNames.forEach(day => {
+            scheduleByEmployee[matchingEmployee.name][day] = [];
+          });
+        }
       });
       
-      // Then process regular shifts
+      // Now process shifts for these employees
       if (data && data.length > 0) {
         data.forEach(shift => {
           const empName = shift.employee_name;
           const day = shift.day;
           
-          if (!scheduleByEmployee[empName]) {
-            scheduleByEmployee[empName] = {};
-            dayNames.forEach(d => {
-              scheduleByEmployee[empName][d] = [];
-            });
-            employeesWithShifts.add(empName);
+          // Find matching employee
+          for (const name of Object.keys(scheduleByEmployee)) {
+            if (name === empName || name.includes(empName) || empName.includes(name)) {
+              scheduleByEmployee[name][day].push(shift);
+              break;
+            }
           }
-          
-          scheduleByEmployee[empName][day].push(shift);
         });
       }
       
@@ -239,16 +263,7 @@ const AdminScheduleEditor = () => {
           
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
-            if (!employee) return;
-            
-            // Add employee to schedule if not already there
-            if (!scheduleByEmployee[employee.name]) {
-              scheduleByEmployee[employee.name] = {};
-              dayNames.forEach(day => {
-                scheduleByEmployee[employee.name][day] = [];
-              });
-              employeesWithShifts.add(employee.name);
-            }
+            if (!employee || !scheduleByEmployee[employee.name]) return;
             
             scheduleByEmployee[employee.name][dayOfWeek].push({
               id: `event_${event.id}_${assignment.employee_id}`,
