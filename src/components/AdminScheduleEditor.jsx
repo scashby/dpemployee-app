@@ -145,13 +145,13 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  // Fetch events data
   const fetchEvents = async () => {
     try {
       const dateRange = getWeekDateRange(currentWeekStart);
       const startDate = formatDateForDB(dateRange.start);
       const endDate = formatDateForDB(dateRange.end);
       
+      // Modified this section to filter event_assignments by date
       const [eventsResponse, assignmentsResponse] = await Promise.all([
         supabase.from('events')
           .select('*')
@@ -177,7 +177,7 @@ const AdminScheduleEditor = () => {
       return [];
     }
   };
-  
+  console.log('Events with assignments:', eventsWithAssignments);
   // Update the loadScheduleData function
   const loadScheduleData = async () => {
     try {
@@ -411,33 +411,6 @@ const AdminScheduleEditor = () => {
     } catch (error) {
       console.error('Error removing employee:', error);
       showError('Failed to remove employee from schedule.');
-    }
-  };
-  
-  // Helper to save employee shift to database
-  const saveEmployeeShift = async (employeeName, day, date, shiftTime) => {
-    try {
-      const shiftData = {
-        employee_name: employeeName,
-        day: day,
-        date: date,
-        shift: shiftTime,
-        week_start: formatDateForDB(currentWeekStart),
-        event_type: 'tasting',
-        event_name: 'Tasting Room'
-      };
-      
-      const { error } = await supabase
-        .from('schedules')
-        .insert([shiftData]);
-        
-      if (error) throw error;
-      
-      // Reload schedule data to reflect the new shift
-      loadScheduleData();
-    } catch (error) {
-      console.error('Error saving shift:', error);
-      showError(`Failed to save shift: ${error.message}`);
     }
   };
   
