@@ -14,7 +14,6 @@ import FormInput from './shared/FormInput';
 import FormSelect from './shared/FormSelect'; 
 import SaveAsTemplateModal from './shared/SaveAsTemplateModal'; 
 import '../styles/admin.css';
-const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
 const AdminScheduleEditor = () => {
   // Use custom hooks for core functionality
