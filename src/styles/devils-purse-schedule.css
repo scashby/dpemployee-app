@@ -367,7 +367,7 @@
   /* Make day columns equal width */
 .dp-day-column {
   width: 14%;
-  min-width: 120px;
+  min-width: 150px;
 }
 
 .dp-employee-column {
