@@ -84,15 +84,15 @@ const AdminScheduleEditor = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [employeesData, templatesData, eventsData] = await Promise.all([
-        fetchEmployees(),
-        fetchTemplates(),
-        fetchEvents()
-      ]);
-  
-      // Use eventsData directly instead of relying on state update
-      setEvents(eventsData);
-      await loadScheduleData(eventsData);
+      
+      // First get employees and templates
+      await fetchEmployees();
+      await fetchTemplates();
+      
+      // Then fetch events and schedules together once employees are loaded
+      await fetchEvents();
+      await loadScheduleData();
+      
     } catch (error) {
       console.error('Error loading initial data:', error);
       showError('Failed to load initial data. Please try again.');
