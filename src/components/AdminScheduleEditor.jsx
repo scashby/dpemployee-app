@@ -74,11 +74,18 @@ const AdminScheduleEditor = () => {
   }, []);
   
   // Fetch schedule when week changes
-  useEffect(() => {
-    if (employees.length > 0) {
-      loadScheduleData();
-    }
-  }, [currentWeekStart, employees]);
+    useEffect(() => {
+      if (employees.length > 0) {
+        loadScheduleData();
+      }
+    }, [currentWeekStart, employees]);
+
+    // Ensure schedule is loaded after component mounts
+    useEffect(() => {
+      if (!loading && Object.keys(scheduleData).length === 0 && employees.length > 0) {
+        loadScheduleData();
+      }
+    }, [loading, scheduleData, employees]);
   
   // Load all initial data
   const loadInitialData = async () => {
