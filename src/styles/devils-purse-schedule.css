@@ -199,11 +199,6 @@
     text-align: center;
   }
   
-  .dp-shift-title {
-    font-size: 0.8rem;
-    color: #6c757d;
-  }
-  
   .dp-shift-actions {
     position: relative;
     display: flex;
