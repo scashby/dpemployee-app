@@ -29,7 +29,10 @@ const AdminEvents = () => {
           .select('*')
           .order('date', { ascending: true });
           
-        if (eventsError) throw eventsError;
+        if (eventsError) {
+          console.error('Error fetching events:', eventsError);
+          throw eventsError;
+        }
         
         // Fetch employees
         const { data: employeesData, error: employeesError } = await supabase
@@ -37,14 +40,20 @@ const AdminEvents = () => {
           .select('id, name')
           .order('name');
           
-        if (employeesError) throw employeesError;
+        if (employeesError) {
+          console.error('Error fetching employees:', employeesError);
+          throw employeesError;
+        }
         
         // Fetch event-employee assignments
         const { data: assignmentsData, error: assignmentsError } = await supabase
           .from('event_employees')
           .select('*');
           
-        if (assignmentsError) throw assignmentsError;
+        if (assignmentsError) {
+          console.error('Error fetching assignments:', assignmentsError);
+          throw assignmentsError;
+        }
         
         // Process assignments into a more usable format
         const assignmentsMap = {};
@@ -58,10 +67,10 @@ const AdminEvents = () => {
         setEvents(eventsData);
         setEmployees(employeesData);
         setEventAssignments(assignmentsMap);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Failed to load data. Please try again.');
+      } finally {
         setLoading(false);
       }
     };
