@@ -82,24 +82,24 @@ const AdminScheduleEditor = () => {
   
   // Load all initial data
   const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      
-      // First get employees and templates
-      await fetchEmployees();
-      await fetchTemplates();
-      
-      // Then fetch events and schedules together once employees are loaded
-      await fetchEvents();
-      await loadScheduleData();
-      
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-      showError('Failed to load initial data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    
+    // First get employees and templates
+    await fetchEmployees();
+    await fetchTemplates();
+    
+    // Then fetch events and schedules together once employees are loaded
+    await fetchEvents();
+    await loadScheduleData();
+    
+  } catch (error) {
+    console.error('Error loading initial data:', error);
+    showError('Failed to load initial data. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
   
   // Fetch employees data
   const fetchEmployees = async () => {
