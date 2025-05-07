@@ -14,6 +14,7 @@ import FormInput from './shared/FormInput';
 import FormSelect from './shared/FormSelect'; 
 import SaveAsTemplateModal from './shared/SaveAsTemplateModal'; 
 import '../styles/admin.css';
+const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
 const AdminScheduleEditor = () => {
   // Use custom hooks for core functionality
@@ -488,14 +489,8 @@ const AdminScheduleEditor = () => {
         onClose={closeAddEmployeeModal}
         title="Add Employee to Schedule"
         onSave={() => {
-          const select = document.getElementById('employeeSelect');
-          console.log("Select element:", select);
-          console.log("Selected value:", select ? select.value : "No select element found");
-          
-          if (select && select.value) {
-            const employee = employees.find(emp => emp.id === select.value);
-            console.log("Found employee:", employee);
-            
+          if (selectedEmployeeId) {
+            const employee = employees.find(emp => emp.id === selectedEmployeeId);
             if (employee) {
               // Add employee to schedule
               const updatedScheduleData = { ...scheduleData };
@@ -505,18 +500,19 @@ const AdminScheduleEditor = () => {
               });
               setScheduleData(updatedScheduleData);
               showSuccess(`${employee.name} added to schedule`);
+              setSelectedEmployeeId(''); // Reset selection
               closeAddEmployeeModal();
-            } else {
-              console.log("No matching employee found for ID:", select.value);
             }
           } else {
-            console.log("No valid selection");
+            showError('Please select an employee');
           }
         }}
       >
         <FormSelect
           id="employeeSelect"
           label="Select Employee"
+          value={selectedEmployeeId}
+          onChange={(e) => setSelectedEmployeeId(e.target.value)}
           options={availableEmployees.map(emp => ({
             value: emp.id,
             label: emp.name
