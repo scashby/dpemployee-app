@@ -196,11 +196,10 @@ const AdminScheduleEditor = () => {
       // Track which employees have shifts
       const employeesWithShifts = new Set();
       
-      // Initialize schedule structure
+      // Initialize schedule structure (only for employees with shifts)
       const scheduleByEmployee = {};
       
-      // First, add any employees that were manually added to the schedule
-      // This ensures they appear even without shifts
+      // First, preserve any employees that were manually added to the schedule
       Object.keys(scheduleData).forEach(empName => {
         scheduleByEmployee[empName] = {};
         dayNames.forEach(day => {
@@ -215,7 +214,6 @@ const AdminScheduleEditor = () => {
           const empName = shift.employee_name;
           const day = shift.day;
           
-          // Add employee to schedule if not already there
           if (!scheduleByEmployee[empName]) {
             scheduleByEmployee[empName] = {};
             dayNames.forEach(d => {
@@ -223,13 +221,12 @@ const AdminScheduleEditor = () => {
             });
           }
           
-          // Add shift to employee's schedule
           scheduleByEmployee[empName][day].push(shift);
           employeesWithShifts.add(empName);
         });
       }
       
-      // Process events for these employees
+      // Process events
       if (events && events.length > 0) {
         events.forEach(event => {
           if (!event.assignments) return;
@@ -241,7 +238,6 @@ const AdminScheduleEditor = () => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
             if (!employee) return;
             
-            // Add employee to schedule if not already there
             if (!scheduleByEmployee[employee.name]) {
               scheduleByEmployee[employee.name] = {};
               dayNames.forEach(day => {
@@ -258,7 +254,7 @@ const AdminScheduleEditor = () => {
               event_name: event.title,
               event_id: event.id,
               event_info: event.info,
-              event_type: event.off_prem ? 'offsite' : 'event' 
+              event_type: event.off_prem ? 'offsite' : 'event'
             });
             
             employeesWithShifts.add(employee.name);
