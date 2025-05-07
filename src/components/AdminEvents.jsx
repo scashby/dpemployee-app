@@ -2,10 +2,277 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 
 const AdminEvents = () => {
-  // All state and function declarations remain the same
+  const [events, setEvents] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [editMode, setEditMode] = useState(null);
+  const [eventAssignments, setEventAssignments] = useState({});
   
-  // Skipping to the return statement for brevity
-  
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    date: '',
+    time: '',
+    info: '',
+    off_prem: false,
+    selectedEmployees: []
+  });
+
+  // Fetch events and employees on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch events
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('events')
+          .select('*')
+          .order('date', { ascending: true });
+          
+        if (eventsError) throw eventsError;
+        
+        // Fetch employees
+        const { data: employeesData, error: employeesError } = await supabase
+          .from('employees')
+          .select('id, name')
+          .order('name');
+          
+        if (employeesError) throw employeesError;
+        
+        // Fetch event-employee assignments
+        const { data: assignmentsData, error: assignmentsError } = await supabase
+          .from('event_employees')
+          .select('*');
+          
+        if (assignmentsError) throw assignmentsError;
+        
+        // Process assignments into a more usable format
+        const assignmentsMap = {};
+        assignmentsData.forEach(assignment => {
+          if (!assignmentsMap[assignment.event_id]) {
+            assignmentsMap[assignment.event_id] = [];
+          }
+          assignmentsMap[assignment.event_id].push(assignment.employee_id);
+        });
+        
+        setEvents(eventsData);
+        setEmployees(employeesData);
+        setEventAssignments(assignmentsMap);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load data. Please try again.');
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
+  // Format date to display in a more readable format
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Handle input changes for new event and event edits
+  const handleInputChange = (e, eventId, field) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    
+    if (eventId) {
+      // Editing existing event
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event.id === eventId ? { ...event, [field]: value } : event
+        )
+      );
+    } else {
+      // New event
+      setNewEvent(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // Handle employee selection for new event and event edits
+  const handleEmployeeSelection = (e, eventId) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    
+    if (eventId) {
+      // Editing existing event
+      setEventAssignments(prev => ({
+        ...prev,
+        [eventId]: selectedOptions
+      }));
+    } else {
+      // New event
+      setNewEvent(prev => ({
+        ...prev,
+        selectedEmployees: selectedOptions
+      }));
+    }
+  };
+
+  // Add a new event
+  const addEvent = async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Insert new event
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .insert([{ 
+          title: newEvent.title,
+          date: newEvent.date,
+          time: newEvent.time,
+          info: newEvent.info,
+          off_prem: newEvent.off_prem
+        }])
+        .select();
+        
+      if (eventError) throw eventError;
+      
+      const newEventId = eventData[0].id;
+      
+      // Insert employee assignments if any
+      if (newEvent.selectedEmployees.length > 0) {
+        const assignmentsToInsert = newEvent.selectedEmployees.map(empId => ({
+          event_id: newEventId,
+          employee_id: empId
+        }));
+        
+        const { error: assignmentError } = await supabase
+          .from('event_employees')
+          .insert(assignmentsToInsert);
+          
+        if (assignmentError) throw assignmentError;
+      }
+      
+      // Update state with new event
+      setEvents(prev => [...prev, eventData[0]]);
+      
+      // Update assignments state
+      if (newEvent.selectedEmployees.length > 0) {
+        setEventAssignments(prev => ({
+          ...prev,
+          [newEventId]: newEvent.selectedEmployees
+        }));
+      }
+      
+      // Reset form
+      setNewEvent({
+        title: '',
+        date: '',
+        time: '',
+        info: '',
+        off_prem: false,
+        selectedEmployees: []
+      });
+      
+      setSuccessMessage('Event added successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error adding event:', error);
+      setError('Failed to add event. Please try again.');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Save changes to an existing event
+  const saveEventChanges = async (eventId) => {
+    try {
+      const eventToUpdate = events.find(event => event.id === eventId);
+      
+      // Update event
+      const { error: eventError } = await supabase
+        .from('events')
+        .update({ 
+          title: eventToUpdate.title,
+          date: eventToUpdate.date,
+          time: eventToUpdate.time,
+          info: eventToUpdate.info,
+          off_prem: eventToUpdate.off_prem
+        })
+        .eq('id', eventId);
+        
+      if (eventError) throw eventError;
+      
+      // Delete existing assignments
+      const { error: deleteError } = await supabase
+        .from('event_employees')
+        .delete()
+        .eq('event_id', eventId);
+        
+      if (deleteError) throw deleteError;
+      
+      // Insert new assignments if any
+      if (eventAssignments[eventId] && eventAssignments[eventId].length > 0) {
+        const assignmentsToInsert = eventAssignments[eventId].map(empId => ({
+          event_id: eventId,
+          employee_id: empId
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('event_employees')
+          .insert(assignmentsToInsert);
+          
+        if (insertError) throw insertError;
+      }
+      
+      setEditMode(null);
+      setSuccessMessage('Event updated successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error updating event:', error);
+      setError('Failed to update event. Please try again.');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Delete an event
+  const deleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) {
+      return;
+    }
+    
+    try {
+      // Delete event-employee assignments first (foreign key constraint)
+      const { error: assignmentError } = await supabase
+        .from('event_employees')
+        .delete()
+        .eq('event_id', eventId);
+        
+      if (assignmentError) throw assignmentError;
+      
+      // Delete the event
+      const { error: eventError } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+        
+      if (eventError) throw eventError;
+      
+      // Update state
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+      
+      // Clean up assignments state
+      const newAssignments = { ...eventAssignments };
+      delete newAssignments[eventId];
+      setEventAssignments(newAssignments);
+      
+      setSuccessMessage('Event deleted successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setError('Failed to delete event. Please try again.');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   if (loading) {
     return <div className="admin-section">Loading events...</div>;
   }
