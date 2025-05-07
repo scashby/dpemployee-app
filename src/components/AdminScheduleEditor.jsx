@@ -489,8 +489,12 @@ const AdminScheduleEditor = () => {
         onClose={closeAddEmployeeModal}
         title="Add Employee to Schedule"
         onSave={() => {
-          if (selectedEmployeeId) {
-            const employee = employees.find(emp => emp.id === selectedEmployeeId);
+          // Get the select element by name rather than id
+          const selectElement = document.querySelector('select[name="employeeSelect"]');
+          
+          if (selectElement && selectElement.value) {
+            const employee = employees.find(emp => emp.id === selectElement.value);
+            
             if (employee) {
               // Add employee to schedule
               const updatedScheduleData = { ...scheduleData };
@@ -500,7 +504,6 @@ const AdminScheduleEditor = () => {
               });
               setScheduleData(updatedScheduleData);
               showSuccess(`${employee.name} added to schedule`);
-              setSelectedEmployeeId(''); // Reset selection
               closeAddEmployeeModal();
             }
           } else {
@@ -509,10 +512,8 @@ const AdminScheduleEditor = () => {
         }}
       >
         <FormSelect
-          id="employeeSelect"
+          name="employeeSelect"
           label="Select Employee"
-          value={selectedEmployeeId}
-          onChange={(e) => setSelectedEmployeeId(e.target.value)}
           options={availableEmployees.map(emp => ({
             value: emp.id,
             label: emp.name
