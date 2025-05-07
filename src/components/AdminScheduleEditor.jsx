@@ -221,7 +221,31 @@ const AdminScheduleEditor = () => {
     }
     
     // Process events to identify employees with event shifts this week
-    if (eventsToProcess && eventsToProcess.length > 0) {
+    if (eventsToif (eventsToProcess && eventsToProcess.length > 0) {
+      eventsToProcess.forEach(event => {
+        if (!event.assignments) return;
+        
+        const eventDate = new Date(event.date);
+        const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+        
+        event.assignments.forEach(assignment => {
+          const employee = employees.find(emp => emp.id === assignment.employee_id);
+          if (!employee || !scheduleByEmployee[employee.name]) return;
+          
+          scheduleByEmployee[employee.name][dayOfWeek].push({
+            id: `event_${event.id}_${assignment.employee_id}`,
+            employee_name: employee.name,
+            day: dayOfWeek,
+            date: event.date,
+            shift: event.time || 'Event Time TBD',
+            event_name: event.title,
+            event_id: event.id,
+            event_info: event.info,
+            event_type: event.off_prem ? 'offsite' : 'event'
+          });
+        });
+      });
+    }Process && eventsToProcess.length > 0) {
       eventsToProcess.forEach(event => {
         if (!event.assignments) return;
         
