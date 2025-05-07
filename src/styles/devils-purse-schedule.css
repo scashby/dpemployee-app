@@ -367,12 +367,12 @@
   /* Make day columns equal width */
 .dp-day-column {
   width: 14%;
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .dp-employee-column {
   width: 15%;
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .dp-actions-column {
