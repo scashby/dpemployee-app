@@ -400,6 +400,32 @@ const AdminScheduleEditor = () => {
       showError('Failed to remove employee from schedule.');
     }
   };
+  // Helper to save employee shift to database
+  const saveEmployeeShift = async (employeeName, day, date, shiftTime) => {
+    try {
+      const shiftData = {
+        employee_name: employeeName,
+        day: day,
+        date: date,
+        shift: shiftTime,
+        week_start: formatDateForDB(currentWeekStart),
+        event_type: 'tasting',
+        event_name: 'Tasting Room'
+      };
+      
+      const { error } = await supabase
+        .from('schedules')
+        .insert([shiftData]);
+        
+      if (error) throw error;
+      
+      // Reload schedule data to reflect the new shift
+      loadScheduleData();
+    } catch (error) {
+      console.error('Error saving shift:', error);
+      showError(`Failed to save shift: ${error.message}`);
+    }
+  };
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
@@ -488,35 +514,74 @@ const AdminScheduleEditor = () => {
         onClose={closeAddEmployeeModal}
         title="Add Employee to Schedule"
         onSave={() => {
-          // Get the select element by name rather than id
-          const selectElement = document.querySelector('select[name="employeeSelect"]');
+          const employeeSelect = document.getElementById('employeeSelect');
+          const daySelect = document.getElementById('daySelect');
+          const shiftInput = document.getElementById('shiftTimeInput');
           
-          if (selectElement && selectElement.value) {
-            const employee = employees.find(emp => emp.id === selectElement.value);
+          if (employeeSelect && employeeSelect.value && daySelect && daySelect.value && shiftInput && shiftInput.value) {
+            const employee = employees.find(emp => emp.id === employeeSelect.value);
+            const selectedDay = daySelect.value;
+            const shiftTime = shiftInput.value;
             
             if (employee) {
               // Add employee to schedule
               const updatedScheduleData = { ...scheduleData };
-              updatedScheduleData[employee.name] = {};
-              dayNames.forEach(day => {
-                updatedScheduleData[employee.name][day] = [];
+              
+              // Initialize the employee if not already in schedule
+              if (!updatedScheduleData[employee.name]) {
+                updatedScheduleData[employee.name] = {};
+                dayNames.forEach(day => {
+                  updatedScheduleData[employee.name][day] = [];
+                });
+              }
+              
+              // Get date for the selected day
+              const selectedDate = getDateForDay(selectedDay);
+              const formattedDate = formatDateForDB(selectedDate);
+              
+              // Add a shift for this employee on the selected day
+              updatedScheduleData[employee.name][selectedDay].push({
+                employee_name: employee.name,
+                day: selectedDay,
+                date: formattedDate,
+                shift: shiftTime,
+                week_start: formatDateForDB(currentWeekStart),
+                event_type: 'tasting',
+                event_name: 'Tasting Room'
               });
+              
               setScheduleData(updatedScheduleData);
-              showSuccess(`${employee.name} added to schedule`);
+              showSuccess(`${employee.name} added to schedule with shift on ${selectedDay}`);
               closeAddEmployeeModal();
+              
+              // Save the shift to database
+              saveEmployeeShift(employee.name, selectedDay, formattedDate, shiftTime);
             }
           } else {
-            showError('Please select an employee');
+            showError('Please select an employee, day, and enter shift time');
           }
         }}
       >
         <FormSelect
-          name="employeeSelect"
+          id="employeeSelect"
           label="Select Employee"
           options={availableEmployees.map(emp => ({
             value: emp.id,
             label: emp.name
           }))}
+        />
+        <FormSelect
+          id="daySelect"
+          label="Select Day"
+          options={dayNames.map(day => ({
+            value: day,
+            label: `${day} (${formatDateForDisplay(getDateForDay(day))})`
+          }))}
+        />
+        <FormInput
+          id="shiftTimeInput"
+          label="Shift Time"
+          placeholder="e.g. 11am to Close"
         />
       </AdminModal>
 
