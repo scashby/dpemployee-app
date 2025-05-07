@@ -26,63 +26,47 @@ const ScheduleTable = ({
   };
 
   return (
-    <div className="dp-table-container">
-      <table className="dp-schedule-table">
-        <thead>
-          <tr>
-            <th className="dp-employee-column">Employee</th>
-            {dayNames.map((day) => (
-              <th key={day} className="dp-day-column">
-                {formatDayWithDate(day)}
-              </th>
-            ))}
-            <th className="dp-actions-column">REMOVE</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scheduledEmployeeNames.map((employeeName) => (
-            <tr key={employeeName} className="dp-employee-row">
-              <td className="dp-employee-cell">{employeeName}</td>
-              
-              {dayNames.map((day) => {
-                const shifts = scheduleData[employeeName][day] || [];
-                
-                return (
-                  <td 
-                    key={day} 
-                    className="dp-day-cell"
-                    onClick={() => shifts.length === 0 && onAddShift(employeeName, day)}
-                  >
-                    {shifts.map((shift, index) => (
-                      <ShiftCard 
-                        key={index}
-                        shift={shift}
-                        onEdit={() => onEditShift(shift)}
-                        onDelete={onDeleteShift}
-                      />
-                    ))}
-                    
-                    {shifts.length === 0 && (
-                      <div className="dp-add-shift">
-                        + Add Shift
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
-              
-              <td className="dp-remove-cell">
-                <button 
-                  onClick={() => onRemoveEmployee(employeeName)}
-                  className="dp-remove-button"
-                >
-                  ✕
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div 
+      className={`dp-shift ${shiftClass} ${className}`}
+      onClick={shift.event_id ? handleEventClick : undefined}
+      data-event-type={shift.event_type}
+    >
+      <div className="dp-shift-content">
+        <span>
+          <div className="dp-shift-title">{title}</div>
+          <div className="dp-shift-time">{subtitle}</div>
+          {shift.event_info && !shift.event_id && (
+            <span className="dp-shift-info">
+              {shift.event_info?.length > 50 
+                ? `${shift.event_info.substring(0, 50)}...` 
+                : shift.event_info}
+            </span>
+          )}
+        </span>
+        
+        {showActions && !shift.event_id && (
+          <div className="dp-shift-actions">
+            <button 
+              onClick={handleEdit}
+              className="dp-shift-action dp-shift-edit"
+              aria-label={isEvent ? "View event details" : "Edit shift"}
+              title={isEvent ? "View event details" : "Edit shift"}
+            >
+              ✎
+            </button>
+            {onDelete && (
+              <button 
+                onClick={handleDelete}
+                className="dp-shift-action dp-shift-delete"
+                aria-label={isEvent ? "Remove from event" : "Delete shift"}
+                title={isEvent ? "Remove from event" : "Delete shift"}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

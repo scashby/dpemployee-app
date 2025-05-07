@@ -32,7 +32,7 @@ const ShiftCard = ({
   };
   const handleEventClick = () => {
     if (shift.event_id) {
-      window.location.href = `/admin/events/edit/${shift.event_id}`;
+      window.location.href = `/admin/events/${shift.event_id}`;
     }
   };
 

@@ -209,6 +209,10 @@
     z-index: 10;
   }
   
+  .dp-shift-content {
+    padding-right: 40px;
+  }
+  
   .dp-shift-action {
     background: none;
     border: none;
