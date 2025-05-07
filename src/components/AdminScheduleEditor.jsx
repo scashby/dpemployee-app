@@ -489,8 +489,13 @@ const AdminScheduleEditor = () => {
         title="Add Employee to Schedule"
         onSave={() => {
           const select = document.getElementById('employeeSelect');
+          console.log("Select element:", select);
+          console.log("Selected value:", select ? select.value : "No select element found");
+          
           if (select && select.value) {
             const employee = employees.find(emp => emp.id === select.value);
+            console.log("Found employee:", employee);
+            
             if (employee) {
               // Add employee to schedule
               const updatedScheduleData = { ...scheduleData };
@@ -501,7 +506,11 @@ const AdminScheduleEditor = () => {
               setScheduleData(updatedScheduleData);
               showSuccess(`${employee.name} added to schedule`);
               closeAddEmployeeModal();
+            } else {
+              console.log("No matching employee found for ID:", select.value);
             }
+          } else {
+            console.log("No valid selection");
           }
         }}
       >
