@@ -520,10 +520,39 @@ const AdminScheduleEditor = () => {
           const shiftValue = document.getElementById('shiftTimeInput').value;
           
           if (employeeValue && dateValue && shiftValue) {
-            // Process and save the data
-            // [Your existing save logic here]
+            const employee = employees.find(emp => emp.id === employeeValue);
+            const selectedDate = new Date(dateValue);
             
-            closeAddEmployeeModal();
+            // Calculate the day code (MON, TUE, etc.) from the selected date
+            const dayIndex = (selectedDate.getDay() + 6) % 7; // Convert from Sunday=0 to Monday=0
+            const selectedDay = dayNames[dayIndex];
+            
+            // Format date for database
+            const formattedDate = formatDateForDB(selectedDate);
+            
+            // Create shift data object
+            const shiftData = {
+              employee_name: employee.name,
+              day: selectedDay,
+              date: formattedDate,
+              shift: shiftValue,
+              week_start: formatDateForDB(currentWeekStart),
+              event_type: 'tasting',
+              event_name: 'Tasting Room'
+            };
+            
+            // Insert the shift into the database
+            supabase.from('schedules')
+              .insert([shiftData])
+              .then(() => {
+                showSuccess(`${employee.name} added to schedule with shift on ${selectedDay}`);
+                closeAddEmployeeModal();
+                loadScheduleData(); // Refresh the schedule
+              })
+              .catch(error => {
+                console.error('Error saving shift:', error);
+                showError(`Failed to save shift: ${error.message}`);
+              });
           } else {
             showError('Please fill in all fields');
           }
