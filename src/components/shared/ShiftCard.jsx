@@ -17,7 +17,7 @@ const ShiftCard = ({
   showActions = true,
   className = ''
 }) => {
-  const shiftClassValue = getShiftClass(shift.event_type);
+  const shiftClass = getShiftClass(shift.event_type);
   const { title, subtitle } = formatShiftDisplay(shift);
   const isEvent = isEventShift(shift);
   
@@ -30,18 +30,9 @@ const ShiftCard = ({
     e.stopPropagation();
     if (onDelete) onDelete(shift.id);
   };
-  const handleEventClick = () => {
-    if (shift.event_id) {
-      window.location.href = `/admin/events/${shift.event_id}`;
-    }
-  };
 
   return (
-    <div 
-      className={`dp-shift ${shiftClassValue} ${className}`}
-      onClick={shift.event_id ? handleEventClick : undefined}
-      data-event-type={shift.event_type}
-    >
+    <div className={`dp-shift ${shiftClass} ${className}`}>
       <div className="dp-shift-content">
         <span>
           <div className="dp-shift-title">{title}</div>
@@ -55,7 +46,7 @@ const ShiftCard = ({
           )}
         </span>
         
-        {showActions && !shift.event_id && (
+        {showActions && (
           <div className="dp-shift-actions">
             <button 
               onClick={handleEdit}
