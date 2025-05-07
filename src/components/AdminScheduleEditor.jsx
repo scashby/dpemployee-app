@@ -558,9 +558,8 @@ const AdminScheduleEditor = () => {
           }
         }}
       >
-        {/* Basic HTML form elements instead of React components */}
-        <div>
-          <label htmlFor="employeeSelect">Select Employee</label>
+        <div className="form-group">
+          <label className="form-label">Select Employee</label>
           <select 
             id="employeeSelect" 
             className="form-input"
@@ -571,16 +570,16 @@ const AdminScheduleEditor = () => {
             ))}
           </select>
         </div>
-        <div>
-          <label htmlFor="dateInput">Select Date</label>
+        <div className="form-group">
+          <label className="form-label">Select Date</label>
           <input 
             type="date" 
             id="dateInput" 
             className="form-input"
           />
         </div>
-        <div>
-          <label htmlFor="shiftTimeInput">Shift Time</label>
+        <div className="form-group">
+          <label className="form-label">Shift Time</label>
           <input 
             type="text" 
             id="shiftTimeInput" 
