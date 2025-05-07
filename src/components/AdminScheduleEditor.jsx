@@ -225,7 +225,15 @@ const AdminScheduleEditor = () => {
       eventsToProcess.forEach(event => {
         if (!event.assignments) return;
         
+        // Check if event date is within the current week
         const eventDate = new Date(event.date);
+        const weekStart = new Date(currentWeekStart);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        // Skip events not in current week
+        if (eventDate < weekStart || eventDate > weekEnd) return;
+        
         const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
         
         event.assignments.forEach(assignment => {
