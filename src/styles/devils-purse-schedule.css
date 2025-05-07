@@ -192,9 +192,11 @@
   }
 
   .dp-shift-time {
-    font-weight: 600;
+    font-weight: normal;
     display: block;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0;
+    color: white;
+    text-align: center;
   }
   
   .dp-shift-title {
@@ -205,9 +207,9 @@
   .dp-shift-actions {
     position: relative;
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
     align-self: center;
-    margin-top: 0.5rem;
+    margin-top: 0;
   }
 
   .dp-shift-action {
