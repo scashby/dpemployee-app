@@ -178,6 +178,7 @@ const AdminScheduleEditor = () => {
   
   // Update the loadScheduleData function to properly preserve manually added employees
   // Update the loadScheduleData function
+  // Modify the loadScheduleData function
   const loadScheduleData = async () => {
     try {
       setLoading(true);
@@ -193,14 +194,15 @@ const AdminScheduleEditor = () => {
       
       if (error) throw error;
       
-      // Initialize schedule for all employees
-      const scheduleByEmployee = {};
-      
-      // Track which employees have shifts or are manually added to schedule
+      // Track which employees have shifts
       const employeesWithShifts = new Set();
       
-      // First, add any employees that were manually added to the schedule
-      // This ensures they appear even without shifts
+      // Initialize schedule structure with the CURRENT scheduleData
+      // This preserves manually added employees
+      const scheduleByEmployee = {};
+      
+      // First, add any employees that were already in the schedule
+      // This ensures manually added employees remain
       Object.keys(scheduleData).forEach(empName => {
         scheduleByEmployee[empName] = {};
         dayNames.forEach(day => {
@@ -209,7 +211,7 @@ const AdminScheduleEditor = () => {
         employeesWithShifts.add(empName);
       });
       
-      // Process regular shifts
+      // Then process regular shifts
       if (data && data.length > 0) {
         data.forEach(shift => {
           const empName = shift.employee_name;
@@ -220,10 +222,10 @@ const AdminScheduleEditor = () => {
             dayNames.forEach(d => {
               scheduleByEmployee[empName][d] = [];
             });
+            employeesWithShifts.add(empName);
           }
           
           scheduleByEmployee[empName][day].push(shift);
-          employeesWithShifts.add(empName);
         });
       }
       
@@ -239,11 +241,13 @@ const AdminScheduleEditor = () => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
             if (!employee) return;
             
+            // Add employee to schedule if not already there
             if (!scheduleByEmployee[employee.name]) {
               scheduleByEmployee[employee.name] = {};
               dayNames.forEach(day => {
                 scheduleByEmployee[employee.name][day] = [];
               });
+              employeesWithShifts.add(employee.name);
             }
             
             scheduleByEmployee[employee.name][dayOfWeek].push({
@@ -257,8 +261,6 @@ const AdminScheduleEditor = () => {
               event_info: event.info,
               event_type: event.off_prem ? 'offsite' : 'event'
             });
-            
-            employeesWithShifts.add(employee.name);
           });
         });
       }
