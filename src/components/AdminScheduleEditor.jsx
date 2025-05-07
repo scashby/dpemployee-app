@@ -178,6 +178,7 @@ const AdminScheduleEditor = () => {
   };
   
   // Update the loadScheduleData function to properly preserve manually added employees
+  // Update the loadScheduleData function
   const loadScheduleData = async () => {
     try {
       setLoading(true);
@@ -193,13 +194,14 @@ const AdminScheduleEditor = () => {
       
       if (error) throw error;
       
-      // Track which employees have shifts
-      const employeesWithShifts = new Set();
-      
-      // Initialize schedule structure (only for employees with shifts)
+      // Initialize schedule for all employees
       const scheduleByEmployee = {};
       
-      // First, preserve any employees that were manually added to the schedule
+      // Track which employees have shifts or are manually added to schedule
+      const employeesWithShifts = new Set();
+      
+      // First, add any employees that were manually added to the schedule
+      // This ensures they appear even without shifts
       Object.keys(scheduleData).forEach(empName => {
         scheduleByEmployee[empName] = {};
         dayNames.forEach(day => {
@@ -226,7 +228,7 @@ const AdminScheduleEditor = () => {
         });
       }
       
-      // Process events
+      // Process events for these employees
       if (events && events.length > 0) {
         events.forEach(event => {
           if (!event.assignments) return;
