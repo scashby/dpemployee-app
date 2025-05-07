@@ -326,3 +326,38 @@
       gap: 0.5rem;
     }
   }
+
+  /* Event type styling */
+.dp-shift {
+    padding: 0.5rem;
+    border-radius: 3px;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    position: relative;
+  }
+  
+  .dp-shift-tasting {
+    background-color: rgba(192, 152, 75, 0.15);
+    border-left: 3px solid #c0984b;
+  }
+  
+  .dp-shift-event {
+    background-color: rgba(40, 167, 69, 0.15);
+    border-left: 3px solid #28a745;
+  }
+  
+  .dp-shift-offsite {
+    background-color: rgba(0, 123, 255, 0.15);
+    border-left: 3px solid #007bff;
+  }
+  
+  .dp-shift-time {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  .dp-shift-title {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }

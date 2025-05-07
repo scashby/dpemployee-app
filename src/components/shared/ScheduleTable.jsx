@@ -26,23 +26,23 @@ const ScheduleTable = ({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border-collapse">
+    <div className="dp-table-container">
+      <table className="dp-schedule-table">
         <thead>
           <tr>
-            <th className="text-left py-2 px-4 border-b">Employee</th>
+            <th className="dp-employee-column">Employee</th>
             {dayNames.map((day) => (
-              <th key={day} className="py-2 px-4 border-b text-center">
+              <th key={day} className="dp-day-column">
                 {formatDayWithDate(day)}
               </th>
             ))}
-            <th className="py-2 px-4 border-b text-center">REMOVE</th>
+            <th className="dp-actions-column">REMOVE</th>
           </tr>
         </thead>
         <tbody>
           {scheduledEmployeeNames.map((employeeName) => (
-            <tr key={employeeName} className="border-b">
-              <td className="py-3 px-4">{employeeName}</td>
+            <tr key={employeeName} className="dp-employee-row">
+              <td className="dp-employee-cell">{employeeName}</td>
               
               {dayNames.map((day) => {
                 const shifts = scheduleData[employeeName][day] || [];
@@ -50,7 +50,7 @@ const ScheduleTable = ({
                 return (
                   <td 
                     key={day} 
-                    className="py-2 px-2 align-top min-w-[100px] cursor-pointer"
+                    className="dp-day-cell"
                     onClick={() => shifts.length === 0 && onAddShift(employeeName, day)}
                   >
                     {shifts.map((shift, index) => (
@@ -63,7 +63,7 @@ const ScheduleTable = ({
                     ))}
                     
                     {shifts.length === 0 && (
-                      <div className="h-10 w-full flex items-center justify-center text-gray-400 text-sm border border-dashed border-gray-300 rounded">
+                      <div className="dp-add-shift">
                         + Add Shift
                       </div>
                     )}
@@ -71,10 +71,10 @@ const ScheduleTable = ({
                 );
               })}
               
-              <td className="py-3 px-4 text-center">
+              <td className="dp-remove-cell">
                 <button 
                   onClick={() => onRemoveEmployee(employeeName)}
-                  className="text-black hover:text-red-600 font-bold"
+                  className="dp-remove-button"
                 >
                   ✕
                 </button>

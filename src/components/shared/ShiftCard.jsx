@@ -33,15 +33,14 @@ const ShiftCard = ({
   
   return (
     <div 
-      className={`p-2 rounded mb-1 relative ${shiftClass} ${className}`}
+      className={`dp-shift ${shiftClass} ${className}`}
     >
-      <div className="flex justify-between">
+      <div className="dp-shift-content">
         <span>
-          {title}
-          <br />
-          {subtitle}
+          <div className="dp-shift-title">{title}</div>
+          <div className="dp-shift-time">{subtitle}</div>
           {shift.event_info && (
-            <span className="block text-xs mt-1 text-white opacity-90">
+            <span className="dp-shift-info">
               {shift.event_info?.length > 50 
                 ? `${shift.event_info.substring(0, 50)}...` 
                 : shift.event_info}
@@ -50,10 +49,10 @@ const ShiftCard = ({
         </span>
         
         {showActions && (
-          <div className="flex space-x-1">
+          <div className="dp-shift-actions">
             <button 
               onClick={handleEdit}
-              className="text-white hover:text-gray-200"
+              className="dp-shift-action dp-shift-edit"
               aria-label={isEvent ? "View event details" : "Edit shift"}
               title={isEvent ? "View event details" : "Edit shift"}
             >
@@ -62,7 +61,7 @@ const ShiftCard = ({
             {onDelete && (
               <button 
                 onClick={handleDelete}
-                className="text-white hover:text-gray-200"
+                className="dp-shift-action dp-shift-delete"
                 aria-label={isEvent ? "Remove from event" : "Delete shift"}
                 title={isEvent ? "Remove from event" : "Delete shift"}
               >
