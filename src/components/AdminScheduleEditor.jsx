@@ -220,8 +220,8 @@ const AdminScheduleEditor = () => {
       });
     }
     
-    // Process events to identify employees with event shifts this week
-    if (eventsToif (eventsToProcess && eventsToProcess.length > 0) {
+    // Process events for these employees
+    if (eventsToProcess && eventsToProcess.length > 0) {
       eventsToProcess.forEach(event => {
         if (!event.assignments) return;
         
@@ -243,17 +243,6 @@ const AdminScheduleEditor = () => {
             event_info: event.info,
             event_type: event.off_prem ? 'offsite' : 'event'
           });
-        });
-      });
-    }Process && eventsToProcess.length > 0) {
-      eventsToProcess.forEach(event => {
-        if (!event.assignments) return;
-        
-        event.assignments.forEach(assignment => {
-          const employee = employees.find(emp => emp.id === assignment.employee_id);
-          if (employee) {
-            employeesWithShifts.add(employee.name);
-          }
         });
       });
     }
