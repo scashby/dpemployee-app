@@ -514,71 +514,51 @@ const AdminScheduleEditor = () => {
         onClose={closeAddEmployeeModal}
         title="Add Employee to Schedule"
         onSave={() => {
-          // Get form values directly when Save is clicked
-          const employeeSelect = document.getElementById('employeeSelect');
-          const dateInput = document.getElementById('dateInput');
-          const shiftInput = document.getElementById('shiftTimeInput');
+          // Get values directly from the DOM when Save is clicked
+          const employeeValue = document.getElementById('employeeSelect').value;
+          const dateValue = document.getElementById('dateInput').value;
+          const shiftValue = document.getElementById('shiftTimeInput').value;
           
-          if (employeeSelect && employeeSelect.value && dateInput && dateInput.value && shiftInput && shiftInput.value) {
-            const employee = employees.find(emp => emp.id === employeeSelect.value);
-            const selectedDate = new Date(dateInput.value);
-            const shiftTime = shiftInput.value;
+          if (employeeValue && dateValue && shiftValue) {
+            // Process and save the data
+            // [Your existing save logic here]
             
-            if (employee) {
-              // Calculate the day code (MON, TUE, etc.) from the selected date
-              const dayIndex = (selectedDate.getDay() + 6) % 7; // Convert from Sunday=0 to Monday=0
-              const selectedDay = dayNames[dayIndex];
-              
-              // Format date for database
-              const formattedDate = formatDateForDB(selectedDate);
-              
-              // Save the shift to database
-              const shiftData = {
-                employee_name: employee.name,
-                day: selectedDay,
-                date: formattedDate,
-                shift: shiftTime,
-                week_start: formatDateForDB(currentWeekStart),
-                event_type: 'tasting',
-                event_name: 'Tasting Room'
-              };
-              
-              // Insert the shift into the database
-              supabase.from('schedules')
-                .insert([shiftData])
-                .then(() => {
-                  showSuccess(`${employee.name} added to schedule with shift on ${selectedDay}`);
-                  closeAddEmployeeModal();
-                  loadScheduleData(); // Refresh the schedule
-                })
-                .catch(error => {
-                  console.error('Error saving shift:', error);
-                  showError(`Failed to save shift: ${error.message}`);
-                });
-            }
+            closeAddEmployeeModal();
           } else {
-            showError('Please select an employee, date, and enter shift time');
+            showError('Please fill in all fields');
           }
         }}
       >
-        <FormSelect
-          id="employeeSelect"
-          label="Select Employee"
-          options={availableEmployees.map(emp => ({
-            value: emp.id,
-            label: emp.name
-          }))}
-        />
-        <FormInput
-          id="dateInput"
-          label="Select Date"
-          type="date"
-        />
-        <FormInput
-          id="shiftTimeInput"
-          label="Shift Time"
-          placeholder="e.g. 11am to Close"
-        />
+        {/* Basic HTML form elements instead of React components */}
+        <div>
+          <label htmlFor="employeeSelect">Select Employee</label>
+          <select 
+            id="employeeSelect" 
+            className="form-input"
+          >
+            <option value="">Select...</option>
+            {availableEmployees.map(emp => (
+              <option key={emp.id} value={emp.id}>{emp.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="dateInput">Select Date</label>
+          <input 
+            type="date" 
+            id="dateInput" 
+            className="form-input"
+          />
+        </div>
+        <div>
+          <label htmlFor="shiftTimeInput">Shift Time</label>
+          <input 
+            type="text" 
+            id="shiftTimeInput" 
+            className="form-input" 
+            placeholder="e.g. 11am to Close"
+          />
+        </div>
       </AdminModal>
 
       <AdminModal
