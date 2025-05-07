@@ -558,35 +558,26 @@ const AdminScheduleEditor = () => {
           }
         }}
       >
-        <div className="form-group">
-          <label className="form-label">Select Employee</label>
-          <select 
-            id="employeeSelect" 
-            className="form-input"
-          >
-            <option value="">Select...</option>
-            {availableEmployees.map(emp => (
-              <option key={emp.id} value={emp.id}>{emp.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Select Date</label>
-          <input 
-            type="date" 
-            id="dateInput" 
-            className="form-input"
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Shift Time</label>
-          <input 
-            type="text" 
-            id="shiftTimeInput" 
-            className="form-input" 
-            placeholder="e.g. 11am to Close"
-          />
-        </div>
+        <FormSelect
+          id="employeeSelect"
+          label="Select Employee"
+          options={availableEmployees.map(emp => ({
+            value: emp.id,
+            label: emp.name
+          }))}
+        />
+        
+        <FormInput
+          id="dateInput"
+          label="Select Date"
+          type="date"
+        />
+        
+        <FormInput
+          id="shiftTimeInput"
+          label="Shift Time"
+          placeholder="e.g. 11am to Close"
+        />
       </AdminModal>
 
       <AdminModal
