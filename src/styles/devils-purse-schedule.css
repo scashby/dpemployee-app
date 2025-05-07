@@ -3,7 +3,7 @@
 /* Container and section styling */
 .dp-schedule-container {
     padding: 1.5rem;
-    max-width: 100%;
+    max-width: 1200px;
     margin: 0 auto;
     font-family: 'Helvetica', 'Arial', sans-serif;
   }
@@ -367,12 +367,12 @@
   /* Make day columns equal width */
 .dp-day-column {
   width: 14%;
-  min-width: 120px;
+  min-width: 150px;
 }
 
 .dp-employee-column {
   width: 15%;
-  min-width: 120px;
+  min-width: 150px;
 }
 
 .dp-actions-column {
