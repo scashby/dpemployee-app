@@ -146,6 +146,7 @@ const AdminScheduleEditor = () => {
   };
   
   const fetchEvents = async () => {
+    console.log('Date range:', startDate, endDate);
     try {
       const dateRange = getWeekDateRange(currentWeekStart);
       const startDate = formatDateForDB(dateRange.start);
@@ -179,7 +180,7 @@ const AdminScheduleEditor = () => {
       return [];
     }
   };
-
+  console.log('Events found:', eventsResponse.data);
   // Update the loadScheduleData function
   const loadScheduleData = async () => {
     try {
