@@ -182,11 +182,13 @@
   .dp-shift-event {
     background-color: rgba(40, 167, 69, 0.15);
     border-left: 3px solid #28a745;
+    cursor: pointer;
   }
   
   .dp-shift-offsite {
     background-color: rgba(0, 123, 255, 0.15);
     border-left: 3px solid #007bff;
+    cursor: pointer;
   }
   
   .dp-shift-time {
@@ -201,11 +203,11 @@
   }
   
   .dp-shift-actions {
-    position: absolute;
-    top: 0.25rem;
-    right: 0.25rem;
+    position: relative;
     display: flex;
     gap: 0.25rem;
+    margin-left: 0.5rem;
+    align-self: flex-start;
   }
 
   .dp-shift-action {
@@ -341,16 +343,6 @@
     border-left: 3px solid #c0984b;
   }
   
-  .dp-shift-event {
-    background-color: rgba(40, 167, 69, 0.15);
-    border-left: 3px solid #28a745;
-  }
-  
-  .dp-shift-offsite {
-    background-color: rgba(0, 123, 255, 0.15);
-    border-left: 3px solid #007bff;
-  }
-  
   .dp-shift-title {
     font-size: 0.8rem;
     color: white;
@@ -367,3 +359,25 @@
   .dp-shift[data-event-type="offsite"] {
     cursor: pointer;
   }
+
+  /* Make day columns equal width */
+.dp-day-column {
+  width: 14%;
+  min-width: 120px;
+}
+
+.dp-employee-column {
+  width: 15%;
+  min-width: 150px;
+}
+
+.dp-actions-column {
+  width: 5%;
+  min-width: 60px;
+}
+
+/* Adjust position of edit/remove icons */
+.dp-shift-content {
+  display: flex;
+  justify-content: space-between;
+}

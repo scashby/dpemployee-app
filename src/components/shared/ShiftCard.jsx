@@ -46,13 +46,13 @@ const ShiftCard = ({
           )}
         </span>
         
-        {showActions && (
+        {showActions && !isEvent && (
           <div className="dp-shift-actions">
             <button 
               onClick={handleEdit}
               className="dp-shift-action dp-shift-edit"
-              aria-label={isEvent ? "View event details" : "Edit shift"}
-              title={isEvent ? "View event details" : "Edit shift"}
+              aria-label="Edit shift"
+              title="Edit shift"
             >
               ✎
             </button>
@@ -60,8 +60,8 @@ const ShiftCard = ({
               <button 
                 onClick={handleDelete}
                 className="dp-shift-action dp-shift-delete"
-                aria-label={isEvent ? "Remove from event" : "Delete shift"}
-                title={isEvent ? "Remove from event" : "Delete shift"}
+                aria-label="Delete shift"
+                title="Delete shift"
               >
                 ✕
               </button>
