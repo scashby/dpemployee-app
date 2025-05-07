@@ -4,12 +4,8 @@ import { supabase } from '../supabase/supabaseClient';
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [editMode, setEditMode] = useState(null);
   const [eventAssignments, setEventAssignments] = useState({});
-  
+  const [loading, setLoading] = useState(true);
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: '',
@@ -18,123 +14,194 @@ const AdminEvents = () => {
     off_prem: false,
     selectedEmployees: []
   });
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [editMode, setEditMode] = useState(null);
 
-  // Fetch events and employees on component mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch events
-        const { data: eventsData, error: eventsError } = await supabase
-          .from('events')
-          .select('*')
-          .order('date', { ascending: true });
-          
-        if (eventsError) {
-          console.error('Error fetching events:', eventsError);
-          throw eventsError;
-        }
-        
-        // Fetch employees
-        const { data: employeesData, error: employeesError } = await supabase
-          .from('employees')
-          .select('id, name')
-          .order('name');
-          
-        if (employeesError) {
-          console.error('Error fetching employees:', employeesError);
-          throw employeesError;
-        }
-        
-        // Fetch event-employee assignments
-        const { data: assignmentsData, error: assignmentsError } = await supabase
-          .from('event_employees')
-          .select('*');
-          
-        if (assignmentsError) {
-          console.error('Error fetching assignments:', assignmentsError);
-          throw assignmentsError;
-        }
-        
-        // Process assignments into a more usable format
-        const assignmentsMap = {};
-        assignmentsData.forEach(assignment => {
-          if (!assignmentsMap[assignment.event_id]) {
-            assignmentsMap[assignment.event_id] = [];
-          }
-          assignmentsMap[assignment.event_id].push(assignment.employee_id);
-        });
-        
-        setEvents(eventsData);
-        setEmployees(employeesData);
-        setEventAssignments(assignmentsMap);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('Failed to load data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
+    fetchEvents();
+    fetchEmployees();
   }, []);
 
-  // Format date to display in a more readable format
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date');
 
-  // Handle input changes for new event and event edits
-  const handleInputChange = (e, eventId, field) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    
-    if (eventId) {
-      // Editing existing event
-      setEvents(prevEvents => 
-        prevEvents.map(event => 
-          event.id === eventId ? { ...event, [field]: value } : event
-        )
-      );
-    } else {
-      // New event
-      setNewEvent(prev => ({ ...prev, [field]: value }));
+      if (error) throw error;
+      setEvents(data || []);
+      
+      // Fetch all event assignments
+      await fetchEventAssignments();
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setError('Failed to load events. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle employee selection for new event and event edits
+  const fetchEventAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('event_assignments')
+        .select('*');
+
+      if (error) throw error;
+      
+      // Group assignments by event_id for easier lookup
+      const assignmentsByEvent = {};
+      if (data && data.length > 0) {
+        data.forEach(assignment => {
+          if (!assignmentsByEvent[assignment.event_id]) {
+            assignmentsByEvent[assignment.event_id] = [];
+          }
+          assignmentsByEvent[assignment.event_id].push(assignment.employee_id);
+        });
+      }
+      
+      setEventAssignments(assignmentsByEvent);
+    } catch (error) {
+      console.error('Error fetching event assignments:', error);
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
+
+  const handleInputChange = (e, id, field) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    
+    if (id) {
+      // Editing existing event
+      setEvents(
+        events.map((evt) => (evt.id === id ? { ...evt, [field]: value } : evt))
+      );
+    } else {
+      // New event form
+      setNewEvent({ ...newEvent, [field]: value });
+    }
+  };
+
   const handleEmployeeSelection = (e, eventId) => {
     const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
     
     if (eventId) {
-      // Editing existing event
-      setEventAssignments(prev => ({
-        ...prev,
+      // Update event assignments for existing event
+      setEventAssignments({
+        ...eventAssignments,
         [eventId]: selectedOptions
-      }));
+      });
     } else {
-      // New event
-      setNewEvent(prev => ({
-        ...prev,
-        selectedEmployees: selectedOptions
-      }));
+      // Store selected employees temporarily for new event
+      setNewEvent({ ...newEvent, selectedEmployees: selectedOptions });
     }
   };
 
-  // Add a new event
+  const saveEventChanges = async (id) => {
+    try {
+      const eventToUpdate = events.find(evt => evt.id === id);
+      
+      // Update event details
+      const { error } = await supabase
+        .from('events')
+        .update({
+          title: eventToUpdate.title,
+          date: eventToUpdate.date,
+          time: eventToUpdate.time,
+          info: eventToUpdate.info,
+          off_prem: eventToUpdate.off_prem
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Get current assignments for this event
+      const { data: currentAssignments, error: fetchError } = await supabase
+        .from('event_assignments')
+        .select('*')
+        .eq('event_id', id);
+      
+      if (fetchError) throw fetchError;
+      
+      // Get the employee IDs that are currently assigned
+      const currentEmployeeIds = currentAssignments.map(a => a.employee_id);
+      
+      // Get the new employee IDs from the state
+      const newEmployeeIds = eventAssignments[id] || [];
+      
+      // Employees to add (in new but not in current)
+      const employeesToAdd = newEmployeeIds.filter(empId => !currentEmployeeIds.includes(empId));
+      
+      // Employees to remove (in current but not in new)
+      const employeesToRemove = currentEmployeeIds.filter(empId => !newEmployeeIds.includes(empId));
+      
+      // Add new assignments
+      if (employeesToAdd.length > 0) {
+        const assignmentsToAdd = employeesToAdd.map(empId => ({
+          event_id: id,
+          employee_id: empId
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('event_assignments')
+          .insert(assignmentsToAdd);
+        
+        if (insertError) throw insertError;
+      }
+      
+      // Remove assignments that are no longer needed
+      if (employeesToRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('event_assignments')
+          .delete()
+          .eq('event_id', id)
+          .in('employee_id', employeesToRemove);
+        
+        if (deleteError) throw deleteError;
+      }
+      
+      setSuccessMessage('Event updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setEditMode(null);
+      
+      // Refresh event assignments
+      await fetchEventAssignments();
+    } catch (error) {
+      console.error('Error updating event:', error);
+      setError('Failed to update event. Please try again.');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const addEvent = async (e) => {
     e.preventDefault();
     
+    if (!newEvent.title || !newEvent.date) {
+      setError('Title and date are required fields.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     try {
-      // Insert new event
-      const { data: eventData, error: eventError } = await supabase
+      // First, insert the new event
+      const { data, error } = await supabase
         .from('events')
-        .insert([{ 
+        .insert([{
           title: newEvent.title,
           date: newEvent.date,
           time: newEvent.time,
@@ -142,35 +209,33 @@ const AdminEvents = () => {
           off_prem: newEvent.off_prem
         }])
         .select();
-        
-      if (eventError) throw eventError;
+
+      if (error) throw error;
       
-      const newEventId = eventData[0].id;
+      const newEventId = data[0].id;
       
-      // Insert employee assignments if any
-      if (newEvent.selectedEmployees.length > 0) {
-        const assignmentsToInsert = newEvent.selectedEmployees.map(empId => ({
+      // If employees were selected, create assignments
+      if (newEvent.selectedEmployees && newEvent.selectedEmployees.length > 0) {
+        const assignments = newEvent.selectedEmployees.map(empId => ({
           event_id: newEventId,
           employee_id: empId
         }));
         
         const { error: assignmentError } = await supabase
-          .from('event_employees')
-          .insert(assignmentsToInsert);
-          
+          .from('event_assignments')
+          .insert(assignments);
+        
         if (assignmentError) throw assignmentError;
-      }
-      
-      // Update state with new event
-      setEvents(prev => [...prev, eventData[0]]);
-      
-      // Update assignments state
-      if (newEvent.selectedEmployees.length > 0) {
-        setEventAssignments(prev => ({
-          ...prev,
+        
+        // Update the assignments state
+        setEventAssignments({
+          ...eventAssignments,
           [newEventId]: newEvent.selectedEmployees
-        }));
+        });
       }
+      
+      // Add the new event to the state
+      setEvents([...events, data[0]]);
       
       // Reset form
       setNewEvent({
@@ -183,103 +248,52 @@ const AdminEvents = () => {
       });
       
       setSuccessMessage('Event added successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Refresh event assignments
+      await fetchEventAssignments();
     } catch (error) {
       console.error('Error adding event:', error);
       setError('Failed to add event. Please try again.');
-      setTimeout(() => setError(null), 3000);
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  // Save changes to an existing event
-  const saveEventChanges = async (eventId) => {
-    try {
-      const eventToUpdate = events.find(event => event.id === eventId);
-      
-      // Update event
-      const { error: eventError } = await supabase
-        .from('events')
-        .update({ 
-          title: eventToUpdate.title,
-          date: eventToUpdate.date,
-          time: eventToUpdate.time,
-          info: eventToUpdate.info,
-          off_prem: eventToUpdate.off_prem
-        })
-        .eq('id', eventId);
-        
-      if (eventError) throw eventError;
-      
-      // Delete existing assignments
-      const { error: deleteError } = await supabase
-        .from('event_employees')
-        .delete()
-        .eq('event_id', eventId);
-        
-      if (deleteError) throw deleteError;
-      
-      // Insert new assignments if any
-      if (eventAssignments[eventId] && eventAssignments[eventId].length > 0) {
-        const assignmentsToInsert = eventAssignments[eventId].map(empId => ({
-          event_id: eventId,
-          employee_id: empId
-        }));
-        
-        const { error: insertError } = await supabase
-          .from('event_employees')
-          .insert(assignmentsToInsert);
-          
-        if (insertError) throw insertError;
-      }
-      
-      setEditMode(null);
-      setSuccessMessage('Event updated successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (error) {
-      console.error('Error updating event:', error);
-      setError('Failed to update event. Please try again.');
-      setTimeout(() => setError(null), 3000);
-    }
-  };
-
-  // Delete an event
-  const deleteEvent = async (eventId) => {
+  const deleteEvent = async (id) => {
     if (!window.confirm('Are you sure you want to delete this event?')) {
       return;
     }
     
     try {
-      // Delete event-employee assignments first (foreign key constraint)
-      const { error: assignmentError } = await supabase
-        .from('event_employees')
-        .delete()
-        .eq('event_id', eventId);
-        
-      if (assignmentError) throw assignmentError;
-      
-      // Delete the event
-      const { error: eventError } = await supabase
+      // The event_assignments will be automatically deleted due to the CASCADE constraint
+      const { error } = await supabase
         .from('events')
         .delete()
-        .eq('id', eventId);
-        
-      if (eventError) throw eventError;
+        .eq('id', id);
+
+      if (error) throw error;
       
-      // Update state
-      setEvents(prev => prev.filter(event => event.id !== eventId));
+      // Update the local state
+      setEvents(events.filter(evt => evt.id !== id));
       
-      // Clean up assignments state
-      const newAssignments = { ...eventAssignments };
-      delete newAssignments[eventId];
-      setEventAssignments(newAssignments);
+      // Remove assignments from the state
+      const updatedAssignments = { ...eventAssignments };
+      delete updatedAssignments[id];
+      setEventAssignments(updatedAssignments);
       
       setSuccessMessage('Event deleted successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error deleting event:', error);
       setError('Failed to delete event. Please try again.');
-      setTimeout(() => setError(null), 3000);
+      setTimeout(() => setError(''), 3000);
     }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
   };
 
   if (loading) {
@@ -302,7 +316,7 @@ const AdminEvents = () => {
         </div>
       )}
 
-      <div className="mb-8">
+      <div className="admin-card mb-8">
         <h3 className="admin-subtitle">Add New Event</h3>
         <form onSubmit={addEvent} className="admin-form">
           <div className="form-row">
@@ -388,7 +402,7 @@ const AdminEvents = () => {
             </div>
           </div>
           
-          <div>
+          <div className="form-actions">
             <button
               type="submit"
               className="btn btn-primary"
@@ -399,161 +413,163 @@ const AdminEvents = () => {
         </form>
       </div>
 
-      <h3 className="admin-subtitle">Event List</h3>
-      <div className="overflow-x-auto">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th className="text-center">Off-Premise</th>
-              <th>Info</th>
-              <th>Assigned Employees</th>
-              <th className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.length === 0 ? (
+      <div className="admin-card">
+        <h3 className="admin-subtitle">Event List</h3>
+        <div className="table-container">
+          <table className="admin-table">
+            <thead>
               <tr>
-                <td colSpan="7" className="text-center p-4">
-                  No events found.
-                </td>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th className="text-center">Off-Premise</th>
+                <th>Info</th>
+                <th>Assigned Employees</th>
+                <th className="text-center">Actions</th>
               </tr>
-            ) : (
-              events.map((event) => (
-                <tr key={event.id}>
-                  <td>
-                    {editMode === event.id ? (
-                      <input
-                        type="text"
-                        value={event.title || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'title')}
-                        className="form-input"
-                      />
-                    ) : (
-                      event.title
-                    )}
-                  </td>
-                  <td>
-                    {editMode === event.id ? (
-                      <input
-                        type="date"
-                        value={event.date || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'date')}
-                        className="form-input"
-                      />
-                    ) : (
-                      formatDate(event.date)
-                    )}
-                  </td>
-                  <td>
-                    {editMode === event.id ? (
-                      <input
-                        type="text"
-                        value={event.time || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'time')}
-                        className="form-input"
-                      />
-                    ) : (
-                      event.time
-                    )}
-                  </td>
-                  <td className="text-center">
-                    {editMode === event.id ? (
-                      <input
-                        type="checkbox"
-                        checked={event.off_prem || false}
-                        onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
-                        className="form-checkbox"
-                      />
-                    ) : (
-                      event.off_prem ? "Yes" : "No"
-                    )}
-                  </td>
-                  <td>
-                    {editMode === event.id ? (
-                      <textarea
-                        value={event.info || ''}
-                        onChange={(e) => handleInputChange(e, event.id, 'info')}
-                        className="form-textarea"
-                        rows="2"
-                      ></textarea>
-                    ) : (
-                      <div className="max-h-20 overflow-y-auto">
-                        {event.info}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    {editMode === event.id ? (
-                      <select
-                        multiple
-                        className="form-select"
-                        onChange={(e) => handleEmployeeSelection(e, event.id)}
-                        value={eventAssignments[event.id] || []}
-                      >
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="max-h-20 overflow-y-auto">
-                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
-                          <ul className="list-disc list-inside">
-                            {(eventAssignments[event.id] || []).map(empId => {
-                              const emp = employees.find(e => e.id === empId);
-                              return emp ? (
-                                <li key={empId}>{emp.name}</li>
-                              ) : null;
-                            })}
-                          </ul>
-                        ) : (
-                          "No employees assigned"
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="cell-actions">
-                    {editMode === event.id ? (
-                      <>
-                        <button
-                          onClick={() => saveEventChanges(event.id)}
-                          className="btn btn-success btn-sm"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditMode(null)}
-                          className="btn btn-secondary btn-sm"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setEditMode(event.id)}
-                          className="btn btn-primary btn-sm"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteEvent(event.id)}
-                          className="btn btn-danger btn-sm"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
+            </thead>
+            <tbody>
+              {events.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="table-empty-message">
+                    No events found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                events.map((event) => (
+                  <tr key={event.id}>
+                    <td>
+                      {editMode === event.id ? (
+                        <input
+                          type="text"
+                          value={event.title || ''}
+                          onChange={(e) => handleInputChange(e, event.id, 'title')}
+                          className="table-input"
+                        />
+                      ) : (
+                        event.title
+                      )}
+                    </td>
+                    <td>
+                      {editMode === event.id ? (
+                        <input
+                          type="date"
+                          value={event.date || ''}
+                          onChange={(e) => handleInputChange(e, event.id, 'date')}
+                          className="table-input"
+                        />
+                      ) : (
+                        formatDate(event.date)
+                      )}
+                    </td>
+                    <td>
+                      {editMode === event.id ? (
+                        <input
+                          type="text"
+                          value={event.time || ''}
+                          onChange={(e) => handleInputChange(e, event.id, 'time')}
+                          className="table-input"
+                        />
+                      ) : (
+                        event.time
+                      )}
+                    </td>
+                    <td className="text-center">
+                      {editMode === event.id ? (
+                        <input
+                          type="checkbox"
+                          checked={event.off_prem || false}
+                          onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
+                          className="form-checkbox"
+                        />
+                      ) : (
+                        event.off_prem ? "Yes" : "No"
+                      )}
+                    </td>
+                    <td>
+                      {editMode === event.id ? (
+                        <textarea
+                          value={event.info || ''}
+                          onChange={(e) => handleInputChange(e, event.id, 'info')}
+                          className="table-input"
+                          rows="2"
+                        ></textarea>
+                      ) : (
+                        <div className="max-h-20 overflow-y-auto">
+                          {event.info}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {editMode === event.id ? (
+                        <select
+                          multiple
+                          className="table-input"
+                          onChange={(e) => handleEmployeeSelection(e, event.id)}
+                          value={eventAssignments[event.id] || []}
+                        >
+                          {employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="max-h-20 overflow-y-auto">
+                          {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
+                            <ul className="list-disc list-inside">
+                              {(eventAssignments[event.id] || []).map(empId => {
+                                const emp = employees.find(e => e.id === empId);
+                                return emp ? (
+                                  <li key={empId}>{emp.name}</li>
+                                ) : null;
+                              })}
+                            </ul>
+                          ) : (
+                            "No employees assigned"
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="cell-actions">
+                      {editMode === event.id ? (
+                        <div className="table-actions">
+                          <button
+                            onClick={() => saveEventChanges(event.id)}
+                            className="btn btn-success btn-sm"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditMode(null)}
+                            className="btn btn-secondary btn-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="table-actions">
+                          <button
+                            onClick={() => setEditMode(event.id)}
+                            className="btn btn-primary btn-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteEvent(event.id)}
+                            className="btn btn-danger btn-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
