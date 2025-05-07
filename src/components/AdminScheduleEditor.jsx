@@ -84,11 +84,15 @@ const AdminScheduleEditor = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      await Promise.all([
+      const [employeesData, templatesData, eventsData] = await Promise.all([
         fetchEmployees(),
         fetchTemplates(),
         fetchEvents()
       ]);
+  
+      // Use eventsData directly instead of relying on state update
+      setEvents(eventsData);
+      await loadScheduleData(eventsData);
     } catch (error) {
       console.error('Error loading initial data:', error);
       showError('Failed to load initial data. Please try again.');
@@ -182,7 +186,7 @@ const AdminScheduleEditor = () => {
   };
 
   // Update the loadScheduleData function
-  const loadScheduleData = async () => {
+  const loadScheduleData = async (eventsToProcess = events) => {
     try {
       setLoading(true);
       const dateRange = getWeekDateRange(currentWeekStart);
@@ -210,8 +214,8 @@ const AdminScheduleEditor = () => {
       }
       
       // Process events to identify employees with event shifts this week
-      if (events && events.length > 0) {
-        events.forEach(event => {
+      if (eventsToProcess && eventsToProcess.length > 0) {
+        eventsToProcess.forEach(event => {
           if (!event.assignments) return;
           
           event.assignments.forEach(assignment => {
@@ -255,10 +259,10 @@ const AdminScheduleEditor = () => {
           }
         });
       }
-      console.log('Events being processed:', events);
+      console.log('Events being processed:', eventsToProcess);
       // Process events for these employees
-      if (events && events.length > 0) {
-        events.forEach(event => {
+      if (eventsToProcess && eventsToProcess.length > 0) {
+        eventsToProcess.forEach(event => {
           if (!event.assignments) return;
           
           const eventDate = new Date(event.date);
