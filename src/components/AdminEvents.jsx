@@ -297,55 +297,60 @@ const AdminEvents = () => {
   };
 
   if (loading) {
-    return <div className="admin-section">Loading events...</div>;
+    return (
+      <div className="dp-loading">
+        <div className="dp-loading-spinner"></div>
+        <p>Loading events...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="admin-section">
-      <h2 className="admin-title">Manage Events</h2>
+    <div className="dp-container">
+      <h2 className="dp-section-title">Manage Events</h2>
       
       {error && (
-        <div className="alert alert-error">
+        <div className="dp-alert dp-alert-error">
           {error}
         </div>
       )}
       
       {successMessage && (
-        <div className="alert alert-success">
+        <div className="dp-alert dp-alert-success">
           {successMessage}
         </div>
       )}
 
-      <div className="admin-card mb-8">
-        <h3 className="admin-subtitle">Add New Event</h3>
-        <form onSubmit={addEvent} className="admin-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">
-                Title<span className="text-red-500">*</span>
+      <div className="dp-section">
+        <h3 className="dp-subsection-title">Add New Event</h3>
+        <form onSubmit={addEvent} className="dp-form">
+          <div className="dp-form-row">
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Title<span className="dp-required">*</span>
               </label>
               <input
                 type="text"
                 value={newEvent.title}
                 onChange={(e) => handleInputChange(e, null, 'title')}
-                className="form-input"
+                className="dp-input"
                 required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">
-                Date<span className="text-red-500">*</span>
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Date<span className="dp-required">*</span>
               </label>
               <input
                 type="date"
                 value={newEvent.date}
                 onChange={(e) => handleInputChange(e, null, 'date')}
-                className="form-input"
+                className="dp-input"
                 required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">
+            <div className="dp-form-group">
+              <label className="dp-form-label">
                 Time
               </label>
               <input
@@ -353,41 +358,41 @@ const AdminEvents = () => {
                 value={newEvent.time}
                 placeholder="e.g. 3:00 PM - 7:00 PM"
                 onChange={(e) => handleInputChange(e, null, 'time')}
-                className="form-input"
+                className="dp-input"
               />
             </div>
-            <div className="form-group">
-              <label className="form-checkbox-label">
+            <div className="dp-form-group dp-checkbox-container">
+              <label className="dp-checkbox-label">
                 <input
                   type="checkbox"
                   checked={newEvent.off_prem}
                   onChange={(e) => handleInputChange(e, null, 'off_prem')}
-                  className="form-checkbox"
+                  className="dp-checkbox"
                 />
                 <span>Off-Premise Event</span>
               </label>
             </div>
           </div>
           
-          <div className="form-group">
-            <label className="form-label">
+          <div className="dp-form-group">
+            <label className="dp-form-label">
               Information
             </label>
             <textarea
               value={newEvent.info}
               onChange={(e) => handleInputChange(e, null, 'info')}
-              className="form-textarea"
+              className="dp-textarea"
               rows="3"
             ></textarea>
           </div>
           
-          <div className="form-group">
-            <label className="form-label">
+          <div className="dp-form-group">
+            <label className="dp-form-label">
               Assign Employees
             </label>
             <select
               multiple
-              className="form-select"
+              className="dp-select"
               onChange={(e) => handleEmployeeSelection(e, null)}
               value={newEvent.selectedEmployees || []}
             >
@@ -397,15 +402,15 @@ const AdminEvents = () => {
                 </option>
               ))}
             </select>
-            <div className="form-help-text">
+            <div className="dp-form-help">
               Hold Ctrl/Cmd to select multiple employees
             </div>
           </div>
           
-          <div className="form-actions">
+          <div className="dp-form-actions">
             <button
               type="submit"
-              className="btn btn-primary"
+              className="dp-button dp-button-primary"
             >
               Add Event
             </button>
@@ -413,41 +418,41 @@ const AdminEvents = () => {
         </form>
       </div>
 
-      <div className="admin-card">
-        <h3 className="admin-subtitle">Event List</h3>
-        <div className="table-container">
-          <table className="admin-table">
+      <div className="dp-section">
+        <h3 className="dp-subsection-title">Event List</h3>
+        <div className="dp-table-container">
+          <table className="dp-table">
             <thead>
               <tr>
                 <th>Title</th>
                 <th>Date</th>
                 <th>Time</th>
-                <th className="text-center">Off-Premise</th>
+                <th className="dp-text-center">Off-Premise</th>
                 <th>Info</th>
                 <th>Assigned Employees</th>
-                <th className="text-center">Actions</th>
+                <th className="dp-text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {events.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="table-empty-message">
+                  <td colSpan="7" className="dp-empty-table">
                     No events found.
                   </td>
                 </tr>
               ) : (
                 events.map((event) => (
-                  <tr key={event.id}>
+                  <tr key={event.id} className="dp-table-row">
                     <td>
                       {editMode === event.id ? (
                         <input
                           type="text"
                           value={event.title || ''}
                           onChange={(e) => handleInputChange(e, event.id, 'title')}
-                          className="table-input"
+                          className="dp-input"
                         />
                       ) : (
-                        event.title
+                        <span className="dp-event-title">{event.title}</span>
                       )}
                     </td>
                     <td>
@@ -456,7 +461,7 @@ const AdminEvents = () => {
                           type="date"
                           value={event.date || ''}
                           onChange={(e) => handleInputChange(e, event.id, 'date')}
-                          className="table-input"
+                          className="dp-input"
                         />
                       ) : (
                         formatDate(event.date)
@@ -468,22 +473,24 @@ const AdminEvents = () => {
                           type="text"
                           value={event.time || ''}
                           onChange={(e) => handleInputChange(e, event.id, 'time')}
-                          className="table-input"
+                          className="dp-input"
                         />
                       ) : (
                         event.time
                       )}
                     </td>
-                    <td className="text-center">
+                    <td className="dp-text-center">
                       {editMode === event.id ? (
                         <input
                           type="checkbox"
                           checked={event.off_prem || false}
                           onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
-                          className="form-checkbox"
+                          className="dp-checkbox"
                         />
                       ) : (
-                        event.off_prem ? "Yes" : "No"
+                        <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>
+                          {event.off_prem ? "Yes" : "No"}
+                        </span>
                       )}
                     </td>
                     <td>
@@ -491,11 +498,11 @@ const AdminEvents = () => {
                         <textarea
                           value={event.info || ''}
                           onChange={(e) => handleInputChange(e, event.id, 'info')}
-                          className="table-input"
+                          className="dp-textarea"
                           rows="2"
                         ></textarea>
                       ) : (
-                        <div className="max-h-20 overflow-y-auto">
+                        <div className="dp-event-info">
                           {event.info}
                         </div>
                       )}
@@ -504,7 +511,7 @@ const AdminEvents = () => {
                       {editMode === event.id ? (
                         <select
                           multiple
-                          className="table-input"
+                          className="dp-select"
                           onChange={(e) => handleEmployeeSelection(e, event.id)}
                           value={eventAssignments[event.id] || []}
                         >
@@ -515,49 +522,49 @@ const AdminEvents = () => {
                           ))}
                         </select>
                       ) : (
-                        <div className="max-h-20 overflow-y-auto">
+                        <div className="dp-employee-list">
                           {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
-                            <ul className="list-disc list-inside">
+                            <ul>
                               {(eventAssignments[event.id] || []).map(empId => {
                                 const emp = employees.find(e => e.id === empId);
                                 return emp ? (
-                                  <li key={empId}>{emp.name}</li>
+                                  <li key={empId} className="dp-employee-item">{emp.name}</li>
                                 ) : null;
                               })}
                             </ul>
                           ) : (
-                            "No employees assigned"
+                            <span className="dp-no-employees">No employees assigned</span>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="cell-actions">
+                    <td>
                       {editMode === event.id ? (
-                        <div className="table-actions">
+                        <div className="dp-button-group">
                           <button
                             onClick={() => saveEventChanges(event.id)}
-                            className="btn btn-success btn-sm"
+                            className="dp-button dp-button-success dp-button-sm"
                           >
                             Save
                           </button>
                           <button
                             onClick={() => setEditMode(null)}
-                            className="btn btn-secondary btn-sm"
+                            className="dp-button dp-button-secondary dp-button-sm"
                           >
                             Cancel
                           </button>
                         </div>
                       ) : (
-                        <div className="table-actions">
+                        <div className="dp-button-group">
                           <button
                             onClick={() => setEditMode(event.id)}
-                            className="btn btn-primary btn-sm"
+                            className="dp-button dp-button-primary dp-button-sm"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => deleteEvent(event.id)}
-                            className="btn btn-danger btn-sm"
+                            className="dp-button dp-button-danger dp-button-sm"
                           >
                             Delete
                           </button>
