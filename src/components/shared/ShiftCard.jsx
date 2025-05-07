@@ -17,7 +17,7 @@ const ShiftCard = ({
   showActions = true,
   className = ''
 }) => {
-  const shiftClass = getShiftClass(shift.event_type);
+  const shiftClassValue = getShiftClass(shift.event_type);
   const { title, subtitle } = formatShiftDisplay(shift);
   const isEvent = isEventShift(shift);
   
@@ -38,7 +38,7 @@ const ShiftCard = ({
 
   return (
     <div 
-      className={`dp-shift ${shiftClass} ${className}`}
+      className={`dp-shift ${shiftClassValue} ${className}`}
       onClick={shift.event_id ? handleEventClick : undefined}
       data-event-type={shift.event_type}
     >
