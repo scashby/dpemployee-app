@@ -1,0 +1,328 @@
+/* Devils Purse Schedule Editor Styling */
+
+/* Container and section styling */
+.dp-schedule-container {
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+  }
+  
+  .dp-schedule-title {
+    font-family: 'Georgia', serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #c0984b;
+    color: #2b2b2b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  /* Action buttons styling */
+  .dp-button-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dp-button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 3px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.875rem;
+  }
+  
+  .dp-button-primary {
+    background-color: #c0984b;
+    color: #ffffff;
+  }
+  
+  .dp-button-primary:hover {
+    background-color: #b08a43;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .dp-button-secondary {
+    background-color: #6c757d;
+    color: #ffffff;
+  }
+  
+  .dp-button-secondary:hover {
+    background-color: #5a6268;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dp-button-success {
+    background-color: #28a745;
+    color: #ffffff;
+  }
+  
+  .dp-button-success:hover {
+    background-color: #218838;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Form elements for modal */
+  .dp-form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .dp-form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #2b2b2b;
+  }
+  
+  .dp-form-input,
+  .dp-form-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    background-color: #ffffff;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .dp-form-input:focus,
+  .dp-form-select:focus {
+    outline: none;
+    border-color: #c0984b;
+    box-shadow: 0 0 0 2px rgba(192, 152, 75, 0.2);
+  }
+  
+  /* Schedule table styling */
+  .dp-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dp-schedule-table th {
+    background-color: #2b2b2b;
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #c0984b;
+  }
+  
+  .dp-schedule-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+  }
+  
+  .dp-schedule-table tr:hover {
+    background-color: rgba(192, 152, 75, 0.05);
+  }
+  
+  .dp-schedule-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .dp-schedule-table td:last-child {
+    border-right: none;
+  }
+  
+  /* Employee row header */
+  .dp-employee-name {
+    font-weight: 600;
+    color: #2b2b2b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .dp-remove-employee {
+    color: #dc3545;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0.25rem;
+    border-radius: 3px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .dp-remove-employee:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+  }
+  
+  /* Shift styling */
+  .dp-shift {
+    padding: 0.5rem;
+    border-radius: 3px;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    position: relative;
+  }
+  
+  .dp-shift-tasting {
+    background-color: rgba(192, 152, 75, 0.15);
+    border-left: 3px solid #c0984b;
+  }
+  
+  .dp-shift-event {
+    background-color: rgba(40, 167, 69, 0.15);
+    border-left: 3px solid #28a745;
+  }
+  
+  .dp-shift-offsite {
+    background-color: rgba(0, 123, 255, 0.15);
+    border-left: 3px solid #007bff;
+  }
+  
+  .dp-shift-time {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  .dp-shift-title {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+  
+  .dp-shift-actions {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: flex;
+    gap: 0.25rem;
+  }
+  
+  .dp-shift-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.125rem;
+    border-radius: 3px;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.75rem;
+  }
+  
+  .dp-shift-edit:hover {
+    color: #c0984b;
+  }
+  
+  .dp-shift-delete:hover {
+    color: #dc3545;
+  }
+  
+  .dp-add-shift {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 2rem;
+    width: 100%;
+    border: 1px dashed #e0e0e0;
+    border-radius: 3px;
+    color: #6c757d;
+    background: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .dp-add-shift:hover {
+    border-color: #c0984b;
+    color: #c0984b;
+    background-color: rgba(192, 152, 75, 0.05);
+  }
+  
+  /* Loading state */
+  .dp-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #6c757d;
+    font-size: 1rem;
+    font-style: italic;
+  }
+  
+  /* Week navigator */
+  .dp-week-navigator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    background-color: #f5f5f5;
+    padding: 0.75rem 1rem;
+    border-radius: 5px;
+  }
+  
+  .dp-week-title {
+    font-weight: 600;
+    color: #2b2b2b;
+    font-size: 1rem;
+  }
+  
+  .dp-week-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .dp-week-button {
+    background: none;
+    border: 1px solid #e0e0e0;
+    color: #2b2b2b;
+    padding: 0.375rem 0.75rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.875rem;
+  }
+  
+  .dp-week-button:hover {
+    border-color: #c0984b;
+    color: #c0984b;
+    background-color: rgba(192, 152, 75, 0.05);
+  }
+  
+  .dp-week-button.current {
+    background-color: #c0984b;
+    color: #ffffff;
+    border-color: #c0984b;
+  }
+  
+  .dp-week-button.current:hover {
+    background-color: #b08a43;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .dp-button-group {
+      flex-direction: column;
+    }
+    
+    .dp-schedule-table {
+      font-size: 0.875rem;
+    }
+    
+    .dp-schedule-table th,
+    .dp-schedule-table td {
+      padding: 0.5rem;
+    }
+    
+    .dp-week-navigator {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }

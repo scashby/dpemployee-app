@@ -4,8 +4,8 @@ import { getWeekDateRange, formatDateForDB } from '../utils/dateUtils';
 import useWeekNavigation from '../hooks/useWeekNavigation';
 import useMessages from '../hooks/useMessages';
 import useModalState from '../hooks/useModalState';
-import * as scheduleService from '../services/scheduleService'; // declared but never read
-import * as templateService from '../services/templateService'; // declared but never read
+import * as scheduleService from '../services/scheduleService';
+import * as templateService from '../services/templateService';
 import StatusMessage from './shared/StatusMessage';
 import WeekNavigator from './shared/WeekNavigator';
 import ScheduleTable from './shared/ScheduleTable';
@@ -14,6 +14,8 @@ import FormInput from './shared/FormInput';
 import FormSelect from './shared/FormSelect'; 
 import SaveAsTemplateModal from './shared/SaveAsTemplateModal'; 
 import '../styles/admin.css';
+import '../styles/devils-purse.css';
+import '../styles/devils-purse-schedule.css'; // Import the new schedule styles
 
 const AdminScheduleEditor = () => {
   // Use custom hooks for core functionality
@@ -44,14 +46,14 @@ const AdminScheduleEditor = () => {
     openAddShiftModal,
     openEditShiftModal,
     closeShiftModal, 
-    openAddEmployeeModal, // declared but never read
+    openAddEmployeeModal,
     closeAddEmployeeModal, 
-    openTemplateModal, // declared but never read
+    openTemplateModal,
     closeTemplateModal, 
     setSelectedTemplate, 
-    openSaveAsTemplateModal, // declared but never read
+    openSaveAsTemplateModal,
     closeSaveAsTemplateModal, 
-    handleShiftInputChange, // declared but never read
+    handleShiftInputChange,
     handleTemplateInputChange 
   } = useModalState();
 
@@ -176,9 +178,7 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  // Update the loadScheduleData function to properly preserve manually added employees
   // Update the loadScheduleData function
-  // Modify the loadScheduleData function
   const loadScheduleData = async () => {
     try {
       setLoading(true);
@@ -355,14 +355,12 @@ const AdminScheduleEditor = () => {
     } finally {
       setLoading(false);
     }
-  }
-
-  // Get date for a specific day
-  // Removed getDateForDay function already provided by useWeekNavigation
+  };
   
   if (loading && employees.length === 0) {
-    return <div className="p-4">Loading schedule data...</div>;
+    return <div className="dp-loading">Loading schedule data...</div>;
   }
+  
   const deleteShift = async (id) => {
     try {
       // Use scheduleService instead of direct supabase calls
@@ -415,6 +413,7 @@ const AdminScheduleEditor = () => {
       showError('Failed to remove employee from schedule.');
     }
   };
+  
   // Helper to save employee shift to database
   const saveEmployeeShift = async (employeeName, day, date, shiftTime) => {
     try {
@@ -441,9 +440,10 @@ const AdminScheduleEditor = () => {
       showError(`Failed to save shift: ${error.message}`);
     }
   };
+  
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Edit Weekly Schedule</h1>
+    <div className="dp-schedule-container">
+      <h1 className="dp-schedule-title">Edit Weekly Schedule</h1>
       
       <StatusMessage 
         message={error} 
@@ -464,25 +464,25 @@ const AdminScheduleEditor = () => {
         onPreviousWeek={goToPreviousWeek}
         onNextWeek={goToNextWeek}
         onCurrentWeek={goToCurrentWeek}
-        className="my-4"
+        className="dp-week-navigator"
       />
       
-      <div className="flex space-x-4 mb-4">
+      <div className="dp-button-group">
         <button 
           onClick={openTemplateModal} 
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="dp-button dp-button-primary"
         >
           Apply Template
         </button>
         <button 
           onClick={openSaveAsTemplateModal} 
-          className="bg-green-500 text-white px-4 py-2 rounded"
+          className="dp-button dp-button-success"
         >
           Save as Template
         </button>
         <button 
           onClick={openAddEmployeeModal} 
-          className="bg-gray-500 text-white px-4 py-2 rounded"
+          className="dp-button dp-button-secondary"
         >
           Add Employee
         </button>
@@ -516,11 +516,11 @@ const AdminScheduleEditor = () => {
           disabled
         />
         <FormInput
-        label="Shift Time"
-        name="shift"
-        value={modalData.shift || ''}
-        onChange={handleShiftInputChange}
-        placeholder="11am to Close"
+          label="Shift Time"
+          name="shift"
+          value={modalData.shift || ''}
+          onChange={handleShiftInputChange}
+          placeholder="11am to Close"
         />
       </AdminModal>
 
@@ -568,25 +568,13 @@ const AdminScheduleEditor = () => {
           }
         }}
       >
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+        <div className="dp-form-group">
+          <label className="dp-form-label">
             Select Employee
           </label>
           <select 
             id="employeeSelect" 
-            style={{ 
-              width: '100%', 
-              padding: '0.5rem', 
-              border: '1px solid #d1d5db', 
-              borderRadius: '0.25rem',
-              backgroundColor: '#fff',
-              appearance: 'none',
-              backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
-              backgroundPosition: 'right 0.5rem center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: '1.5em 1.5em',
-              paddingRight: '2.5rem'
-            }}
+            className="dp-form-select"
           >
             <option value="">Select...</option>
             {availableEmployees.map(emp => (
@@ -595,38 +583,26 @@ const AdminScheduleEditor = () => {
           </select>
         </div>
         
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
-            Select Date
+        <div className="dp-form-group">
+          <label className="dp-form-label">
+          Select Date
           </label>
           <input 
             type="date" 
             id="dateInput" 
-            style={{ 
-              width: '100%', 
-              padding: '0.5rem', 
-              border: '1px solid #d1d5db', 
-              borderRadius: '0.25rem',
-              backgroundColor: '#fff'
-            }}
+            className="dp-form-input"
           />
         </div>
         
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+        <div className="dp-form-group">
+          <label className="dp-form-label">
             Shift Time
           </label>
           <input 
             type="text" 
             id="shiftTimeInput" 
             placeholder="e.g. 11am to Close" 
-            style={{ 
-              width: '100%', 
-              padding: '0.5rem', 
-              border: '1px solid #d1d5db', 
-              borderRadius: '0.25rem',
-              backgroundColor: '#fff'
-            }}
+            className="dp-form-input"
           />
         </div>
       </AdminModal>
