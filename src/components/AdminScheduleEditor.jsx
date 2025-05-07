@@ -532,30 +532,6 @@ const AdminScheduleEditor = () => {
               // Format date for database
               const formattedDate = formatDateForDB(selectedDate);
               
-              // Add employee to schedule
-              const updatedScheduleData = { ...scheduleData };
-              
-              // Initialize the employee if not already in schedule
-              if (!updatedScheduleData[employee.name]) {
-                updatedScheduleData[employee.name] = {};
-                dayNames.forEach(day => {
-                  updatedScheduleData[employee.name][day] = [];
-                });
-              }
-              
-              // Add a shift for this employee on the selected day
-              updatedScheduleData[employee.name][selectedDay].push({
-                employee_name: employee.name,
-                day: selectedDay,
-                date: formattedDate,
-                shift: shiftTime,
-                week_start: formatDateForDB(currentWeekStart),
-                event_type: 'tasting',
-                event_name: 'Tasting Room'
-              });
-              
-              setScheduleData(updatedScheduleData);
-              
               // Save the shift to database
               const shiftData = {
                 employee_name: employee.name,
@@ -585,28 +561,25 @@ const AdminScheduleEditor = () => {
           }
         }}
       >
-  <FormSelect
-    id="employeeSelect"
-    label="Select Employee"
-    options={availableEmployees.map(emp => ({
-      value: emp.id,
-      label: emp.name
-    }))}
-  />
-  <div className="form-group">
-    <label className="form-label">Select Date</label>
-    <input
-      type="date"
-      id="dateInput"
-      className="form-input"
-    />
-  </div>
-  <FormInput
-    id="shiftTimeInput"
-    label="Shift Time"
-    placeholder="e.g. 11am to Close"
-  />
-</AdminModal>
+        <FormSelect
+          id="employeeSelect"
+          label="Select Employee"
+          options={availableEmployees.map(emp => ({
+            value: emp.id,
+            label: emp.name
+          }))}
+        />
+        <FormInput
+          id="dateInput"
+          label="Select Date"
+          type="date"
+        />
+        <FormInput
+          id="shiftTimeInput"
+          label="Shift Time"
+          placeholder="e.g. 11am to Close"
+        />
+      </AdminModal>
 
       <AdminModal
         show={showTemplateModal}
