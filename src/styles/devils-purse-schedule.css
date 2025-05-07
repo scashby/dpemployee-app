@@ -202,17 +202,12 @@
   
   .dp-shift-actions {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 0.25rem;
+    right: 0.25rem;
     display: flex;
     gap: 0.25rem;
-    z-index: 10;
   }
-  
-  .dp-shift-content {
-    padding-right: 40px;
-  }
-  
+
   .dp-shift-action {
     background: none;
     border: none;
@@ -333,13 +328,13 @@
   }
 
   /* Event type styling */
-.dp-shift {
-    padding: 0.5rem;
-    border-radius: 3px;
-    margin-bottom: 0.25rem;
-    font-size: 0.875rem;
-    position: relative;
-  }
+  .dp-shift {
+      padding: 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+      position: relative;
+    }
   
   .dp-shift-tasting {
     background-color: rgba(192, 152, 75, 0.15);
@@ -356,25 +351,19 @@
     border-left: 3px solid #007bff;
   }
   
-  .dp-shift-time {
-    font-weight: normal;
-    display: block;
-    margin-bottom: 0.25rem;
-    color: white;
-  }
-  
   .dp-shift-title {
     font-size: 0.8rem;
     color: white;
     font-weight: bold;
   }
 
-  .dp-schedule-day {
-    width: 14.28%;
-    min-width: 100px;
+  .dp-shift-time {
+    font-weight: normal;
+    display: block;
+    margin-bottom: 0.25rem;
+    color: white;
   }
 
-  .dp-shift[data-event-type="event"],
   .dp-shift[data-event-type="offsite"] {
     cursor: pointer;
   }
