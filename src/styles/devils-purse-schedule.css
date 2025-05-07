@@ -104,12 +104,12 @@
   /* Schedule table styling */
   .dp-schedule-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     border: 1px solid #e0e0e0;
     border-radius: 5px;
     overflow: hidden;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
   }
   
   .dp-schedule-table th {
