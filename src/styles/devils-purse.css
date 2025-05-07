@@ -225,8 +225,9 @@
   
   .dp-button-group {
     display: flex;
-    gap: var(--dp-spacing-sm);
+    gap: 1rem;
     justify-content: center;
+    margin-bottom: 1.5rem;
   }
   
   .dp-form-actions {
@@ -386,6 +387,10 @@
     align-items: center;
     justify-content: center;
     padding: var(--dp-spacing-xl);
+    height: 200px;
+    color: #6c757d;
+    font-size: 1rem;
+    font-style: italic;
   }
   
   .dp-loading-spinner {
@@ -418,6 +423,20 @@
     
     .dp-subsection-title {
       font-size: 1.25rem;
+    }
+
+    .dp-schedule-table {
+      font-size: 0.875rem;
+    }
+    
+    .dp-schedule-table th,
+    .dp-schedule-table td {
+      padding: 0.5rem;
+    }
+    
+    .dp-week-navigator {
+      flex-direction: column;
+      gap: 0.5rem;
     }
   }
   /* ============= Forms Styles ============= */
@@ -460,7 +479,6 @@
 .form-textarea.error {
   border-color: #dc3545;
 }
-
 .form-input:disabled,
 .form-select:disabled,
 .form-textarea:disabled {
@@ -970,19 +988,6 @@
 }
 
 /* Shift styling */
-.dp-shift {
-  padding: 0.5rem;
-  border-radius: 3px;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
-  position: relative;
-}
-
-.dp-shift-tasting {
-  background-color: rgba(192, 152, 75, 0.15);
-  border-left: 3px solid #c0984b;
-}
-
 .dp-shift-event {
   background-color: rgba(40, 167, 69, 0.15);
   border-left: 3px solid #28a745;
@@ -993,19 +998,6 @@
   background-color: rgba(0, 123, 255, 0.15);
   border-left: 3px solid #007bff;
   cursor: pointer;
-}
-
-.dp-shift-time {
-  font-weight: normal;
-  display: block;
-  margin-bottom: 0;
-  color: white;
-  text-align: center;
-}
-
-.dp-shift-title {
-  font-size: 0.8rem;
-  color: #6c757d;
 }
 
 .dp-shift-actions {
@@ -1103,27 +1095,6 @@
   background-color: #b08a43;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .dp-button-group {
-    flex-direction: column;
-  }
-  
-  .dp-schedule-table {
-    font-size: 0.875rem;
-  }
-  
-  .dp-schedule-table th,
-  .dp-schedule-table td {
-    padding: 0.5rem;
-  }
-  
-  .dp-week-navigator {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-}
-
 /* Event type styling */
 .dp-shift-title {
   font-size: 0.8rem;
@@ -1159,7 +1130,6 @@ min-width: 150px;
 width: 5%;
 min-width: 60px;
 }
-
 /* Adjust position of edit/remove icons */
 .dp-shift-content {
 display: flex;
