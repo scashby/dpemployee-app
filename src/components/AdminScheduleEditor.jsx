@@ -194,136 +194,133 @@ const AdminScheduleEditor = () => {
 
   // Update the loadScheduleData function
   const loadScheduleData = async (eventsToProcess = events) => {
-  try {
-    setLoading(true);
-    const dateRange = getWeekDateRange(currentWeekStart);
-    const startDate = formatDateForDB(dateRange.start);
-    const endDate = formatDateForDB(dateRange.end);
-    
-    // Fetch schedule data from database
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
-    
-    if (error) throw error;
-    
-    // Track which employees have shifts in THIS week only
-    const employeesWithShifts = new Set();
-    
-    // Process regular shifts to identify employees with shifts this week
-    if (data && data.length > 0) {
-      data.forEach(shift => {
-        const empName = shift.employee_name;
-        employeesWithShifts.add(empName);
-      });
-    }
-    
-    // Process events for these employees
-    if (eventsToProcess && eventsToProcess.length > 0) {
-      eventsToProcess.forEach(event => {
-        if (!event.assignments) return;
-        
-        // Check if event date is within the current week
-        const eventDate = new Date(event.date);
-        const weekStart = new Date(currentWeekStart);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        
-        // Skip events not in current week
-        if (eventDate < weekStart || eventDate > weekEnd) return;
-        
-        const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
-        
-        event.assignments.forEach(assignment => {
-          const employee = employees.find(emp => emp.id === assignment.employee_id);
-          if (!employee || !scheduleByEmployee[employee.name]) return;
-          
-          scheduleByEmployee[employee.name][dayOfWeek].push({
-            id: `event_${event.id}_${assignment.employee_id}`,
-            employee_name: employee.name,
-            day: dayOfWeek,
-            date: event.date,
-            shift: event.time || 'Event Time TBD',
-            event_name: event.title,
-            event_id: event.id,
-            event_info: event.info,
-            event_type: event.off_prem ? 'offsite' : 'event'
-          });
-        });
-      });
-    }
-    
-    // Initialize schedule structure ONLY for employees with shifts THIS week
-    const scheduleByEmployee = {};
-    
-    // Only include employees that have shifts in this week's date range
-    [...employeesWithShifts].forEach(empName => {
-      const matchingEmployee = employees.find(emp => 
-        emp.name === empName || emp.name.includes(empName) || empName.includes(emp.name)
-      );
+    try {
+      setLoading(true);
+      const dateRange = getWeekDateRange(currentWeekStart);
+      const startDate = formatDateForDB(dateRange.start);
+      const endDate = formatDateForDB(dateRange.end);
       
-      if (matchingEmployee) {
-        scheduleByEmployee[matchingEmployee.name] = {};
-        dayNames.forEach(day => {
-          scheduleByEmployee[matchingEmployee.name][day] = [];
+      // Fetch schedule data from database
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
+      
+      if (error) throw error;
+      
+      // Track which employees have shifts in THIS week only
+      const employeesWithShifts = new Set();
+      
+      // Process regular shifts to identify employees with shifts this week
+      if (data && data.length > 0) {
+        data.forEach(shift => {
+          const empName = shift.employee_name;
+          employeesWithShifts.add(empName);
         });
       }
-    });
-    
-    // Now process shifts for these employees
-    if (data && data.length > 0) {
-      data.forEach(shift => {
-        const empName = shift.employee_name;
-        const day = shift.day;
-        
-        // Find matching employee
-        for (const name of Object.keys(scheduleByEmployee)) {
-          if (name === empName || name.includes(empName) || empName.includes(name)) {
-            scheduleByEmployee[name][day].push(shift);
-            break;
-          }
-        }
-      });
-    }
-    console.log('Events being processed:', eventsToProcess);
-    // Process events for these employees
-    if (eventsToProcess && eventsToProcess.length > 0) {
-      eventsToProcess.forEach(event => {
-        if (!event.assignments) return;
-        
-        const eventDate = new Date(event.date);
-        const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
-        
-        event.assignments.forEach(assignment => {
-          const employee = employees.find(emp => emp.id === assignment.employee_id);
-          if (!employee || !scheduleByEmployee[employee.name]) return;
+      
+      // Process event assignments to identify employees with event shifts this week
+      if (eventsToProcess && eventsToProcess.length > 0) {
+        eventsToProcess.forEach(event => {
+          if (!event.assignments) return;
           
-          scheduleByEmployee[employee.name][dayOfWeek].push({
-            id: `event_${event.id}_${assignment.employee_id}`,
-            employee_name: employee.name,
-            day: dayOfWeek,
-            date: event.date,
-            shift: event.time || 'Event Time TBD',
-            event_name: event.title,
-            event_id: event.id,
-            event_info: event.info,
-            event_type: event.off_prem ? 'offsite' : 'event'
+          // Check if event date is within the current week
+          const eventDate = new Date(event.date);
+          const weekStart = new Date(currentWeekStart);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          
+          // Skip events not in current week
+          if (eventDate < weekStart || eventDate > weekEnd) return;
+          
+          event.assignments.forEach(assignment => {
+            const employee = employees.find(emp => emp.id === assignment.employee_id);
+            if (employee) {
+              employeesWithShifts.add(employee.name);
+            }
           });
         });
+      }
+      
+      // Initialize schedule structure ONLY for employees with shifts THIS week
+      const scheduleByEmployee = {};
+      
+      // Only include employees that have shifts in this week's date range
+      [...employeesWithShifts].forEach(empName => {
+        const matchingEmployee = employees.find(emp => 
+          emp.name === empName || emp.name.includes(empName) || empName.includes(emp.name)
+        );
+        
+        if (matchingEmployee) {
+          scheduleByEmployee[matchingEmployee.name] = {};
+          dayNames.forEach(day => {
+            scheduleByEmployee[matchingEmployee.name][day] = [];
+          });
+        }
       });
+      
+      // Now process shifts for these employees
+      if (data && data.length > 0) {
+        data.forEach(shift => {
+          const empName = shift.employee_name;
+          const day = shift.day;
+          
+          // Find matching employee
+          for (const name of Object.keys(scheduleByEmployee)) {
+            if (name === empName || name.includes(empName) || empName.includes(name)) {
+              scheduleByEmployee[name][day].push(shift);
+              break;
+            }
+          }
+        });
+      }
+      
+      // Process events for these employees
+      if (eventsToProcess && eventsToProcess.length > 0) {
+        eventsToProcess.forEach(event => {
+          if (!event.assignments) return;
+          
+          // Check if event date is within the current week
+          const eventDate = new Date(event.date);
+          const weekStart = new Date(currentWeekStart);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          
+          // Skip events not in current week
+          if (eventDate < weekStart || eventDate > weekEnd) return;
+          
+          const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
+          
+          event.assignments.forEach(assignment => {
+            const employee = employees.find(emp => emp.id === assignment.employee_id);
+            if (!employee || !scheduleByEmployee[employee.name]) return;
+            
+            scheduleByEmployee[employee.name][dayOfWeek].push({
+              id: `event_${event.id}_${assignment.employee_id}`,
+              employee_name: employee.name,
+              day: dayOfWeek,
+              date: event.date,
+              shift: event.time || 'Event Time TBD',
+              event_name: event.title,
+              event_id: event.id,
+              event_info: event.info,
+              event_type: event.off_prem ? 'offsite' : 'event'
+            });
+          });
+        });
+      }
+      
+      console.log('Processed schedule data:', JSON.stringify(scheduleByEmployee, null, 2));
+      setScheduleData(scheduleByEmployee);
+      updateAvailableEmployees(employeesWithShifts);
+    } catch (error) {
+      console.error('Error loading schedule data:', error);
+      showError('Failed to load schedule. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    console.log('Processed schedule data:', JSON.stringify(scheduleByEmployee, null, 2));
-    setScheduleData(scheduleByEmployee);
-    updateAvailableEmployees(employeesWithShifts);
-  } catch (error) {
-    console.error('Error loading schedule data:', error);
-    showError('Failed to load schedule. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   
   // Update available employees list
   const updateAvailableEmployees = (scheduledEmployees) => {
