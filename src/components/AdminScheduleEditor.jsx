@@ -164,20 +164,22 @@ const AdminScheduleEditor = () => {
       if (eventsResponse.error) throw eventsResponse.error;
       if (assignmentsResponse.error) throw assignmentsResponse.error;
       
-      const eventsWithAssignments = eventsResponse.data?.map(event => ({
+      const events = eventsResponse.data?.map(event => ({
         ...event,
         assignments: assignmentsResponse.data?.filter(a => a.event_id === event.id) || []
       })) || [];
       
-      setEvents(eventsWithAssignments);
-      return eventsWithAssignments;
+      console.log('Events with assignments:', events);
+      
+      setEvents(events);
+      return events;
     } catch (error) {
       console.error('Error fetching events:', error);
       showError('Failed to load events');
       return [];
     }
   };
-  console.log('Events with assignments:', eventsWithAssignments);
+
   // Update the loadScheduleData function
   const loadScheduleData = async () => {
     try {
