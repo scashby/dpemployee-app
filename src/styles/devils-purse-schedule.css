@@ -190,7 +190,7 @@
     border-left: 3px solid #007bff;
     cursor: pointer;
   }
-  
+
   .dp-shift-time {
     font-weight: 600;
     display: block;
@@ -206,8 +206,7 @@
     position: relative;
     display: flex;
     gap: 0.25rem;
-    margin-left: 0.5rem;
-    align-self: flex-start;
+    align-self: flex-end;
   }
 
   .dp-shift-action {
@@ -379,5 +378,9 @@
 /* Adjust position of edit/remove icons */
 .dp-shift-content {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+}
+
+.dp-shift-info-container {
+  margin-bottom: 0.5rem;
 }
