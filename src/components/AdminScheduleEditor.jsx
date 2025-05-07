@@ -15,7 +15,6 @@ import FormSelect from './shared/FormSelect';
 import SaveAsTemplateModal from './shared/SaveAsTemplateModal'; 
 import '../styles/admin.css';
 import '../styles/devils-purse.css';
-import '../styles/devils-purse-schedule.css'; // Import the new schedule styles
 
 const AdminScheduleEditor = () => {
   // Use custom hooks for core functionality
