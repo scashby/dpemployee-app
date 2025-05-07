@@ -176,8 +176,8 @@ const AdminScheduleEditor = () => {
     }
   };
   
-  // Load schedule data - modified to only include employees with shifts
-const loadScheduleData = async () => {
+  // Update the loadScheduleData function to properly preserve manually added employees
+  const loadScheduleData = async () => {
     try {
       setLoading(true);
       const dateRange = getWeekDateRange(currentWeekStart);
@@ -195,59 +195,36 @@ const loadScheduleData = async () => {
       // Track which employees have shifts
       const employeesWithShifts = new Set();
       
-      // Initialize schedule structure (only for employees with shifts)
+      // Initialize schedule structure
       const scheduleByEmployee = {};
       
-      // Process regular shifts to identify employees with shifts
-      if (data && data.length > 0) {
-        data.forEach(shift => {
-          const empName = shift.employee_name;
-          employeesWithShifts.add(empName);
+      // First, add any employees that were manually added to the schedule
+      // This ensures they appear even without shifts
+      Object.keys(scheduleData).forEach(empName => {
+        scheduleByEmployee[empName] = {};
+        dayNames.forEach(day => {
+          scheduleByEmployee[empName][day] = [];
         });
-      }
-      
-      // Process events to identify employees with event shifts
-      if (events && events.length > 0) {
-        events.forEach(event => {
-          if (!event.assignments) return;
-          
-          event.assignments.forEach(assignment => {
-            const employee = employees.find(emp => emp.id === assignment.employee_id);
-            if (employee) {
-              employeesWithShifts.add(employee.name);
-            }
-          });
-        });
-      }
-      
-      // Only include employees that have shifts
-      const scheduledEmployees = [...employeesWithShifts];
-      scheduledEmployees.forEach(empName => {
-        const matchingEmployee = employees.find(emp => 
-          emp.name === empName || emp.name.includes(empName) || empName.includes(emp.name)
-        );
-        
-        if (matchingEmployee) {
-          scheduleByEmployee[matchingEmployee.name] = {};
-          dayNames.forEach(day => {
-            scheduleByEmployee[matchingEmployee.name][day] = [];
-          });
-        }
+        employeesWithShifts.add(empName);
       });
       
-      // Now process shifts for these employees
+      // Process regular shifts
       if (data && data.length > 0) {
         data.forEach(shift => {
           const empName = shift.employee_name;
           const day = shift.day;
           
-          // Find matching employee
-          for (const name of Object.keys(scheduleByEmployee)) {
-            if (name === empName || name.includes(empName) || empName.includes(name)) {
-              scheduleByEmployee[name][day].push(shift);
-              break;
-            }
+          // Add employee to schedule if not already there
+          if (!scheduleByEmployee[empName]) {
+            scheduleByEmployee[empName] = {};
+            dayNames.forEach(d => {
+              scheduleByEmployee[empName][d] = [];
+            });
           }
+          
+          // Add shift to employee's schedule
+          scheduleByEmployee[empName][day].push(shift);
+          employeesWithShifts.add(empName);
         });
       }
       
@@ -261,7 +238,15 @@ const loadScheduleData = async () => {
           
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
-            if (!employee || !scheduleByEmployee[employee.name]) return;
+            if (!employee) return;
+            
+            // Add employee to schedule if not already there
+            if (!scheduleByEmployee[employee.name]) {
+              scheduleByEmployee[employee.name] = {};
+              dayNames.forEach(day => {
+                scheduleByEmployee[employee.name][day] = [];
+              });
+            }
             
             scheduleByEmployee[employee.name][dayOfWeek].push({
               id: `event_${event.id}_${assignment.employee_id}`,
@@ -271,14 +256,17 @@ const loadScheduleData = async () => {
               shift: event.time || 'Event Time TBD',
               event_name: event.title,
               event_id: event.id,
-              event_info: event.info
+              event_info: event.info,
+              event_type: event.off_prem ? 'offsite' : 'event' 
             });
+            
+            employeesWithShifts.add(employee.name);
           });
         });
       }
       
       setScheduleData(scheduleByEmployee);
-      updateAvailableEmployees(new Set(Object.keys(scheduleByEmployee)));
+      updateAvailableEmployees(employeesWithShifts);
     } catch (error) {
       console.error('Error loading schedule data:', error);
       showError('Failed to load schedule. Please try again.');
