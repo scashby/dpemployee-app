@@ -282,7 +282,7 @@ const AdminScheduleEditor = () => {
           });
         });
       }
-      
+      console.log('Processed schedule data:', scheduleByEmployee);
       setScheduleData(scheduleByEmployee);
       updateAvailableEmployees(employeesWithShifts);
     } catch (error) {
