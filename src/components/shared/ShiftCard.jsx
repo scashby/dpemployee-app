@@ -34,7 +34,7 @@ const ShiftCard = ({
   return (
     <div className={`dp-shift ${shiftClass} ${className}`}>
       <div className="dp-shift-content">
-        <span>
+        <div className="dp-shift-info-container">
           <div className="dp-shift-title">{title}</div>
           <div className="dp-shift-time">{subtitle}</div>
           {shift.event_info && (
@@ -44,7 +44,7 @@ const ShiftCard = ({
                 : shift.event_info}
             </span>
           )}
-        </span>
+        </div>
         
         {showActions && shift.event_type === 'tasting' && (
           <div className="dp-shift-actions">
