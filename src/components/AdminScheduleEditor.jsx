@@ -285,26 +285,23 @@ const AdminScheduleEditor = () => {
           if (!event.assignments) return;
           
           // Check if event date is within the current week
-const eventDate = new Date(event.date);
-console.log(`Event ID: ${event.id}, Title: ${event.title}`);
-console.log(`Raw event date from DB: ${event.date}`);
-console.log(`Event date as JS Date: ${eventDate}`); 
-console.log(`Event day of week: ${eventDate.getDay()}`); // 0=Sunday, 6=Saturday
+          const eventDate = new Date(event.date);
+          // Add time to both dates to ensure proper comparison
+          eventDate.setHours(12, 0, 0, 0);
+          const weekStart = new Date(currentWeekStart);
+          weekStart.setHours(0, 0, 0, 0);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          weekEnd.setHours(23, 59, 59, 999);
 
-// Add time to both dates to ensure proper comparison
-eventDate.setHours(12, 0, 0, 0);
-const weekStart = new Date(currentWeekStart);
-weekStart.setHours(0, 0, 0, 0);
-const weekEnd = new Date(weekStart);
-weekEnd.setDate(weekStart.getDate() + 6);
-weekEnd.setHours(23, 59, 59, 999);
+          // Skip events not in current week
+          if (eventDate < weekStart || eventDate > weekEnd) return;
 
-// Skip events not in current week
-if (eventDate < weekStart || eventDate > weekEnd) return;
-
-// Hard code to SAT (the correct day) to see if it resolves the issue
-const dayOfWeek = 'SAT';
-console.log(`Mapped day of week: ${dayOfWeek}`);         
+          // Map JavaScript's day index (0=Sunday, 1=Monday, etc.) to our dayNames array indices
+          const jsDay = eventDate.getDay(); // 0=Sunday, 1=Monday, etc.
+          // Convert to match our dayNames array (which is 0=Monday, 6=Sunday)
+          const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
+          const dayOfWeek = dayNames[dayIndex];      
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
             if (!employee || !scheduleByEmployee[employee.name]) return;
