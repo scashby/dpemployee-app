@@ -1591,10 +1591,6 @@ const AdminEvents = () => {
     </table>
   </div>
 </div>
-    </div>
-  );
-};
-
 {showPrintForm && selectedEvent && (
   <div className="modal-backdrop">
     <div className="modal">
@@ -1619,6 +1615,10 @@ const AdminEvents = () => {
     </div>
   </div>
 )}
+    </div>
+  );
+};
+
 // Printable Event Form
 const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => {
   if (!event) return null;
