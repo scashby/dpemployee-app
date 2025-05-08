@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'; 
 import { supabase } from '../supabase/supabaseClient';
-import { getWeekDateRange, formatDateForDB } from '../utils/dateUtils';
+import { getWeekDateRange, formatDateForDB, getDayOfWeekIndex } from '../utils/dateUtils';
 import useWeekNavigation from '../hooks/useWeekNavigation';
 import useMessages from '../hooks/useMessages';
 import useModalState from '../hooks/useModalState';
@@ -296,18 +296,14 @@ const AdminScheduleEditor = () => {
 
           // Skip events not in current week
           if (eventDate < weekStart || eventDate > weekEnd) return;
-          
-          // Create a mapping that correctly aligns JS day index (0=Sunday) with our dayNames array (starts with Monday)
-          const dayMapping = {
-            0: 'SUN', // Sunday (JS index 0) → SUN (last in our array)
-            1: 'MON', // Monday (JS index 1) → MON (first in our array)
-            2: 'TUE',
-            3: 'WED',
-            4: 'THU',
-            5: 'FRI',
-            6: 'SAT'
-          };
-          const dayOfWeek = dayMapping[eventDate.getDay()];          
+
+          // Use the getDay directly to determine the day index
+          // JavaScript getDay(): 0=Sunday, 1=Monday, etc.
+          // Our dayNames array: MON, TUE, WED, THU, FRI, SAT, SUN
+          // So we need a custom mapping
+          const jsDay = eventDate.getDay(); // 0=Sunday, 6=Saturday
+          const dayIndex = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Monday, 6=Sunday
+          const dayOfWeek = dayNames[dayIndex];         
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
             if (!employee || !scheduleByEmployee[employee.name]) return;
