@@ -1095,19 +1095,22 @@
   background-color: #b08a43;
 }
 
-/* Event type styling */
+/* Event type styling - fix font sizes */
 .dp-shift-title {
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Increase from 0.8rem to make more prominent */
   color: white;
   font-weight: bold;
   text-align: center;
+  margin-bottom: 0.25rem; /* Add margin below title */
 }
 
 .dp-shift-time {
+  font-size: 0.8rem; /* Add explicit smaller font size */
   font-weight: normal;
   display: block;
   margin-bottom: 0.25rem;
   color: white;
+  opacity: 0.9; /* Slightly less prominent than title */
   text-align: center;
 }
 
