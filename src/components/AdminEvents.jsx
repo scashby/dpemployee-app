@@ -594,7 +594,10 @@ const AdminEvents = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    // Fix timezone issues by explicitly parsing the date parts
+    // This ensures the date displayed matches the date stored without timezone shifts
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString();
   };
 
