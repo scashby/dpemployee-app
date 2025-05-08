@@ -226,10 +226,14 @@ const AdminScheduleEditor = () => {
           
           // Check if event date is within the current week
           const eventDate = new Date(event.date);
+          // Add time to both dates to ensure proper comparison
+          eventDate.setHours(12, 0, 0, 0);
           const weekStart = new Date(currentWeekStart);
+          weekStart.setHours(0, 0, 0, 0);
           const weekEnd = new Date(weekStart);
           weekEnd.setDate(weekStart.getDate() + 6);
-          
+          weekEnd.setHours(23, 59, 59, 999);
+
           // Skip events not in current week
           if (eventDate < weekStart || eventDate > weekEnd) return;
           
@@ -282,10 +286,14 @@ const AdminScheduleEditor = () => {
           
           // Check if event date is within the current week
           const eventDate = new Date(event.date);
+          // Add time to both dates to ensure proper comparison
+          eventDate.setHours(12, 0, 0, 0);
           const weekStart = new Date(currentWeekStart);
+          weekStart.setHours(0, 0, 0, 0);
           const weekEnd = new Date(weekStart);
           weekEnd.setDate(weekStart.getDate() + 6);
-          
+          weekEnd.setHours(23, 59, 59, 999);
+
           // Skip events not in current week
           if (eventDate < weekStart || eventDate > weekEnd) return;
           
