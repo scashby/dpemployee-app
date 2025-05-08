@@ -40,13 +40,6 @@ const ShiftCard = ({
         <div className="dp-shift-info-container">
           <div className="dp-shift-title">{title}</div>
           <div className="dp-shift-time">{subtitle}</div>
-          {shift.event_info && (
-            <span className="dp-shift-info">
-              {shift.event_info?.length > 50 
-                ? `${shift.event_info.substring(0, 50)}...` 
-                : shift.event_info}
-            </span>
-          )}
         </div>
         
         {showActions && shift.event_type === 'tasting' && (
