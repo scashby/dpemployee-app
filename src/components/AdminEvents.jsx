@@ -22,7 +22,6 @@ const AdminEvents = () => {
     info: '',
     event_instructions: '',
     off_prem: false,
-    selectedEmployees: [],
     supplies: {
       table_needed: false,
       beer_buckets: false,
@@ -43,6 +42,7 @@ const AdminEvents = () => {
   const [openEventId, setOpenEventId] = useState(null);
   const [showPostNotes, setShowPostNotes] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [newEventEmployees, setNewEventEmployees] = useState([]);
 
   // Helper functions for the detail view
   const [showPrintForm, setShowPrintForm] = useState(false);
@@ -193,8 +193,8 @@ const AdminEvents = () => {
   };
 
   const handleEmployeeSelection = (e, eventId) => {
-    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-    
+  const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+  
     if (eventId) {
       // Update event assignments for existing event
       setEventAssignments({
@@ -203,7 +203,7 @@ const AdminEvents = () => {
       });
     } else {
       // Store selected employees temporarily for new event
-      setNewEvent({ ...newEvent, selectedEmployees: selectedOptions });
+      setNewEventEmployees(selectedOptions);
     }
   };
 
@@ -319,15 +319,22 @@ const AdminEvents = () => {
       
       // Update event details
       const { error } = await supabase
-        .from('events')
-        .update({
-          title: eventToUpdate.title,
-          date: eventToUpdate.date,
-          time: eventToUpdate.time,
-          info: eventToUpdate.info,
-          off_prem: eventToUpdate.off_prem
-        })
-        .eq('id', id);
+      .from('events')
+      .update({
+        title: eventToUpdate.title,
+        date: eventToUpdate.date,
+        time: eventToUpdate.time,
+        setup_time: eventToUpdate.setup_time,
+        duration: eventToUpdate.duration,
+        contact_name: eventToUpdate.contact_name,
+        contact_phone: eventToUpdate.contact_phone,
+        expected_attendees: eventToUpdate.expected_attendees,
+        event_type: eventToUpdate.event_type,
+        event_type_other: eventToUpdate.event_type_other,
+        event_instructions: eventToUpdate.event_instructions || eventToUpdate.info,
+        off_prem: eventToUpdate.off_prem
+      })
+      .eq('id', id);
 
       if (error) throw error;
       
@@ -408,7 +415,6 @@ const AdminEvents = () => {
           time: newEvent.time,
           setup_time: newEvent.setup_time,
           duration: newEvent.duration,
-          staff_attending: newEvent.staff_attending,
           contact_name: newEvent.contact_name,
           contact_phone: newEvent.contact_phone,
           expected_attendees: newEvent.expected_attendees ? parseInt(newEvent.expected_attendees) : null,
@@ -472,8 +478,8 @@ const AdminEvents = () => {
       if (notesError) throw notesError;
       
       // If employees were selected, create assignments
-      if (newEvent.selectedEmployees && newEvent.selectedEmployees.length > 0) {
-        const assignments = newEvent.selectedEmployees.map(empId => ({
+      if (newEventEmployees && newEventEmployees.length > 0) {
+        const assignments = newEventEmployees.map(empId => ({
           event_id: newEventId,
           employee_id: empId
         }));
@@ -487,7 +493,7 @@ const AdminEvents = () => {
         // Update the assignments state
         setEventAssignments({
           ...eventAssignments,
-          [newEventId]: newEvent.selectedEmployees
+          [newEventId]: newEventEmployees
         });
       }
       
@@ -501,7 +507,6 @@ const AdminEvents = () => {
         time: '',
         setup_time: '',
         duration: '',
-        staff_attending: '',
         contact_name: '',
         contact_phone: '',
         expected_attendees: '',
@@ -510,7 +515,6 @@ const AdminEvents = () => {
         info: '',
         event_instructions: '',
         off_prem: false,
-        selectedEmployees: [],
         supplies: {
           table_needed: false,
           beer_buckets: false,
@@ -524,6 +528,7 @@ const AdminEvents = () => {
         },
         beers: []
       });
+      setNewEventEmployees([]);
       
       setSuccessMessage('Event added successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -676,12 +681,21 @@ const AdminEvents = () => {
         <label className="dp-form-label">
           DP Staff Attending
         </label>
-        <input
-          type="text"
-          value={newEvent.staff_attending}
-          onChange={(e) => handleInputChange(e, null, 'staff_attending')}
-          className="dp-input"
-        />
+        <select
+          multiple
+          className="dp-select"
+          onChange={(e) => handleEmployeeSelection(e, null)}
+          value={newEventEmployees || []}
+        >
+          {employees.map(emp => (
+            <option key={emp.id} value={emp.id}>
+              {emp.name}
+            </option>
+          ))}
+        </select>
+        <div className="dp-form-help">
+          Hold Ctrl/Cmd to select multiple employees
+        </div>
       </div>
     </div>
 
@@ -984,27 +998,6 @@ const AdminEvents = () => {
       Add Beer
     </button>
     
-    <div className="dp-form-group">
-      <label className="dp-form-label">
-        Assign Employees
-      </label>
-      <select
-        multiple
-        className="dp-select"
-        onChange={(e) => handleEmployeeSelection(e, null)}
-        value={newEvent.selectedEmployees || []}
-      >
-        {employees.map(emp => (
-          <option key={emp.id} value={emp.id}>
-            {emp.name}
-          </option>
-        ))}
-      </select>
-      <div className="dp-form-help">
-        Hold Ctrl/Cmd to select multiple employees
-      </div>
-    </div>
-    
     <div className="dp-form-actions">
       <button
         type="submit"
@@ -1052,12 +1045,11 @@ const AdminEvents = () => {
                   {event.duration || event.time || "Time TBD"}
                 </td>
                 <td>
-                  {event.staff_attending || (
-                    eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
+                  {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
                     employees.find(e => e.id === eventAssignments[event.id][0])?.name + 
                     (eventAssignments[event.id].length > 1 ? ` +${eventAssignments[event.id].length - 1} more` : '')
                     : "Not assigned"
-                  )}
+                  }
                 </td>
                 <td>
                   <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>
@@ -1115,7 +1107,12 @@ const AdminEvents = () => {
                             <strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}
                           </div>
                           <div>
-                            <strong>Staff Attending:</strong> {event.staff_attending || "Not assigned"}
+                            <strong>Staff Attending:</strong> 
+                            {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
+                              eventAssignments[event.id].map(empId => 
+                                employees.find(e => e.id === empId)?.name).filter(Boolean).join(', ')
+                              : "Not assigned"
+                            }
                           </div>
                           <div>
                             <strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}
@@ -1263,12 +1260,21 @@ const AdminEvents = () => {
                         </div>
                         <div className="dp-form-group">
                           <label className="dp-form-label">Staff Attending</label>
-                          <input
-                            type="text"
-                            value={event.staff_attending || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'staff_attending')}
-                            className="dp-input"
-                          />
+                          <select
+                            multiple
+                            className="dp-select"
+                            onChange={(e) => handleEmployeeSelection(e, event.id)}
+                            value={eventAssignments[event.id] || []}
+                          >
+                            {employees.map(emp => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="dp-form-help">
+                            Hold Ctrl/Cmd to select multiple employees
+                          </div>
                         </div>
                       </div>
 
@@ -1547,25 +1553,6 @@ const AdminEvents = () => {
                         Add Beer
                       </button>
 
-                      <div className="dp-form-group">
-                        <label className="dp-form-label">Assign Employees</label>
-                        <select
-                          multiple
-                          className="dp-select"
-                          onChange={(e) => handleEmployeeSelection(e, event.id)}
-                          value={eventAssignments[event.id] || []}
-                        >
-                          {employees.map(emp => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="dp-form-help">
-                          Hold Ctrl/Cmd to select multiple employees
-                        </div>
-                      </div>
-
                       <div className="dp-button-group">
                         <button
                           onClick={() => saveEventChanges(event.id)}
@@ -1667,7 +1654,7 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
         <div className="print-row">
           <div className="print-field">
             <label>DP Staff Attending:</label>
-            <span>{event.staff_attending || 'Not specified'}</span>
+            <span>{assignedEmployees.length > 0 ? assignedEmployees.join(', ') : 'Not assigned'}</span>
           </div>
         </div>
         
