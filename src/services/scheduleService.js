@@ -160,8 +160,17 @@ export const processEvents = (events, employees, scheduleByEmployee, scheduledEm
     if (!event.assignments) return;
     
     const eventDate = new Date(event.date);
-    const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][eventDate.getDay()];
-    
+    // Create a mapping that correctly aligns JS day index (0=Sunday) with our dayNames array (starts with Monday)
+    const dayMapping = {
+      0: 'SUN', // Sunday (JS index 0) → SUN (last in our array)
+      1: 'MON', // Monday (JS index 1) → MON (first in our array)
+      2: 'TUE',
+      3: 'WED',
+      4: 'THU',
+      5: 'FRI',
+      6: 'SAT'
+    };
+    const dayOfWeek = dayMapping[eventDate.getDay()];    
     event.assignments.forEach(assignment => {
       const employee = employees.find(emp => emp.id === assignment.employee_id);
       if (!employee || !scheduleByEmployee[employee.name]) return;
