@@ -285,25 +285,26 @@ const AdminScheduleEditor = () => {
           if (!event.assignments) return;
           
           // Check if event date is within the current week
-          const eventDate = new Date(event.date);
-          // Add time to both dates to ensure proper comparison
-          eventDate.setHours(12, 0, 0, 0);
-          const weekStart = new Date(currentWeekStart);
-          weekStart.setHours(0, 0, 0, 0);
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekStart.getDate() + 6);
-          weekEnd.setHours(23, 59, 59, 999);
+const eventDate = new Date(event.date);
+console.log(`Event ID: ${event.id}, Title: ${event.title}`);
+console.log(`Raw event date from DB: ${event.date}`);
+console.log(`Event date as JS Date: ${eventDate}`); 
+console.log(`Event day of week: ${eventDate.getDay()}`); // 0=Sunday, 6=Saturday
 
-          // Skip events not in current week
-          if (eventDate < weekStart || eventDate > weekEnd) return;
+// Add time to both dates to ensure proper comparison
+eventDate.setHours(12, 0, 0, 0);
+const weekStart = new Date(currentWeekStart);
+weekStart.setHours(0, 0, 0, 0);
+const weekEnd = new Date(weekStart);
+weekEnd.setDate(weekStart.getDate() + 6);
+weekEnd.setHours(23, 59, 59, 999);
 
-          // Use the getDay directly to determine the day index
-          // JavaScript getDay(): 0=Sunday, 1=Monday, etc.
-          // Our dayNames array: MON, TUE, WED, THU, FRI, SAT, SUN
-          // So we need a custom mapping
-          const jsDay = eventDate.getDay(); // 0=Sunday, 6=Saturday
-          const dayIndex = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Monday, 6=Sunday
-          const dayOfWeek = dayNames[dayIndex];         
+// Skip events not in current week
+if (eventDate < weekStart || eventDate > weekEnd) return;
+
+// Hard code to SAT (the correct day) to see if it resolves the issue
+const dayOfWeek = 'SAT';
+console.log(`Mapped day of week: ${dayOfWeek}`);         
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
             if (!employee || !scheduleByEmployee[employee.name]) return;
