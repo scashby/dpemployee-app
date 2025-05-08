@@ -1619,110 +1619,146 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
     <div className="printable-event-form">
       <div className="print-header">
         <img src="/logo.png" alt="Devil's Purse Logo" className="print-logo" />
-        <div className="print-title-bar">
-          <h1>DPBC TASTING + EVENT FORM</h1>
-        </div>
+      </div>
+      <div className="print-title-bar">
+        <h1>DPBC TASTING + EVENT FORM</h1>
       </div>
       
       <div className="print-form-content">
-        <div className="print-field-row">
-          <div className="print-field-label">Event Name :</div>
-          <div className="print-field-value">{event.title}</div>
-        </div>
-        
-        <div className="print-field-row">
-          <div className="print-field-label">Event Date:</div>
-          <div className="print-field-value">{new Date(event.date).toLocaleDateString()}</div>
-        </div>
-        
-        <div className="print-field-row">
-          <div className="print-field-label">Event Set Up Time:</div>
-          <div className="print-field-value">{event.setup_time || ''}</div>
-        </div>
-        
-        <div className="print-field-row">
-          <div className="print-field-label">Event Duration:</div>
-          <div className="print-field-value">{event.duration || event.time || ''}</div>
-        </div>
-        
-        <div className="print-field-row">
-          <div className="print-field-label">DP Staff Attending:</div>
-          <div className="print-field-value">{assignedEmployees.length > 0 ? assignedEmployees.join(', ') : ''}</div>
-        </div>
-        
-        <div className="print-field-row">
-          <div className="print-field-label">Event Contact(Name, Phone):</div>
-          <div className="print-field-value">{event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : ''}</div>
-        </div>
-        
-        <div className="print-field-row">
-          <div className="print-field-label">Expected # of Attendees:</div>
-          <div className="print-field-value">{event.expected_attendees || '?'}</div>
-        </div>
+        <table className="print-form-table">
+          <tbody>
+            <tr>
+              <td className="print-field-label">Event Name :</td>
+              <td className="print-field-value">{event.title}</td>
+            </tr>
+            <tr>
+              <td className="print-field-label">Event Date:</td>
+              <td className="print-field-value">{new Date(event.date).toLocaleDateString()}</td>
+            </tr>
+            <tr>
+              <td className="print-field-label">Event Set Up Time:</td>
+              <td className="print-field-value">{event.setup_time || ''}</td>
+            </tr>
+            <tr>
+              <td className="print-field-label">Event Duration:</td>
+              <td className="print-field-value">{event.duration || event.time || ''}</td>
+            </tr>
+            <tr>
+              <td className="print-field-label">DP Staff Attending:</td>
+              <td className="print-field-value">{assignedEmployees.length > 0 ? assignedEmployees.join(', ') : ''}</td>
+            </tr>
+            <tr>
+              <td className="print-field-label">Event Contact(Name, Phone):</td>
+              <td className="print-field-value">{event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : ''}</td>
+            </tr>
+            <tr>
+              <td className="print-field-label">Expected # of Attendees:</td>
+              <td className="print-field-value">{event.expected_attendees || '?'}</td>
+            </tr>
+          </tbody>
+        </table>
         
         <div className="print-section-header">Type of Event</div>
-        <div className="print-event-type">
-          <div className="print-checkbox-row">
-            <div className="print-checkbox-label">Tasting:</div>
-            <div className="print-checkbox">{event.event_type === 'tasting' ? '✓' : '□'}</div>
-          </div>
-          <div className="print-checkbox-row">
-            <div className="print-checkbox-label">Pint Night:</div>
-            <div className="print-checkbox">{event.event_type === 'pint_night' ? '✓' : '□'}</div>
-          </div>
-          <div className="print-checkbox-row">
-            <div className="print-checkbox-label">Beer Fest :</div>
-            <div className="print-checkbox">{event.event_type === 'beer_fest' ? '✓' : '□'}</div>
-          </div>
-          <div className="print-checkbox-row">
-            <div className="print-checkbox-label">Other :</div>
-            <div className="print-checkbox">{event.event_type === 'other' ? '✓' : '□'}</div>
-            <div className="print-checkbox-value">{event.event_type === 'other' ? event.event_type_other : ''}</div>
-          </div>
-        </div>
-        
-        <div className="print-section-header">SUPPLIES NEEDED</div>
-        <div className="print-supplies-table">
-          <div className="print-supplies-header">
-            <div className="print-beer-style">Beer Style</div>
-            <div className="print-pkg">Pkg</div>
-            <div className="print-qty">Qty</div>
-            <div className="print-supplies-checks">
-              <div className="print-supply-check">
-                <span>Table:</span>
-                <div className="print-checkbox">{event.supplies?.table_needed ? '✓' : '□'}</div>
-              </div>
-              <div className="print-supply-check">
-                <span>Beer buckets:</span>
-                <div className="print-checkbox">{event.supplies?.beer_buckets ? '✓' : '□'}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="print-beers-list">
-            {event.beers && event.beers.length > 0 ? (
-              // Map through beers
-              event.beers.map((beer, idx) => (
-                <div key={idx} className="print-beer-row">
-                  <div className="print-beer-style">{beer.beer_style}</div>
-                  <div className="print-pkg">{beer.packaging}</div>
-                  <div className="print-qty">{beer.quantity}</div>
-                  
-                  {/* Show checkboxes on appropriate rows */}
-                  {idx === 0 && (
-                    <div className="print-supplies-checks">
-                      <div className="print-supply-check">
-                        <span>Table:</span>
-                        <div className="print-checkbox">{event.supplies?.table_needed ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Beer buckets:</span>
-                        <div className="print-checkbox">{event.supplies?.beer_buckets ? '✓' : '□'}</div>
-                      </div>
-                    </div>
+          <table className="print-event-type-table">
+            <tbody>
+              <tr>
+                <td className="print-checkbox-cell">
+                  <div className="print-checkbox-label">Tasting:</div>
+                  <div className="print-checkbox">{event.event_type === 'tasting' ? '✓' : '□'}</div>
+                </td>
+                <td className="print-checkbox-cell">
+                  <div className="print-checkbox-label">Pint Night:</div>
+                  <div className="print-checkbox">{event.event_type === 'pint_night' ? '✓' : '□'}</div>
+                </td>
+              </tr>
+              <tr>
+                <td className="print-checkbox-cell">
+                  <div className="print-checkbox-label">Beer Fest :</div>
+                  <div className="print-checkbox">{event.event_type === 'beer_fest' ? '✓' : '□'}</div>
+                </td>
+                <td className="print-checkbox-cell print-other-cell">
+                  <div className="print-checkbox-with-value">
+                    <div className="print-checkbox-label">Other :</div>
+                    <div className="print-checkbox">{event.event_type === 'other' ? '✓' : '□'}</div>
+                  </div>
+                  {event.event_type === 'other' && (
+                    <div className="print-other-value">{event.event_type_other}</div>
                   )}
-                  {idx === 1 && (
-                    <div className="print-supplies-checks">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        
+          <div className="print-section-header">SUPPLIES NEEDED</div>
+          <table className="print-supplies-table">
+            <thead>
+              <tr>
+                <th className="beer-style-col">Beer Style</th>
+                <th className="pkg-col">Pkg</th>
+                <th className="qty-col">Qty</th>
+                <th className="supplies-col" colSpan="2">
+                  <div className="print-supplies-header-checks">
+                    <div className="print-supply-check">
+                      <span>Table:</span>
+                      <div className="print-checkbox">{event.supplies?.table_needed ? '✓' : '□'}</div>
+                    </div>
+                    <div className="print-supply-check">
+                      <span>Beer buckets:</span>
+                      <div className="print-checkbox">{event.supplies?.beer_buckets ? '✓' : '□'}</div>
+                    </div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {event.beers && event.beers.length > 0 ? (
+                event.beers.map((beer, idx) => (
+                  <tr key={idx} className="print-beer-row">
+                    <td className="beer-style-col">{beer.beer_style}</td>
+                    <td className="pkg-col">{beer.packaging}</td>
+                    <td className="qty-col">{beer.quantity}</td>
+                    {idx === 0 && (
+                      <td className="supplies-col" rowSpan={Math.max(3, event.beers.length)}>
+                        <div className="print-supply-check">
+                          <span>Table Cloth:</span>
+                          <div className="print-checkbox">{event.supplies?.table_cloth ? '✓' : '□'}</div>
+                        </div>
+                        <div className="print-supply-check">
+                          <span>Tent/Weights:</span>
+                          <div className="print-checkbox">{event.supplies?.tent_weights ? '✓' : '□'}</div>
+                        </div>
+                        <div className="print-supply-check">
+                          <span>Signage:</span>
+                          <div className="print-checkbox">{event.supplies?.signage ? '✓' : '□'}</div>
+                        </div>
+                        <div className="print-supply-check">
+                          <span>Ice:</span>
+                          <div className="print-checkbox">{event.supplies?.ice ? '✓' : '□'}</div>
+                        </div>
+                      </td>
+                    )}
+                    {idx === 0 && (
+                      <td className="supplies-col" rowSpan={Math.max(3, event.beers.length)}>
+                        <div className="print-supply-check">
+                          <span>Jockey box:</span>
+                          <div className="print-checkbox">{event.supplies?.jockey_box ? '✓' : '□'}</div>
+                          <div className="print-jockey-info">(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)</div>
+                        </div>
+                        <div className="print-supply-check">
+                          <span>Cups:</span>
+                          <div className="print-checkbox">{event.supplies?.cups ? '✓' : '□'}</div>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <>
+                  <tr className="print-beer-row empty-row">
+                    <td className="beer-style-col"></td>
+                    <td className="pkg-col"></td>
+                    <td className="qty-col"></td>
+                    <td className="supplies-col" rowSpan="3">
                       <div className="print-supply-check">
                         <span>Table Cloth:</span>
                         <div className="print-checkbox">{event.supplies?.table_cloth ? '✓' : '□'}</div>
@@ -1731,10 +1767,6 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
                         <span>Tent/Weights:</span>
                         <div className="print-checkbox">{event.supplies?.tent_weights ? '✓' : '□'}</div>
                       </div>
-                    </div>
-                  )}
-                  {idx === 2 && (
-                    <div className="print-supplies-checks">
                       <div className="print-supply-check">
                         <span>Signage:</span>
                         <div className="print-checkbox">{event.supplies?.signage ? '✓' : '□'}</div>
@@ -1743,10 +1775,8 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
                         <span>Ice:</span>
                         <div className="print-checkbox">{event.supplies?.ice ? '✓' : '□'}</div>
                       </div>
-                    </div>
-                  )}
-                  {idx === 3 && (
-                    <div className="print-supplies-checks">
+                    </td>
+                    <td className="supplies-col" rowSpan="3">
                       <div className="print-supply-check">
                         <span>Jockey box:</span>
                         <div className="print-checkbox">{event.supplies?.jockey_box ? '✓' : '□'}</div>
@@ -1756,139 +1786,95 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
                         <span>Cups:</span>
                         <div className="print-checkbox">{event.supplies?.cups ? '✓' : '□'}</div>
                       </div>
-                    </div>
-                  )}
+                    </td>
+                  </tr>
+                  <tr className="print-beer-row empty-row">
+                    <td className="beer-style-col"></td>
+                    <td className="pkg-col"></td>
+                    <td className="qty-col"></td>
+                  </tr>
+                  <tr className="print-beer-row empty-row">
+                    <td className="beer-style-col"></td>
+                    <td className="pkg-col"></td>
+                    <td className="qty-col"></td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        
+          <table className="print-form-table">
+            <tbody>
+              <tr>
+                <td className="print-field-label">Additional Supplies:</td>
+                <td className="print-field-value">
+                  {event.supplies?.additional_supplies || ''}
+                  <div className="print-note">(Stickers, Koozies, Hats, Dog toy)</div>
+                </td>
+              </tr>
+              <tr>
+                <td className="print-field-label">Event Instructions:</td>
+                <td className="print-field-value">
+                  {event.event_instructions || ''}
+                  <div className="print-note">(include additional notes here)</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        
+          <div className="print-section-header">POST EVENT NOTES</div>
+          <table className="print-post-notes-table">
+            <tbody>
+              <tr>
+                <td className="print-field-label">Estimated attendees:</td>
+                <td className="print-field-value">{event.notes?.estimated_attendees || ''}</td>
+              </tr>
+              <tr>
+                <td className="print-field-label">Was there a favorite style of beer offered?</td>
+                <td className="print-field-value">{event.notes?.favorite_beer || ''}</td>
+              </tr>
+              <tr>
+                <td className="print-field-label">Did you have enough product?</td>
+                <td className="print-field-value">{event.notes?.enough_product === true ? 'Yes' : (event.notes?.enough_product === false ? 'No' : '')}</td>
+              </tr>
+              <tr>
+                <td className="print-field-label">Were you adequately staffed for the event/tasting?</td>
+                <td className="print-field-value">{event.notes?.adequately_staffed === true ? 'Yes' : (event.notes?.adequately_staffed === false ? 'No' : '')}</td>
+              </tr>
+              <tr>
+                <td className="print-field-label">Should we continue to participate in this event?</td>
+                <td className="print-field-value">{event.notes?.continue_participation === true ? 'Yes' : (event.notes?.continue_participation === false ? 'No' : '')}</td>
+              </tr>
+              <tr>
+                <td className="print-field-label">Any critiques?</td>
+                <td className="print-field-value">{event.notes?.critiques || ''}</td>
+              </tr>
+            </tbody>
+          </table>
+        
+          <div className="print-section-header print-reminder-header">REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS</div>
+          <table className="print-form-table">
+            <tbody>
+              <tr>
+                <td className="print-field-label">RETURN EQUIPMENT BY:</td>
+                <td className="print-field-value print-equipment-return-date">{event.notes?.return_equipment_by ? new Date(event.notes.return_equipment_by).toLocaleDateString() : ''}</td>
+              </tr>
+            </tbody>
+          </table>
                 </div>
-              ))
-            ) : (
-              // Empty state - create four empty rows with checkboxes
-              [...Array(4)].map((_, idx) => (
-                <div key={idx} className="print-beer-row empty-row">
-                  <div className="print-beer-style"></div>
-                  <div className="print-pkg"></div>
-                  <div className="print-qty"></div>
-                  
-                  {idx === 0 && (
-                    <div className="print-supplies-checks">
-                      <div className="print-supply-check">
-                        <span>Table:</span>
-                        <div className="print-checkbox">{event.supplies?.table_needed ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Beer buckets:</span>
-                        <div className="print-checkbox">{event.supplies?.beer_buckets ? '✓' : '□'}</div>
-                      </div>
-                    </div>
-                  )}
-                  {idx === 1 && (
-                    <div className="print-supplies-checks">
-                      <div className="print-supply-check">
-                        <span>Table Cloth:</span>
-                        <div className="print-checkbox">{event.supplies?.table_cloth ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Tent/Weights:</span>
-                        <div className="print-checkbox">{event.supplies?.tent_weights ? '✓' : '□'}</div>
-                      </div>
-                    </div>
-                  )}
-                  {idx === 2 && (
-                    <div className="print-supplies-checks">
-                      <div className="print-supply-check">
-                        <span>Signage:</span>
-                        <div className="print-checkbox">{event.supplies?.signage ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Ice:</span>
-                        <div className="print-checkbox">{event.supplies?.ice ? '✓' : '□'}</div>
-                      </div>
-                    </div>
-                  )}
-                  {idx === 3 && (
-                    <div className="print-supplies-checks">
-                      <div className="print-supply-check">
-                        <span>Jockey box:</span>
-                        <div className="print-checkbox">{event.supplies?.jockey_box ? '✓' : '□'}</div>
-                        <div className="print-jockey-info">(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Cups:</span>
-                        <div className="print-checkbox">{event.supplies?.cups ? '✓' : '□'}</div>
-                      </div>
-                    </div>
-                  )}
+                
+                <div className="no-print">
+                  <button onClick={window.print} className="dp-button dp-button-primary">
+                    Print Form
+                  </button>
+                  <button onClick={onClose} className="dp-button dp-button-secondary">
+                    Close
+                  </button>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-        
-        <div className="print-additional-supplies">
-          <div className="print-field-label">Additional Supplies:</div>
-          <div className="print-field-value">{event.supplies?.additional_supplies || ''}</div>
-        </div>
-        
-        <div className="print-event-instructions">
-          <div className="print-field-label">Event Instructions:</div>
-          <div className="print-field-value">
-            {event.event_instructions || ''}
-            <div className="print-note">(include additional notes here)</div>
-          </div>
-        </div>
-        
-        <div className="print-section-header">POST EVENT NOTES</div>
-        <div className="print-post-notes">
-          <div className="print-field-row">
-            <div className="print-field-label">Estimated attendees:</div>
-            <div className="print-field-value">{event.notes?.estimated_attendees || ''}</div>
-          </div>
-          
-          <div className="print-field-row">
-            <div className="print-field-label">Was there a favorite style of beer offered?</div>
-            <div className="print-field-value">{event.notes?.favorite_beer || ''}</div>
-          </div>
-          
-          <div className="print-field-row">
-            <div className="print-field-label">Did you have enough product?</div>
-            <div className="print-field-value">{event.notes?.enough_product === true ? 'Yes' : (event.notes?.enough_product === false ? 'No' : '')}</div>
-          </div>
-          
-          <div className="print-field-row">
-            <div className="print-field-label">Were you adequately staffed for the event/tasting?</div>
-            <div className="print-field-value">{event.notes?.adequately_staffed === true ? 'Yes' : (event.notes?.adequately_staffed === false ? 'No' : '')}</div>
-          </div>
-          
-          <div className="print-field-row">
-            <div className="print-field-label">Should we continue to participate in this event?</div>
-            <div className="print-field-value">{event.notes?.continue_participation === true ? 'Yes' : (event.notes?.continue_participation === false ? 'No' : '')}</div>
-          </div>
-          
-          <div className="print-field-row">
-            <div className="print-field-label">Any critiques?</div>
-            <div className="print-field-value">{event.notes?.critiques || ''}</div>
-          </div>
-        </div>
-        
-        <div className="print-reminder">
-          <div className="print-reminder-text">REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS</div>
-          <div className="print-field-row">
-            <div className="print-field-label">RETURN EQUIPMENT BY:</div>
-            <div className="print-field-value">{event.notes?.return_equipment_by ? new Date(event.notes.return_equipment_by).toLocaleDateString() : ''}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="no-print">
-        <button onClick={window.print} className="dp-button dp-button-primary">
-          Print Form
-        </button>
-        <button onClick={onClose} className="dp-button dp-button-secondary">
-          Close
-        </button>
-      </div>
-    </div>
-  );
-};
+              </div>
+            );
+          };
+    
 // Post Event Notes Modal
 const PostEventNotesModal = ({ event, onClose, onSave }) => {
   const [notes, setNotes] = useState({
