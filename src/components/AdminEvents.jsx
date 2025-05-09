@@ -1705,293 +1705,62 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
     return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
   });
 
-  const generatePDF = () => {
-    import('jspdf').then(({ default: jsPDF }) => {
-      import('jspdf-autotable').then(() => {
-        const doc = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
-        
-        // Add logo
-        const logoUrl = '/logo.png'; 
-        // We'll add the logo asynchronously
-        const img = new Image();
-        img.src = logoUrl;
-        img.onload = function() {
-          // Add the logo to the center top
-          const imgWidth = 20;
-          const imgHeight = (img.height * imgWidth) / img.width;
-          doc.addImage(img, 'PNG', (doc.internal.pageSize.width - imgWidth) / 2, 10, imgWidth, imgHeight);
-          
-          // Title bar
-          doc.setFillColor(153, 153, 153);
-          doc.rect(0, 40, doc.internal.pageSize.width, 10, 'F');
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          doc.text('DPBC TASTING + EVENT FORM', doc.internal.pageSize.width / 2, 46, { align: 'center' });
-          
-          // Form content
-          doc.setTextColor(0, 0, 0);
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          
-          // Basic event information
-          doc.setFont('helvetica', 'bold');
-          doc.text('Event Name :', 20, 60);
-          doc.setFont('helvetica', 'normal');
-          doc.text(event.title || '', 60, 60);
-          
-          doc.setFont('helvetica', 'bold');
-          doc.text('Event Date:', 20, 67);
-          doc.setFont('helvetica', 'normal');
-          doc.text(new Date(event.date).toLocaleDateString(), 60, 67);
-          
-          doc.setFont('helvetica', 'bold');
-          doc.text('Event Set Up Time:', 20, 74);
-          doc.setFont('helvetica', 'normal');
-          doc.text(event.setup_time || '', 60, 74);
-          
-          doc.setFont('helvetica', 'bold');
-          doc.text('Event Duration:', 20, 81);
-          doc.setFont('helvetica', 'normal');
-          doc.text(event.duration || event.time || '', 60, 81);
-          
-          doc.setFont('helvetica', 'bold');
-          doc.text('DP Staff Attending:', 20, 88);
-          doc.setFont('helvetica', 'normal');
-          doc.text(assignedEmployees.length > 0 ? assignedEmployees.join(', ') : '', 60, 88);
-          
-          doc.setFont('helvetica', 'bold');
-          doc.text('Event Contact(Name, Phone):', 20, 95);
-          doc.setFont('helvetica', 'normal');
-          doc.text(event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '', 60, 95);
-          
-          doc.setFont('helvetica', 'bold');
-          doc.text('Expected # of Attendees:', 20, 102);
-          doc.setFont('helvetica', 'normal');
-          doc.text(event.expected_attendees ? event.expected_attendees.toString() : '?', 60, 102);
-          
-          // Event Type Section
-          doc.setFillColor(238, 238, 238);
-          doc.rect(0, 110, doc.internal.pageSize.width, 7, 'F');
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10);
-          doc.text('Type of Event', 20, 115);
-          
-          // Checkboxes for event type
-          doc.rect(30, 120, 4, 4, 'S');  // Tasting checkbox
-          if (event.event_type === 'tasting') {
-            doc.text('✓', 31, 123);
-          }
-          doc.text('Tasting:', 36, 123);
-          
-          doc.rect(85, 120, 4, 4, 'S');  // Pint Night checkbox
-          if (event.event_type === 'pint_night') {
-            doc.text('✓', 86, 123);
-          }
-          doc.text('Pint Night:', 91, 123);
-          
-          doc.rect(30, 128, 4, 4, 'S');  // Beer Fest checkbox
-          if (event.event_type === 'beer_fest') {
-            doc.text('✓', 31, 131);
-          }
-          doc.text('Beer Fest :', 36, 131);
-          
-          doc.rect(85, 128, 4, 4, 'S');  // Other checkbox
-          if (event.event_type === 'other') {
-            doc.text('✓', 86, 131);
-          }
-          doc.text('Other :', 91, 131);
-          
-          // Other event type description
-          if (event.event_type === 'other' && event.event_type_other) {
-            doc.setFont('helvetica', 'normal');
-            doc.text(event.event_type_other, 91, 138);
-          }
-          
-          // Supplies Section
-          doc.setFillColor(238, 238, 238);
-          doc.rect(0, 145, doc.internal.pageSize.width, 7, 'F');
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10);
-          doc.text('SUPPLIES NEEDED', doc.internal.pageSize.width / 2, 150, { align: 'center' });
-          
-          // Beer table headers
-          doc.autoTable({
-            startY: 155,
-            head: [['Beer Style', 'Pkg', 'Qty', 'Table:', 'Beer buckets:']],
-            body: [],
-            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-            columnStyles: {
-              0: { cellWidth: 70 },
-              1: { cellWidth: 20 },
-              2: { cellWidth: 15 },
-              3: { cellWidth: 30 },
-              4: { cellWidth: 40 }
-            },
-            didDrawCell: (data) => {
-              if (data.section === 'head' && data.column.index > 2) {
-                const dim = data.cell.height - 1;
-                const x = data.cell.x + 5;
-                const y = data.cell.y + 3.5;
-                
-                doc.rect(x, y, 4, 4, 'S');
-                
-                if ((data.column.index === 3 && event.supplies?.table_needed) ||
-                    (data.column.index === 4 && event.supplies?.beer_buckets)) {
-                  doc.text('✓', x + 1, y + 3);
-                }
-              }
-            }
-          });
-          
-          // Beer rows and supply checkboxes
-          const beerData = event.beers && event.beers.length > 0 
-            ? event.beers.map(beer => [beer.beer_style, beer.packaging, beer.quantity.toString()])
-            : [['', '', '']];
-            
-          let lastY = doc.previousAutoTable.finalY + 5;
-          
-          doc.autoTable({
-            startY: doc.previousAutoTable.finalY,
-            head: [],
-            body: beerData,
-            columnStyles: {
-              0: { cellWidth: 70 },
-              1: { cellWidth: 20 },
-              2: { cellWidth: 15 }
-            },
-            theme: 'grid'
-          });
-          
-          // Supplies checkboxes
-          lastY = doc.previousAutoTable.finalY + 10;
-          
-          // Left column of checkboxes
-          doc.text('Table Cloth:', 20, lastY);
-          doc.rect(70, lastY - 4, 4, 4, 'S');
-          if (event.supplies?.table_cloth) {
-            doc.text('✓', 71, lastY);
-          }
-          
-          doc.text('Tent/Weights:', 20, lastY + 8);
-          doc.rect(70, lastY + 4, 4, 4, 'S');
-          if (event.supplies?.tent_weights) {
-            doc.text('✓', 71, lastY + 8);
-          }
-          
-          doc.text('Signage:', 20, lastY + 16);
-          doc.rect(70, lastY + 12, 4, 4, 'S');
-          if (event.supplies?.signage) {
-            doc.text('✓', 71, lastY + 16);
-          }
-          
-          doc.text('Ice:', 20, lastY + 24);
-          doc.rect(70, lastY + 20, 4, 4, 'S');
-          if (event.supplies?.ice) {
-            doc.text('✓', 71, lastY + 24);
-          }
-          
-          // Right column of checkboxes
-          doc.text('Jockey box:', 100, lastY);
-          doc.rect(150, lastY - 4, 4, 4, 'S');
-          if (event.supplies?.jockey_box) {
-            doc.text('✓', 151, lastY);
-          }
-          doc.setFontSize(8);
-          doc.text('(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)', 100, lastY + 5);
-          
-          doc.setFontSize(10);
-          doc.text('Cups:', 100, lastY + 16);
-          doc.rect(150, lastY + 12, 4, 4, 'S');
-          if (event.supplies?.cups) {
-            doc.text('✓', 151, lastY + 16);
-          }
-          
-          // Additional supplies
-          lastY = lastY + 35;
-          doc.setFont('helvetica', 'bold');
-          doc.text('Additional Supplies:', 20, lastY);
-          doc.setFont('helvetica', 'normal');
-          doc.text(event.supplies?.additional_supplies || '', 70, lastY);
-          doc.setFontSize(8);
-          doc.text('(Stickers, Koozies, Hats, Dog toy)', 70, lastY + 5);
-          
-          // Event instructions
-          lastY = lastY + 15;
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Event Instructions:', 20, lastY);
-          doc.setFont('helvetica', 'normal');
-          
-          // Handle long event instructions with wrapping
-          const maxWidth = 120;
-          const instructionsText = event.event_instructions || '';
-          const splitInstructions = doc.splitTextToSize(instructionsText, maxWidth);
-          doc.text(splitInstructions, 70, lastY);
-          
-          doc.setFontSize(8);
-          doc.text('(include additional notes here)', 70, lastY + 5 + (splitInstructions.length * 3.5));
-          
-          // Post Event Notes Section
-          lastY = lastY + 25 + (splitInstructions.length * 3.5);
-          doc.setFillColor(238, 238, 238);
-          doc.rect(0, lastY - 5, doc.internal.pageSize.width, 7, 'F');
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10);
-          doc.text('POST EVENT NOTES', doc.internal.pageSize.width / 2, lastY, { align: 'center' });
-          
-          // Post event notes fields
-          lastY = lastY + 10;
-          doc.text('Estimated attendees:', 20, lastY);
-          doc.text(event.notes?.estimated_attendees || '', 120, lastY);
-          
-          lastY = lastY + 8;
-          doc.text('Was there a favorite style of beer offered?', 20, lastY);
-          doc.text(event.notes?.favorite_beer || '', 120, lastY);
-          
-          lastY = lastY + 8;
-          doc.text('Did you have enough product?', 20, lastY);
-          doc.text(event.notes?.enough_product === true ? 'Yes' : (event.notes?.enough_product === false ? 'No' : ''), 120, lastY);
-          
-          lastY = lastY + 8;
-          doc.text('Were you adequately staffed for the event/tasting?', 20, lastY);
-          doc.text(event.notes?.adequately_staffed === true ? 'Yes' : (event.notes?.adequately_staffed === false ? 'No' : ''), 120, lastY);
-          
-          lastY = lastY + 8;
-          doc.text('Should we continue to participate in this event?', 20, lastY);
-          doc.text(event.notes?.continue_participation === true ? 'Yes' : (event.notes?.continue_participation === false ? 'No' : ''), 120, lastY);
-          
-          lastY = lastY + 8;
-          doc.text('Any critiques?', 20, lastY);
-          doc.text(event.notes?.critiques || '', 120, lastY);
-          
-          // Reminder section
-          lastY = lastY + 15;
-          doc.setFillColor(240, 240, 240);
-          doc.rect(0, lastY - 5, doc.internal.pageSize.width, 7, 'F');
-          doc.setTextColor(204, 0, 0);  // Red text for the reminder
-          doc.text('REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS', doc.internal.pageSize.width / 2, lastY, { align: 'center' });
-          
-          // Return equipment by
-          lastY = lastY + 10;
-          doc.setTextColor(0, 0, 0);
-          doc.text('RETURN EQUIPMENT BY:', 20, lastY);
-          doc.text(event.notes?.return_equipment_by ? new Date(event.notes.return_equipment_by).toLocaleDateString() : '', 120, lastY);
-          
-          // Save the PDF
-          doc.save(`${event.title.replace(/\s+/g, '_')}_Event_Form.pdf`);
-        };
+  const generatePDF = async () => {
+    try {
+      console.log("Generating PDF...");
+      
+      // Dynamically import jsPDF
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      
+      // Dynamically import jspdf-autotable
+      await import('jspdf-autotable');
+      
+      // Create the PDF document
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
-    });
+      
+      // Create simple PDF first to make sure generation works
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DPBC TASTING + EVENT FORM', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.text(`Event: ${event.title || ''}`, 20, 30);
+      doc.text(`Date: ${new Date(event.date).toLocaleDateString()}`, 20, 40);
+      doc.text(`Staff: ${assignedEmployees.join(', ')}`, 20, 50);
+      
+      // Add more event details
+      doc.text(`Type: ${event.event_type === 'other' ? event.event_type_other : event.event_type}`, 20, 60);
+      
+      // Beer products in simple table format
+      if (event.beers && event.beers.length > 0) {
+        const beerTableData = event.beers.map(beer => 
+          [beer.beer_style, beer.packaging, beer.quantity.toString()]
+        );
+        
+        doc.autoTable({
+          startY: 70,
+          head: [['Beer Style', 'Packaging', 'Qty']],
+          body: beerTableData,
+          theme: 'grid'
+        });
+      }
+      
+      // Save the PDF
+      doc.save(`${event.title.replace(/\s+/g, '_')}_Event_Form.pdf`);
+      console.log("PDF generated successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
   };
 
   return (
     <div className="dp-section">
-      <h3 className="dp-subsection-title">Event Form Preview</h3>
+      <h3 className="dp-subsection-title">Event Form PDF</h3>
       <p>Click the button below to download the event form as a PDF:</p>
       
       <div className="dp-button-group">
@@ -2005,7 +1774,7 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
       
       <div className="dp-form-group">
         <p className="dp-note">
-          Note: The PDF will be generated with the Devil's Purse logo and formatted to match the approved template.
+          Note: This will generate a PDF version of the event form that can be printed or saved.
         </p>
       </div>
     </div>
