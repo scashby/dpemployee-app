@@ -1696,7 +1696,7 @@ const AdminEvents = () => {
   );
 };
 
-// Printable Event Form
+// Printable Event Form with PDF Generation
 const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => {
   if (!event) return null;
 
@@ -1705,265 +1705,312 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
     return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
   });
 
+  const generatePDF = () => {
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(() => {
+        const doc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        // Add logo
+        const logoUrl = '/logo.png'; 
+        // We'll add the logo asynchronously
+        const img = new Image();
+        img.src = logoUrl;
+        img.onload = function() {
+          // Add the logo to the center top
+          const imgWidth = 20;
+          const imgHeight = (img.height * imgWidth) / img.width;
+          doc.addImage(img, 'PNG', (doc.internal.pageSize.width - imgWidth) / 2, 10, imgWidth, imgHeight);
+          
+          // Title bar
+          doc.setFillColor(153, 153, 153);
+          doc.rect(0, 40, doc.internal.pageSize.width, 10, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DPBC TASTING + EVENT FORM', doc.internal.pageSize.width / 2, 46, { align: 'center' });
+          
+          // Form content
+          doc.setTextColor(0, 0, 0);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          
+          // Basic event information
+          doc.setFont('helvetica', 'bold');
+          doc.text('Event Name :', 20, 60);
+          doc.setFont('helvetica', 'normal');
+          doc.text(event.title || '', 60, 60);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Event Date:', 20, 67);
+          doc.setFont('helvetica', 'normal');
+          doc.text(new Date(event.date).toLocaleDateString(), 60, 67);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Event Set Up Time:', 20, 74);
+          doc.setFont('helvetica', 'normal');
+          doc.text(event.setup_time || '', 60, 74);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Event Duration:', 20, 81);
+          doc.setFont('helvetica', 'normal');
+          doc.text(event.duration || event.time || '', 60, 81);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('DP Staff Attending:', 20, 88);
+          doc.setFont('helvetica', 'normal');
+          doc.text(assignedEmployees.length > 0 ? assignedEmployees.join(', ') : '', 60, 88);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Event Contact(Name, Phone):', 20, 95);
+          doc.setFont('helvetica', 'normal');
+          doc.text(event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '', 60, 95);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Expected # of Attendees:', 20, 102);
+          doc.setFont('helvetica', 'normal');
+          doc.text(event.expected_attendees ? event.expected_attendees.toString() : '?', 60, 102);
+          
+          // Event Type Section
+          doc.setFillColor(238, 238, 238);
+          doc.rect(0, 110, doc.internal.pageSize.width, 7, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text('Type of Event', 20, 115);
+          
+          // Checkboxes for event type
+          doc.rect(30, 120, 4, 4, 'S');  // Tasting checkbox
+          if (event.event_type === 'tasting') {
+            doc.text('✓', 31, 123);
+          }
+          doc.text('Tasting:', 36, 123);
+          
+          doc.rect(85, 120, 4, 4, 'S');  // Pint Night checkbox
+          if (event.event_type === 'pint_night') {
+            doc.text('✓', 86, 123);
+          }
+          doc.text('Pint Night:', 91, 123);
+          
+          doc.rect(30, 128, 4, 4, 'S');  // Beer Fest checkbox
+          if (event.event_type === 'beer_fest') {
+            doc.text('✓', 31, 131);
+          }
+          doc.text('Beer Fest :', 36, 131);
+          
+          doc.rect(85, 128, 4, 4, 'S');  // Other checkbox
+          if (event.event_type === 'other') {
+            doc.text('✓', 86, 131);
+          }
+          doc.text('Other :', 91, 131);
+          
+          // Other event type description
+          if (event.event_type === 'other' && event.event_type_other) {
+            doc.setFont('helvetica', 'normal');
+            doc.text(event.event_type_other, 91, 138);
+          }
+          
+          // Supplies Section
+          doc.setFillColor(238, 238, 238);
+          doc.rect(0, 145, doc.internal.pageSize.width, 7, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text('SUPPLIES NEEDED', doc.internal.pageSize.width / 2, 150, { align: 'center' });
+          
+          // Beer table headers
+          doc.autoTable({
+            startY: 155,
+            head: [['Beer Style', 'Pkg', 'Qty', 'Table:', 'Beer buckets:']],
+            body: [],
+            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+            columnStyles: {
+              0: { cellWidth: 70 },
+              1: { cellWidth: 20 },
+              2: { cellWidth: 15 },
+              3: { cellWidth: 30 },
+              4: { cellWidth: 40 }
+            },
+            didDrawCell: (data) => {
+              if (data.section === 'head' && data.column.index > 2) {
+                const dim = data.cell.height - 1;
+                const x = data.cell.x + 5;
+                const y = data.cell.y + 3.5;
+                
+                doc.rect(x, y, 4, 4, 'S');
+                
+                if ((data.column.index === 3 && event.supplies?.table_needed) ||
+                    (data.column.index === 4 && event.supplies?.beer_buckets)) {
+                  doc.text('✓', x + 1, y + 3);
+                }
+              }
+            }
+          });
+          
+          // Beer rows and supply checkboxes
+          const beerData = event.beers && event.beers.length > 0 
+            ? event.beers.map(beer => [beer.beer_style, beer.packaging, beer.quantity.toString()])
+            : [['', '', '']];
+            
+          let lastY = doc.previousAutoTable.finalY + 5;
+          
+          doc.autoTable({
+            startY: doc.previousAutoTable.finalY,
+            head: [],
+            body: beerData,
+            columnStyles: {
+              0: { cellWidth: 70 },
+              1: { cellWidth: 20 },
+              2: { cellWidth: 15 }
+            },
+            theme: 'grid'
+          });
+          
+          // Supplies checkboxes
+          lastY = doc.previousAutoTable.finalY + 10;
+          
+          // Left column of checkboxes
+          doc.text('Table Cloth:', 20, lastY);
+          doc.rect(70, lastY - 4, 4, 4, 'S');
+          if (event.supplies?.table_cloth) {
+            doc.text('✓', 71, lastY);
+          }
+          
+          doc.text('Tent/Weights:', 20, lastY + 8);
+          doc.rect(70, lastY + 4, 4, 4, 'S');
+          if (event.supplies?.tent_weights) {
+            doc.text('✓', 71, lastY + 8);
+          }
+          
+          doc.text('Signage:', 20, lastY + 16);
+          doc.rect(70, lastY + 12, 4, 4, 'S');
+          if (event.supplies?.signage) {
+            doc.text('✓', 71, lastY + 16);
+          }
+          
+          doc.text('Ice:', 20, lastY + 24);
+          doc.rect(70, lastY + 20, 4, 4, 'S');
+          if (event.supplies?.ice) {
+            doc.text('✓', 71, lastY + 24);
+          }
+          
+          // Right column of checkboxes
+          doc.text('Jockey box:', 100, lastY);
+          doc.rect(150, lastY - 4, 4, 4, 'S');
+          if (event.supplies?.jockey_box) {
+            doc.text('✓', 151, lastY);
+          }
+          doc.setFontSize(8);
+          doc.text('(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)', 100, lastY + 5);
+          
+          doc.setFontSize(10);
+          doc.text('Cups:', 100, lastY + 16);
+          doc.rect(150, lastY + 12, 4, 4, 'S');
+          if (event.supplies?.cups) {
+            doc.text('✓', 151, lastY + 16);
+          }
+          
+          // Additional supplies
+          lastY = lastY + 35;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Additional Supplies:', 20, lastY);
+          doc.setFont('helvetica', 'normal');
+          doc.text(event.supplies?.additional_supplies || '', 70, lastY);
+          doc.setFontSize(8);
+          doc.text('(Stickers, Koozies, Hats, Dog toy)', 70, lastY + 5);
+          
+          // Event instructions
+          lastY = lastY + 15;
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Event Instructions:', 20, lastY);
+          doc.setFont('helvetica', 'normal');
+          
+          // Handle long event instructions with wrapping
+          const maxWidth = 120;
+          const instructionsText = event.event_instructions || '';
+          const splitInstructions = doc.splitTextToSize(instructionsText, maxWidth);
+          doc.text(splitInstructions, 70, lastY);
+          
+          doc.setFontSize(8);
+          doc.text('(include additional notes here)', 70, lastY + 5 + (splitInstructions.length * 3.5));
+          
+          // Post Event Notes Section
+          lastY = lastY + 25 + (splitInstructions.length * 3.5);
+          doc.setFillColor(238, 238, 238);
+          doc.rect(0, lastY - 5, doc.internal.pageSize.width, 7, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text('POST EVENT NOTES', doc.internal.pageSize.width / 2, lastY, { align: 'center' });
+          
+          // Post event notes fields
+          lastY = lastY + 10;
+          doc.text('Estimated attendees:', 20, lastY);
+          doc.text(event.notes?.estimated_attendees || '', 120, lastY);
+          
+          lastY = lastY + 8;
+          doc.text('Was there a favorite style of beer offered?', 20, lastY);
+          doc.text(event.notes?.favorite_beer || '', 120, lastY);
+          
+          lastY = lastY + 8;
+          doc.text('Did you have enough product?', 20, lastY);
+          doc.text(event.notes?.enough_product === true ? 'Yes' : (event.notes?.enough_product === false ? 'No' : ''), 120, lastY);
+          
+          lastY = lastY + 8;
+          doc.text('Were you adequately staffed for the event/tasting?', 20, lastY);
+          doc.text(event.notes?.adequately_staffed === true ? 'Yes' : (event.notes?.adequately_staffed === false ? 'No' : ''), 120, lastY);
+          
+          lastY = lastY + 8;
+          doc.text('Should we continue to participate in this event?', 20, lastY);
+          doc.text(event.notes?.continue_participation === true ? 'Yes' : (event.notes?.continue_participation === false ? 'No' : ''), 120, lastY);
+          
+          lastY = lastY + 8;
+          doc.text('Any critiques?', 20, lastY);
+          doc.text(event.notes?.critiques || '', 120, lastY);
+          
+          // Reminder section
+          lastY = lastY + 15;
+          doc.setFillColor(240, 240, 240);
+          doc.rect(0, lastY - 5, doc.internal.pageSize.width, 7, 'F');
+          doc.setTextColor(204, 0, 0);  // Red text for the reminder
+          doc.text('REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS', doc.internal.pageSize.width / 2, lastY, { align: 'center' });
+          
+          // Return equipment by
+          lastY = lastY + 10;
+          doc.setTextColor(0, 0, 0);
+          doc.text('RETURN EQUIPMENT BY:', 20, lastY);
+          doc.text(event.notes?.return_equipment_by ? new Date(event.notes.return_equipment_by).toLocaleDateString() : '', 120, lastY);
+          
+          // Save the PDF
+          doc.save(`${event.title.replace(/\s+/g, '_')}_Event_Form.pdf`);
+        };
+      });
+    });
+  };
+
   return (
-    <div className="printable-event-form">
-      <div className="print-header">
-        <img src="/logo.png" alt="Devil's Purse Logo" className="print-logo" />
-      </div>
-      <div className="print-title-bar">
-        <h1>DPBC TASTING + EVENT FORM</h1>
+    <div className="dp-section">
+      <h3 className="dp-subsection-title">Event Form Preview</h3>
+      <p>Click the button below to download the event form as a PDF:</p>
+      
+      <div className="dp-button-group">
+        <button onClick={generatePDF} className="dp-button dp-button-primary">
+          Download PDF Form
+        </button>
+        <button onClick={onClose} className="dp-button dp-button-secondary">
+          Close
+        </button>
       </div>
       
-      <div className="print-form-content">
-        <table className="print-form-table">
-          <tbody>
-            <tr>
-              <td className="print-field-label">Event Name :</td>
-              <td className="print-field-value">{event.title}</td>
-            </tr>
-            <tr>
-              <td className="print-field-label">Event Date:</td>
-              <td className="print-field-value">{new Date(event.date).toLocaleDateString()}</td>
-            </tr>
-            <tr>
-              <td className="print-field-label">Event Set Up Time:</td>
-              <td className="print-field-value">{event.setup_time || ''}</td>
-            </tr>
-            <tr>
-              <td className="print-field-label">Event Duration:</td>
-              <td className="print-field-value">{event.duration || event.time || ''}</td>
-            </tr>
-            <tr>
-              <td className="print-field-label">DP Staff Attending:</td>
-              <td className="print-field-value">{assignedEmployees.length > 0 ? assignedEmployees.join(', ') : ''}</td>
-            </tr>
-            <tr>
-              <td className="print-field-label">Event Contact(Name, Phone):</td>
-              <td className="print-field-value">{event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : ''}</td>
-            </tr>
-            <tr>
-              <td className="print-field-label">Expected # of Attendees:</td>
-              <td className="print-field-value">{event.expected_attendees || '?'}</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div className="print-section-header">Type of Event</div>
-          <table className="print-event-type-table">
-            <tbody>
-              <tr>
-                <td className="print-checkbox-cell">
-                  <div className="print-checkbox-label">Tasting:</div>
-                  <div className="print-checkbox">{event.event_type === 'tasting' ? '✓' : '□'}</div>
-                </td>
-                <td className="print-checkbox-cell">
-                  <div className="print-checkbox-label">Pint Night:</div>
-                  <div className="print-checkbox">{event.event_type === 'pint_night' ? '✓' : '□'}</div>
-                </td>
-              </tr>
-              <tr>
-                <td className="print-checkbox-cell">
-                  <div className="print-checkbox-label">Beer Fest :</div>
-                  <div className="print-checkbox">{event.event_type === 'beer_fest' ? '✓' : '□'}</div>
-                </td>
-                <td className="print-checkbox-cell print-other-cell">
-                  <div className="print-checkbox-with-value">
-                    <div className="print-checkbox-label">Other :</div>
-                    <div className="print-checkbox">{event.event_type === 'other' ? '✓' : '□'}</div>
-                  </div>
-                  {event.event_type === 'other' && (
-                    <div className="print-other-value">{event.event_type_other}</div>
-                  )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        
-          <div className="print-section-header">SUPPLIES NEEDED</div>
-          <table className="print-supplies-table">
-            <thead>
-              <tr>
-                <th className="beer-style-col">Beer Style</th>
-                <th className="pkg-col">Pkg</th>
-                <th className="qty-col">Qty</th>
-                <th className="supplies-col" colSpan="2">
-                  <div className="print-supplies-header-checks">
-                    <div className="print-supply-check">
-                      <span>Table:</span>
-                      <div className="print-checkbox">{event.supplies?.table_needed ? '✓' : '□'}</div>
-                    </div>
-                    <div className="print-supply-check">
-                      <span>Beer buckets:</span>
-                      <div className="print-checkbox">{event.supplies?.beer_buckets ? '✓' : '□'}</div>
-                    </div>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {event.beers && event.beers.length > 0 ? (
-                event.beers.map((beer, idx) => (
-                  <tr key={idx} className="print-beer-row">
-                    <td className="beer-style-col">{beer.beer_style}</td>
-                    <td className="pkg-col">{beer.packaging}</td>
-                    <td className="qty-col">{beer.quantity}</td>
-                    {idx === 0 && (
-                      <td className="supplies-col" rowSpan={Math.max(3, event.beers.length)}>
-                        <div className="print-supply-check">
-                          <span>Table Cloth:</span>
-                          <div className="print-checkbox">{event.supplies?.table_cloth ? '✓' : '□'}</div>
-                        </div>
-                        <div className="print-supply-check">
-                          <span>Tent/Weights:</span>
-                          <div className="print-checkbox">{event.supplies?.tent_weights ? '✓' : '□'}</div>
-                        </div>
-                        <div className="print-supply-check">
-                          <span>Signage:</span>
-                          <div className="print-checkbox">{event.supplies?.signage ? '✓' : '□'}</div>
-                        </div>
-                        <div className="print-supply-check">
-                          <span>Ice:</span>
-                          <div className="print-checkbox">{event.supplies?.ice ? '✓' : '□'}</div>
-                        </div>
-                      </td>
-                    )}
-                    {idx === 0 && (
-                      <td className="supplies-col" rowSpan={Math.max(3, event.beers.length)}>
-                        <div className="print-supply-check">
-                          <span>Jockey box:</span>
-                          <div className="print-checkbox">{event.supplies?.jockey_box ? '✓' : '□'}</div>
-                          <div className="print-jockey-info">(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)</div>
-                        </div>
-                        <div className="print-supply-check">
-                          <span>Cups:</span>
-                          <div className="print-checkbox">{event.supplies?.cups ? '✓' : '□'}</div>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              ) : (
-                <>
-                  <tr className="print-beer-row empty-row">
-                    <td className="beer-style-col"></td>
-                    <td className="pkg-col"></td>
-                    <td className="qty-col"></td>
-                    <td className="supplies-col" rowSpan="3">
-                      <div className="print-supply-check">
-                        <span>Table Cloth:</span>
-                        <div className="print-checkbox">{event.supplies?.table_cloth ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Tent/Weights:</span>
-                        <div className="print-checkbox">{event.supplies?.tent_weights ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Signage:</span>
-                        <div className="print-checkbox">{event.supplies?.signage ? '✓' : '□'}</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Ice:</span>
-                        <div className="print-checkbox">{event.supplies?.ice ? '✓' : '□'}</div>
-                      </div>
-                    </td>
-                    <td className="supplies-col" rowSpan="3">
-                      <div className="print-supply-check">
-                        <span>Jockey box:</span>
-                        <div className="print-checkbox">{event.supplies?.jockey_box ? '✓' : '□'}</div>
-                        <div className="print-jockey-info">(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)</div>
-                      </div>
-                      <div className="print-supply-check">
-                        <span>Cups:</span>
-                        <div className="print-checkbox">{event.supplies?.cups ? '✓' : '□'}</div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="print-beer-row empty-row">
-                    <td className="beer-style-col"></td>
-                    <td className="pkg-col"></td>
-                    <td className="qty-col"></td>
-                  </tr>
-                  <tr className="print-beer-row empty-row">
-                    <td className="beer-style-col"></td>
-                    <td className="pkg-col"></td>
-                    <td className="qty-col"></td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        
-          <table className="print-form-table">
-            <tbody>
-              <tr>
-                <td className="print-field-label">Additional Supplies:</td>
-                <td className="print-field-value">
-                  {event.supplies?.additional_supplies || ''}
-                  <div className="print-note">(Stickers, Koozies, Hats, Dog toy)</div>
-                </td>
-              </tr>
-              <tr>
-                <td className="print-field-label">Event Instructions:</td>
-                <td className="print-field-value">
-                  {event.event_instructions || ''}
-                  <div className="print-note">(include additional notes here)</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        
-          <div className="print-section-header">POST EVENT NOTES</div>
-          <table className="print-post-notes-table">
-            <tbody>
-              <tr>
-                <td className="print-field-label">Estimated attendees:</td>
-                <td className="print-field-value">{event.notes?.estimated_attendees || ''}</td>
-              </tr>
-              <tr>
-                <td className="print-field-label">Was there a favorite style of beer offered?</td>
-                <td className="print-field-value">{event.notes?.favorite_beer || ''}</td>
-              </tr>
-              <tr>
-                <td className="print-field-label">Did you have enough product?</td>
-                <td className="print-field-value">{event.notes?.enough_product === true ? 'Yes' : (event.notes?.enough_product === false ? 'No' : '')}</td>
-              </tr>
-              <tr>
-                <td className="print-field-label">Were you adequately staffed for the event/tasting?</td>
-                <td className="print-field-value">{event.notes?.adequately_staffed === true ? 'Yes' : (event.notes?.adequately_staffed === false ? 'No' : '')}</td>
-              </tr>
-              <tr>
-                <td className="print-field-label">Should we continue to participate in this event?</td>
-                <td className="print-field-value">{event.notes?.continue_participation === true ? 'Yes' : (event.notes?.continue_participation === false ? 'No' : '')}</td>
-              </tr>
-              <tr>
-                <td className="print-field-label">Any critiques?</td>
-                <td className="print-field-value">{event.notes?.critiques || ''}</td>
-              </tr>
-            </tbody>
-          </table>
-        
-          <div className="print-section-header print-reminder-header">REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS</div>
-          <table className="print-form-table">
-            <tbody>
-              <tr>
-                <td className="print-field-label">RETURN EQUIPMENT BY:</td>
-                <td className="print-field-value print-equipment-return-date">{event.notes?.return_equipment_by ? new Date(event.notes.return_equipment_by).toLocaleDateString() : ''}</td>
-              </tr>
-            </tbody>
-          </table>
-                </div>
-                
-                <div className="no-print">
-                  <button onClick={window.print} className="dp-button dp-button-primary">
-                    Print Form
-                  </button>
-                  <button onClick={onClose} className="dp-button dp-button-secondary">
-                    Close
-                  </button>
-                </div>
-              </div>
-            );
-          };
+      <div className="dp-form-group">
+        <p className="dp-note">
+          Note: The PDF will be generated with the Devil's Purse logo and formatted to match the approved template.
+        </p>
+      </div>
+    </div>
+  );
+};
     
 // Post Event Notes Modal
 const PostEventNotesModal = ({ event, onClose, onSave }) => {
