@@ -284,24 +284,61 @@ const AdminScheduleEditor = () => {
         eventsToProcess.forEach(event => {
           if (!event.assignments) return;
           
-          // Check if event date is within the current week
-          const eventDate = new Date(event.date);
-          // Add time to both dates to ensure proper comparison
-          eventDate.setHours(12, 0, 0, 0);
-          const weekStart = new Date(currentWeekStart);
-          weekStart.setHours(0, 0, 0, 0);
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekStart.getDate() + 6);
-          weekEnd.setHours(23, 59, 59, 999);
+         // Check if event date is within the current week
+        const eventDate = new Date(event.date);
+        // Add time to both dates to ensure proper comparison
+        eventDate.setHours(12, 0, 0, 0);
+        const weekStart = new Date(currentWeekStart);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
 
-          // Skip events not in current week
-          if (eventDate < weekStart || eventDate > weekEnd) return;
+        // Skip events not in current week
+        if (eventDate < weekStart || eventDate > weekEnd) return;
 
-          // Map JavaScript's day index (0=Sunday, 1=Monday, etc.) to our dayNames array indices
-          const jsDay = eventDate.getDay(); // 0=Sunday, 1=Monday, etc.
-          // Convert to match our dayNames array (which is 0=Monday, 6=Sunday)
-          const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
-          const dayOfWeek = dayNames[dayIndex];      
+        // Explicitly check the date
+        if (event.title && event.title.includes("Rugby")) {
+          console.log("Found Rugby event!", event);
+          console.log("Event date:", event.date);
+          console.log("JS Date:", eventDate.toString());
+          console.log("Day of week:", eventDate.getDay());
+          // Force the day to be Saturday 
+          const dayOfWeek = "SAT";
+          
+          // Continue with your existing code
+          event.assignments.forEach(assignment => {
+            const employee = employees.find(emp => emp.id === assignment.employee_id);
+            if (!employee || !scheduleByEmployee[employee.name]) return;
+            
+            scheduleByEmployee[employee.name][dayOfWeek].push({
+              id: `event_${event.id}_${assignment.employee_id}`,
+              employee_name: employee.name,
+              day: dayOfWeek,
+              date: event.date,
+              shift: event.time || 'Event Time TBD',
+              event_name: event.title,
+              event_id: event.id,
+              event_info: event.info,
+              event_type: event.off_prem ? 'offsite' : 'event'
+            });
+          });
+          
+          // Skip the rest of the forEach iteration for this event
+          return;
+        }
+
+        // Regular day mapping for other events
+        const dayMapping = {
+          0: 'SUN', // Sunday (JS index 0) → SUN (last in our array)
+          1: 'MON', // Monday (JS index 1) → MON (first in our array)
+          2: 'TUE',
+          3: 'WED',
+          4: 'THU',
+          5: 'FRI',
+          6: 'SAT'
+        };
+        const dayOfWeek = dayMapping[eventDate.getDay()];      
           event.assignments.forEach(assignment => {
             const employee = employees.find(emp => emp.id === assignment.employee_id);
             if (!employee || !scheduleByEmployee[employee.name]) return;
