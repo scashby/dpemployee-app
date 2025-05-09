@@ -316,7 +316,8 @@ const AdminEvents = () => {
   const saveEventChanges = async (id) => {
   try {
     const eventToUpdate = events.find(evt => evt.id === id);
-    
+    console.log('saveEventChanges called with ID:', id);
+    console.log('Found event to update:', eventToUpdate);
     // Update event details
     const { error } = await supabase
     .from('events')
@@ -338,26 +339,6 @@ const AdminEvents = () => {
     .eq('id', id);
 
     if (error) throw error;
-    
-    // Update event supplies
-    if (eventToUpdate.supplies) {
-      const { error: suppliesError } = await supabase
-        .from('event_supplies')
-        .upsert({
-          event_id: id,
-          table_needed: eventToUpdate.supplies.table_needed || false,
-          beer_buckets: eventToUpdate.supplies.beer_buckets || false,
-          table_cloth: eventToUpdate.supplies.table_cloth || false,
-          tent_weights: eventToUpdate.supplies.tent_weights || false,
-          signage: eventToUpdate.supplies.signage || false,
-          ice: eventToUpdate.supplies.ice || false,
-          jockey_box: eventToUpdate.supplies.jockey_box || false,
-          cups: eventToUpdate.supplies.cups || false,
-          additional_supplies: eventToUpdate.supplies.additional_supplies || ''
-        }, { onConflict: 'event_id' });
-        
-      if (suppliesError) throw suppliesError;
-    }
     
 // Update event supplies
     if (eventToUpdate.supplies) {
