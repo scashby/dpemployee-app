@@ -340,24 +340,60 @@ const AdminEvents = () => {
 
     if (error) throw error;
     
-// Update event supplies
+    // Try a different approach for event supplies
     if (eventToUpdate.supplies) {
-      const { error: suppliesError } = await supabase
+      // First check if supplies record exists
+      const { data: existingSupplies } = await supabase
         .from('event_supplies')
-        .upsert({
-          event_id: id,
-          table_needed: eventToUpdate.supplies.table_needed || false,
-          beer_buckets: eventToUpdate.supplies.beer_buckets || false,
-          table_cloth: eventToUpdate.supplies.table_cloth || false,
-          tent_weights: eventToUpdate.supplies.tent_weights || false,
-          signage: eventToUpdate.supplies.signage || false,
-          ice: eventToUpdate.supplies.ice || false,
-          jockey_box: eventToUpdate.supplies.jockey_box || false,
-          cups: eventToUpdate.supplies.cups || false,
-          additional_supplies: eventToUpdate.supplies.additional_supplies || ''
-        }, { onConflict: 'event_id' });
+        .select('*')
+        .eq('event_id', id)
+        .single();
+      
+      console.log('Existing supplies:', existingSupplies);
+      
+      if (existingSupplies) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('event_supplies')
+          .update({
+            table_needed: eventToUpdate.supplies.table_needed || false,
+            beer_buckets: eventToUpdate.supplies.beer_buckets || false,
+            table_cloth: eventToUpdate.supplies.table_cloth || false,
+            tent_weights: eventToUpdate.supplies.tent_weights || false,
+            signage: eventToUpdate.supplies.signage || false,
+            ice: eventToUpdate.supplies.ice || false,
+            jockey_box: eventToUpdate.supplies.jockey_box || false,
+            cups: eventToUpdate.supplies.cups || false,
+            additional_supplies: eventToUpdate.supplies.additional_supplies || ''
+          })
+          .eq('event_id', id);
         
-      if (suppliesError) throw suppliesError;
+        if (updateError) {
+          console.error('Error updating supplies:', updateError);
+          throw updateError;
+        }
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('event_supplies')
+          .insert([{
+            event_id: id,
+            table_needed: eventToUpdate.supplies.table_needed || false,
+            beer_buckets: eventToUpdate.supplies.beer_buckets || false,
+            table_cloth: eventToUpdate.supplies.table_cloth || false,
+            tent_weights: eventToUpdate.supplies.tent_weights || false,
+            signage: eventToUpdate.supplies.signage || false,
+            ice: eventToUpdate.supplies.ice || false,
+            jockey_box: eventToUpdate.supplies.jockey_box || false,
+            cups: eventToUpdate.supplies.cups || false,
+            additional_supplies: eventToUpdate.supplies.additional_supplies || ''
+          }]);
+        
+        if (insertError) {
+          console.error('Error inserting supplies:', insertError);
+          throw insertError;
+        }
+      }
     }
     
     // Update beer products - first delete existing ones
