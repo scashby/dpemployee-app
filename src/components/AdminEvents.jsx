@@ -314,87 +314,157 @@ const AdminEvents = () => {
   };
 
   const saveEventChanges = async (id) => {
-    try {
-      const eventToUpdate = events.find(evt => evt.id === id);
-      
-      // Update event details
-      const { error } = await supabase
-      .from('events')
-      .update({
-        title: eventToUpdate.title,
-        date: eventToUpdate.date,
-        time: eventToUpdate.time,
-        setup_time: eventToUpdate.setup_time,
-        duration: eventToUpdate.duration,
-        contact_name: eventToUpdate.contact_name,
-        contact_phone: eventToUpdate.contact_phone,
-        expected_attendees: eventToUpdate.expected_attendees,
-        event_type: eventToUpdate.event_type,
-        event_type_other: eventToUpdate.event_type_other,
-        event_instructions: eventToUpdate.event_instructions || eventToUpdate.info,
-        off_prem: eventToUpdate.off_prem
-      })
-      .eq('id', id);
+  try {
+    const eventToUpdate = events.find(evt => evt.id === id);
+    
+    // Update event details
+    const { error } = await supabase
+    .from('events')
+    .update({
+      title: eventToUpdate.title,
+      date: eventToUpdate.date,
+      time: eventToUpdate.time,
+      setup_time: eventToUpdate.setup_time,
+      duration: eventToUpdate.duration,
+      contact_name: eventToUpdate.contact_name,
+      contact_phone: eventToUpdate.contact_phone,
+      expected_attendees: eventToUpdate.expected_attendees,
+      event_type: eventToUpdate.event_type,
+      event_type_other: eventToUpdate.event_type_other,
+      event_instructions: eventToUpdate.event_instructions || eventToUpdate.info || '',
+      info: null, // Set info to null to avoid duplication
+      off_prem: eventToUpdate.off_prem
+    })
+    .eq('id', id);
 
-      if (error) throw error;
-      
-      // Get current assignments for this event
-      const { data: currentAssignments, error: fetchError } = await supabase
-        .from('event_assignments')
-        .select('*')
-        .eq('event_id', id);
-      
-      if (fetchError) throw fetchError;
-      
-      // Get the employee IDs that are currently assigned
-      const currentEmployeeIds = currentAssignments.map(a => a.employee_id);
-      
-      // Get the new employee IDs from the state
-      const newEmployeeIds = eventAssignments[id] || [];
-      
-      // Employees to add (in new but not in current)
-      const employeesToAdd = newEmployeeIds.filter(empId => !currentEmployeeIds.includes(empId));
-      
-      // Employees to remove (in current but not in new)
-      const employeesToRemove = currentEmployeeIds.filter(empId => !newEmployeeIds.includes(empId));
-      
-      // Add new assignments
-      if (employeesToAdd.length > 0) {
-        const assignmentsToAdd = employeesToAdd.map(empId => ({
+    if (error) throw error;
+    
+    // Update event supplies
+    if (eventToUpdate.supplies) {
+      const { error: suppliesError } = await supabase
+        .from('event_supplies')
+        .upsert({
           event_id: id,
-          employee_id: empId
+          table_needed: eventToUpdate.supplies.table_needed || false,
+          beer_buckets: eventToUpdate.supplies.beer_buckets || false,
+          table_cloth: eventToUpdate.supplies.table_cloth || false,
+          tent_weights: eventToUpdate.supplies.tent_weights || false,
+          signage: eventToUpdate.supplies.signage || false,
+          ice: eventToUpdate.supplies.ice || false,
+          jockey_box: eventToUpdate.supplies.jockey_box || false,
+          cups: eventToUpdate.supplies.cups || false,
+          additional_supplies: eventToUpdate.supplies.additional_supplies || ''
+        }, { onConflict: 'event_id' });
+        
+      if (suppliesError) throw suppliesError;
+    }
+    
+// Update event supplies
+    if (eventToUpdate.supplies) {
+      const { error: suppliesError } = await supabase
+        .from('event_supplies')
+        .upsert({
+          event_id: id,
+          table_needed: eventToUpdate.supplies.table_needed || false,
+          beer_buckets: eventToUpdate.supplies.beer_buckets || false,
+          table_cloth: eventToUpdate.supplies.table_cloth || false,
+          tent_weights: eventToUpdate.supplies.tent_weights || false,
+          signage: eventToUpdate.supplies.signage || false,
+          ice: eventToUpdate.supplies.ice || false,
+          jockey_box: eventToUpdate.supplies.jockey_box || false,
+          cups: eventToUpdate.supplies.cups || false,
+          additional_supplies: eventToUpdate.supplies.additional_supplies || ''
+        }, { onConflict: 'event_id' });
+        
+      if (suppliesError) throw suppliesError;
+    }
+    
+    // Update beer products - first delete existing ones
+    if (eventToUpdate.beers && eventToUpdate.beers.length > 0) {
+      // First delete all existing beer products for this event
+      const { error: deleteBeersError } = await supabase
+        .from('event_beers')
+        .delete()
+        .eq('event_id', id);
+        
+      if (deleteBeersError) throw deleteBeersError;
+      
+      // Then insert the updated beer products
+      const beersToInsert = eventToUpdate.beers
+        .filter(beer => beer.beer_style && beer.beer_style.trim() !== '')
+        .map(beer => ({
+          event_id: id,
+          beer_style: beer.beer_style,
+          packaging: beer.packaging || '',
+          quantity: beer.quantity || 1
         }));
         
-        const { error: insertError } = await supabase
-          .from('event_assignments')
-          .insert(assignmentsToAdd);
-        
-        if (insertError) throw insertError;
+      if (beersToInsert.length > 0) {
+        const { error: insertBeersError } = await supabase
+          .from('event_beers')
+          .insert(beersToInsert);
+          
+        if (insertBeersError) throw insertBeersError;
       }
-      
-      // Remove assignments that are no longer needed
-      if (employeesToRemove.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('event_assignments')
-          .delete()
-          .eq('event_id', id)
-          .in('employee_id', employeesToRemove);
-        
-        if (deleteError) throw deleteError;
-      }
-      
-      setSuccessMessage('Event updated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-      setEditMode(null);
-      
-      // Refresh event assignments
-      await fetchEventAssignments();
-    } catch (error) {
-      console.error('Error updating event:', error);
-      setError('Failed to update event. Please try again.');
-      setTimeout(() => setError(''), 3000);
     }
-  };
+    
+    // Get current assignments for this event
+    const { data: currentAssignments, error: fetchError } = await supabase
+      .from('event_assignments')
+      .select('*')
+      .eq('event_id', id);
+    
+    if (fetchError) throw fetchError;
+    
+    // Get the employee IDs that are currently assigned
+    const currentEmployeeIds = currentAssignments.map(a => a.employee_id);
+    
+    // Get the new employee IDs from the state
+    const newEmployeeIds = eventAssignments[id] || [];
+    
+    // Employees to add (in new but not in current)
+    const employeesToAdd = newEmployeeIds.filter(empId => !currentEmployeeIds.includes(empId));
+    
+    // Employees to remove (in current but not in new)
+    const employeesToRemove = currentEmployeeIds.filter(empId => !newEmployeeIds.includes(empId));
+    
+    // Add new assignments
+    if (employeesToAdd.length > 0) {
+      const assignmentsToAdd = employeesToAdd.map(empId => ({
+        event_id: id,
+        employee_id: empId
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('event_assignments')
+        .insert(assignmentsToAdd);
+      
+      if (insertError) throw insertError;
+    }
+    
+    // Remove assignments that are no longer needed
+    if (employeesToRemove.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('event_assignments')
+        .delete()
+        .eq('event_id', id)
+        .in('employee_id', employeesToRemove);
+      
+      if (deleteError) throw deleteError;
+    }
+    
+    setSuccessMessage('Event updated successfully!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+    setEditMode(null);
+    
+    // Refresh events to get updated data
+    await fetchEvents();
+  } catch (error) {
+    console.error('Error updating event:', error);
+    setError(`Failed to update event: ${error.message}`);
+    setTimeout(() => setError(''), 3000);
+  }
+};
 
   const addEvent = async (e) => {
     e.preventDefault();
