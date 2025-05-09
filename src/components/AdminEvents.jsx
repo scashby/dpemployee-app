@@ -1713,9 +1713,6 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
       const jsPDFModule = await import('jspdf');
       const jsPDF = jsPDFModule.default;
       
-      // Dynamically import jspdf-autotable
-      await import('jspdf-autotable');
-      
       // Create the PDF document
       const doc = new jsPDF({
         orientation: 'portrait',
@@ -1723,7 +1720,7 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
         format: 'a4'
       });
       
-      // Create simple PDF first to make sure generation works
+      // Create simple PDF without using autoTable
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('DPBC TASTING + EVENT FORM', doc.internal.pageSize.width / 2, 20, { align: 'center' });
@@ -1736,17 +1733,13 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
       // Add more event details
       doc.text(`Type: ${event.event_type === 'other' ? event.event_type_other : event.event_type}`, 20, 60);
       
-      // Beer products in simple table format
+      // Beer products in simple text format (not using autoTable)
       if (event.beers && event.beers.length > 0) {
-        const beerTableData = event.beers.map(beer => 
-          [beer.beer_style, beer.packaging, beer.quantity.toString()]
-        );
-        
-        doc.autoTable({
-          startY: 70,
-          head: [['Beer Style', 'Packaging', 'Qty']],
-          body: beerTableData,
-          theme: 'grid'
+        doc.text('Beer Products:', 20, 70);
+        let y = 80;
+        event.beers.forEach(beer => {
+          doc.text(`${beer.beer_style} - ${beer.packaging} - Qty: ${beer.quantity}`, 25, y);
+          y += 10;
         });
       }
       
