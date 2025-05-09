@@ -1705,38 +1705,78 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
     return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
   });
 
+  // Fetch and convert image to base64 to ensure proper embedding
+  const getBase64Image = (url) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.setAttribute('crossOrigin', 'anonymous');
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      };
+      img.onerror = error => {
+        reject(error);
+      };
+      img.src = url;
+    });
+  };
+
   const generatePDF = async () => {
     try {
-      console.log("Generating simplified DPBC form...");
+      console.log("Generating DPBC form exactly as template...");
       
-      // Import jsPDF
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default;
+      // First import jsPDF
+      const { default: jsPDF } = await import('jspdf');
       
       // Create document
       const doc = new jsPDF({
         orientation: 'portrait',
-        unit: 'mm',
+        unit: 'pt',
         format: 'a4'
       });
       
-      // Start with a fixed-layout approach without relying on image dimensions
-      // Set up initial positions
+      // Load the logo
+      try {
+        const logoSrc = '/logo.png';
+        const logoBase64 = await getBase64Image(logoSrc);
+        
+        // Logo at center top
+        const logoWidth = 80;
+        const logoHeight = 100;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const logoX = (pageWidth - logoWidth) / 2;
+        doc.addImage(logoBase64, 'PNG', logoX, 20, logoWidth, logoHeight);
+      } catch (logoError) {
+        console.error("Error loading logo:", logoError);
+        // Continue without logo if there's an error
+      }
+      
+      // Define variables for positioning
       const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 20;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 40;
+      let currentY = 140; // Start after logo space
       
-      // Add title at the top
+      // Add gray title bar
+      doc.setFillColor(192, 192, 192);
+      doc.rect(0, currentY, pageWidth, 25, 'F');
+      
+      // Add title text
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.text('DPBC TASTING + EVENT FORM', pageWidth/2, 20, { align: 'center' });
+      doc.text('DPBC TASTING + EVENT FORM', pageWidth / 2, currentY + 17, { align: 'center' });
       
-      // Add basic info fields using a tabular approach
-      doc.setFontSize(12);
-      let yPos = 30;
+      currentY += 40;
       
-      // Main info section
-      const fieldInfo = [
-        { label: 'Event Name:', value: event.title || '' },
+      // Form fields - use consistent box format matching the template
+      const fields = [
+        { label: 'Event Name :', value: event.title || '' },
         { label: 'Event Date:', value: new Date(event.date).toLocaleDateString() },
         { label: 'Event Set Up Time:', value: event.setup_time || '' },
         { label: 'Event Duration:', value: event.duration || event.time || '' },
@@ -1745,103 +1785,259 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
         { label: 'Expected # of Attendees:', value: event.expected_attendees?.toString() || '?' }
       ];
       
-      fieldInfo.forEach(field => {
+      // Add field labels and values with boxed appearance
+      doc.setFontSize(10);
+      fields.forEach(field => {
+        // Field box
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(margin, currentY - 15, pageWidth - (margin * 2), 25, 'S');
+        
+        // Label
         doc.setFont('helvetica', 'bold');
-        doc.text(field.label, margin, yPos);
+        doc.text(field.label, margin + 10, currentY);
+        
+        // Value
         doc.setFont('helvetica', 'normal');
-        doc.text(field.value, margin + 50, yPos);
-        yPos += 8;
+        doc.text(field.value, margin + 150, currentY);
+        
+        currentY += 30;
       });
       
-      // Event Type Section
-      yPos += 5;
+      // Type of Event section
+      currentY += 10;
+      doc.setFillColor(240, 240, 240);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'F');
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'S');
+      
       doc.setFont('helvetica', 'bold');
-      doc.text('Type of Event', margin, yPos);
-      yPos += 8;
+      doc.text('Type of Event', margin + 10, currentY);
       
-      // Event type checkboxes
+      currentY += 25;
+      
+      // Create checkbox grid for event types
+      const checkSize = 12;
+      
+      // First row of checkboxes
       doc.setFont('helvetica', 'normal');
-      doc.text(`☐ Tasting ${event.event_type === 'tasting' ? '✓' : ''}`, margin, yPos);
-      doc.text(`☐ Pint Night ${event.event_type === 'pint_night' ? '✓' : ''}`, margin + 50, yPos);
-      yPos += 8;
       
-      doc.text(`☐ Beer Fest ${event.event_type === 'beer_fest' ? '✓' : ''}`, margin, yPos);
-      doc.text(`☐ Other ${event.event_type === 'other' ? '✓' : ''}`, margin + 50, yPos);
+      // Tasting checkbox
+      doc.rect(margin + 10, currentY - 10, checkSize, checkSize, 'S');
+      if (event.event_type === 'tasting') {
+        doc.text('✓', margin + 12, currentY - 1);
+      }
+      doc.text('Tasting:', margin + 30, currentY);
       
+      // Pint Night checkbox
+      doc.rect(margin + 150, currentY - 10, checkSize, checkSize, 'S');
+      if (event.event_type === 'pint_night') {
+        doc.text('✓', margin + 152, currentY - 1);
+      }
+      doc.text('Pint Night:', margin + 170, currentY);
+      
+      currentY += 25;
+      
+      // Second row of checkboxes
+      doc.rect(margin + 10, currentY - 10, checkSize, checkSize, 'S');
+      if (event.event_type === 'beer_fest') {
+        doc.text('✓', margin + 12, currentY - 1);
+      }
+      doc.text('Beer Fest :', margin + 30, currentY);
+      
+      doc.rect(margin + 150, currentY - 10, checkSize, checkSize, 'S');
+      if (event.event_type === 'other') {
+        doc.text('✓', margin + 152, currentY - 1);
+      }
+      doc.text('Other :', margin + 170, currentY);
+      
+      // Other event type description
       if (event.event_type === 'other' && event.event_type_other) {
-        yPos += 8;
-        doc.text(event.event_type_other, margin + 50, yPos);
+        currentY += 20;
+        doc.text(event.event_type_other, margin + 170, currentY);
       }
       
-      // Supplies Section
-      yPos += 10;
+      // SUPPLIES NEEDED section
+      currentY += 35;
+      doc.setFillColor(240, 240, 240);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'F');
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'S');
+      
       doc.setFont('helvetica', 'bold');
-      doc.text('SUPPLIES NEEDED', pageWidth/2, yPos, { align: 'center' });
-      yPos += 8;
+      doc.text('SUPPLIES NEEDED', pageWidth / 2, currentY, { align: 'center' });
       
-      // Supply checkboxes - first row
-      doc.setFont('helvetica', 'normal');
-      doc.text(`☐ Table ${event.supplies?.table_needed ? '✓' : ''}`, margin, yPos);
-      doc.text(`☐ Beer buckets ${event.supplies?.beer_buckets ? '✓' : ''}`, margin + 50, yPos);
-      doc.text(`☐ Table Cloth ${event.supplies?.table_cloth ? '✓' : ''}`, margin + 100, yPos);
-      yPos += 8;
+      currentY += 25;
       
-      // Supply checkboxes - second row
-      doc.text(`☐ Tent/Weights ${event.supplies?.tent_weights ? '✓' : ''}`, margin, yPos);
-      doc.text(`☐ Signage ${event.supplies?.signage ? '✓' : ''}`, margin + 50, yPos);
-      doc.text(`☐ Ice ${event.supplies?.ice ? '✓' : ''}`, margin + 100, yPos);
-      yPos += 8;
+      // Create a table for beer and supplies
+      // Table headers
+      const colWidths = [200, 80, 60, 160];
+      const tableWidth = colWidths.reduce((sum, width) => sum + width, 0);
+      const tableX = (pageWidth - tableWidth) / 2;
       
-      // Supply checkboxes - third row
-      doc.text(`☐ Jockey box ${event.supplies?.jockey_box ? '✓' : ''}`, margin, yPos);
-      doc.text(`☐ Cups ${event.supplies?.cups ? '✓' : ''}`, margin + 50, yPos);
-      yPos += 12;
+      // Draw table header
+      doc.setFillColor(240, 240, 240);
+      doc.rect(tableX, currentY - 15, colWidths[0] + colWidths[1] + colWidths[2], 25, 'F');
+      doc.rect(tableX + colWidths[0] + colWidths[1] + colWidths[2], currentY - 15, colWidths[3], 25, 'F');
       
-      // Beer Products Section
+      // Header text
       doc.setFont('helvetica', 'bold');
-      doc.text('Beer Products', margin, yPos);
-      yPos += 8;
+      doc.text('Beer Style', tableX + 10, currentY);
+      doc.text('Pkg', tableX + colWidths[0] + 10, currentY);
+      doc.text('Qty', tableX + colWidths[0] + colWidths[1] + 10, currentY);
       
-      // Beer products
+      // Draw the supply checkboxes in the header
+      const supplyX = tableX + colWidths[0] + colWidths[1] + colWidths[2] + 10;
+      doc.text('Table:', supplyX, currentY - 5);
+      doc.rect(supplyX + 40, currentY - 10, checkSize, checkSize, 'S');
+      if (event.supplies?.table_needed) {
+        doc.text('✓', supplyX + 42, currentY - 1);
+      }
+      
+      doc.text('Beer buckets:', supplyX, currentY + 10);
+      doc.rect(supplyX + 70, currentY + 5, checkSize, checkSize, 'S');
+      if (event.supplies?.beer_buckets) {
+        doc.text('✓', supplyX + 72, currentY + 14);
+      }
+      
+      // Table rows for beers
+      currentY += 25;
+      const rowHeight = 25;
+      
+      // Draw vertical lines of the table
+      doc.setDrawColor(120, 120, 120);
+      doc.line(tableX, currentY - 40, tableX, currentY + 200); // Left border
+      doc.line(tableX + colWidths[0], currentY - 40, tableX + colWidths[0], currentY + 200); // After Beer Style
+      doc.line(tableX + colWidths[0] + colWidths[1], currentY - 40, tableX + colWidths[0] + colWidths[1], currentY + 200); // After Pkg
+      doc.line(tableX + colWidths[0] + colWidths[1] + colWidths[2], currentY - 40, tableX + colWidths[0] + colWidths[1] + colWidths[2], currentY + 200); // After Qty
+      doc.line(tableX + tableWidth, currentY - 40, tableX + tableWidth, currentY + 200); // Right border
+      
+      // Horizontal line after header
+      doc.line(tableX, currentY - 15, tableX + tableWidth, currentY - 15);
+      
       if (event.beers && event.beers.length > 0) {
-        event.beers.forEach(beer => {
+        event.beers.forEach((beer, index) => {
+          // Draw row
           doc.setFont('helvetica', 'normal');
-          doc.text(`${beer.beer_style || ''} - ${beer.packaging || ''} - Qty: ${beer.quantity || ''}`, margin + 5, yPos);
-          yPos += 8;
+          doc.text(beer.beer_style || '', tableX + 10, currentY + 10);
+          doc.text(beer.packaging || '', tableX + colWidths[0] + 10, currentY + 10);
+          doc.text(beer.quantity?.toString() || '', tableX + colWidths[0] + colWidths[1] + 10, currentY + 10);
+          
+          // Draw horizontal line
+          doc.line(tableX, currentY + rowHeight, tableX + tableWidth, currentY + rowHeight);
+          
+          currentY += rowHeight;
         });
       } else {
-        yPos += 8; // Skip line if no beers
+        // Add empty rows if no beers
+        for (let i = 0; i < 3; i++) {
+          doc.line(tableX, currentY + rowHeight, tableX + tableWidth, currentY + rowHeight);
+          currentY += rowHeight;
+        }
       }
+      
+      // Supply checkboxes in the second column
+      const supplyY1 = currentY - 120;
+      const supplyX1 = tableX + colWidths[0] + colWidths[1] + colWidths[2] + 10;
+      
+      // Second column of supply checkboxes
+      doc.setFont('helvetica', 'normal');
+      doc.text('Table Cloth:', supplyX1, supplyY1);
+      doc.rect(supplyX1 + 70, supplyY1 - 5, checkSize, checkSize, 'S');
+      if (event.supplies?.table_cloth) {
+        doc.text('✓', supplyX1 + 72, supplyY1 + 4);
+      }
+      
+      doc.text('Tent/Weights:', supplyX1, supplyY1 + 25);
+      doc.rect(supplyX1 + 70, supplyY1 + 20, checkSize, checkSize, 'S');
+      if (event.supplies?.tent_weights) {
+        doc.text('✓', supplyX1 + 72, supplyY1 + 29);
+      }
+      
+      doc.text('Signage:', supplyX1, supplyY1 + 50);
+      doc.rect(supplyX1 + 70, supplyY1 + 45, checkSize, checkSize, 'S');
+      if (event.supplies?.signage) {
+        doc.text('✓', supplyX1 + 72, supplyY1 + 54);
+      }
+      
+      doc.text('Ice:', supplyX1, supplyY1 + 75);
+      doc.rect(supplyX1 + 70, supplyY1 + 70, checkSize, checkSize, 'S');
+      if (event.supplies?.ice) {
+        doc.text('✓', supplyX1 + 72, supplyY1 + 79);
+      }
+      
+      // Right column of supplies
+      doc.text('Jockey box:', supplyX1, supplyY1 + 100);
+      doc.rect(supplyX1 + 70, supplyY1 + 95, checkSize, checkSize, 'S');
+      if (event.supplies?.jockey_box) {
+        doc.text('✓', supplyX1 + 72, supplyY1 + 104);
+      }
+      
+      // Small text for jockey box note
+      doc.setFontSize(7);
+      doc.text('(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)', supplyX1, supplyY1 + 115);
+      
+      doc.setFontSize(10);
+      doc.text('Cups:', supplyX1, supplyY1 + 135);
+      doc.rect(supplyX1 + 70, supplyY1 + 130, checkSize, checkSize, 'S');
+      if (event.supplies?.cups) {
+        doc.text('✓', supplyX1 + 72, supplyY1 + 139);
+      }
+      
+      // Reset current Y position to after the table
+      currentY = currentY + 20;
       
       // Additional Supplies
-      yPos += 5;
       doc.setFont('helvetica', 'bold');
-      doc.text('Additional Supplies:', margin, yPos);
+      doc.text('Additional Supplies:', margin, currentY);
       doc.setFont('helvetica', 'normal');
-      doc.text(event.supplies?.additional_supplies || '', margin + 50, yPos);
-      yPos += 12;
+      doc.text(event.supplies?.additional_supplies || '', margin + 120, currentY);
+      
+      // Small text for additional supplies note
+      doc.setFontSize(7);
+      doc.text('(Stickers, Koozies, Hats, Dog toy)', margin + 120, currentY + 15);
       
       // Event Instructions
+      currentY += 40;
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('Event Instructions:', margin, yPos);
-      yPos += 8;
+      doc.text('Event Instructions:', margin, currentY);
+      doc.setFont('helvetica', 'normal');
       
       if (event.event_instructions) {
-        doc.setFont('helvetica', 'normal');
-        const splitInstructions = doc.splitTextToSize(event.event_instructions, pageWidth - (margin * 2));
-        doc.text(splitInstructions, margin, yPos);
-        yPos += (splitInstructions.length * 7) + 5;
+        // Handle long text wrapping
+        const maxWidth = pageWidth - (margin * 2) - 120;
+        const splitText = doc.splitTextToSize(event.event_instructions, maxWidth);
+        doc.text(splitText, margin + 120, currentY);
+        
+        // Small note text
+        doc.setFontSize(7);
+        doc.text('(include additional notes here)', margin + 120, currentY + 10 + (splitText.length * 10));
+        
+        currentY += Math.max(30, splitText.length * 12);
       } else {
-        yPos += 10;
+        // Empty space for instructions
+        doc.text('', margin + 120, currentY);
+        doc.setFontSize(7);
+        doc.text('(include additional notes here)', margin + 120, currentY + 10);
+        currentY += 30;
       }
       
-      // Post Event Notes Section
-      doc.setFont('helvetica', 'bold');
-      doc.text('POST EVENT NOTES', pageWidth/2, yPos, { align: 'center' });
-      yPos += 8;
+      // POST EVENT NOTES Section
+      currentY += 10;
+      doc.setFillColor(240, 240, 240);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'F');
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'S');
       
-      // Post event notes fields
-      const postFields = [
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('POST EVENT NOTES', pageWidth / 2, currentY, { align: 'center' });
+      
+      currentY += 25;
+      
+      // Post Event Notes fields
+      const noteFields = [
         { label: 'Estimated attendees:', value: event.notes?.estimated_attendees || '' },
         { label: 'Was there a favorite style of beer offered?', value: event.notes?.favorite_beer || '' },
         { label: 'Did you have enough product?', value: event.notes?.enough_product === true ? 'Yes' : (event.notes?.enough_product === false ? 'No' : '') },
@@ -1850,26 +2046,46 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
         { label: 'Any critiques?', value: event.notes?.critiques || '' }
       ];
       
-      postFields.forEach(field => {
+      noteFields.forEach(field => {
         doc.setFont('helvetica', 'bold');
-        doc.text(field.label, margin, yPos);
+        doc.text(field.label, margin, currentY);
+        
+        // Add underline for the answer
+        doc.setDrawColor(120, 120, 120);
+        doc.line(margin + 220, currentY, pageWidth - margin, currentY);
+        
+        // Value
         doc.setFont('helvetica', 'normal');
-        doc.text(field.value, margin + 100, yPos);
-        yPos += 8;
+        doc.text(field.value, margin + 220, currentY - 3);
+        
+        currentY += 20;
       });
       
-      // Reminder Section
-      yPos += 5;
+      // REMINDER section
+      currentY += 15;
+      doc.setFillColor(240, 240, 240);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'F');
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(0, currentY - 15, pageWidth, 25, 'S');
+      
       doc.setTextColor(255, 0, 0); // Red text
       doc.setFont('helvetica', 'bold');
-      doc.text('REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS', pageWidth/2, yPos, { align: 'center' });
-      yPos += 8;
+      doc.text('REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS', pageWidth / 2, currentY, { align: 'center' });
       
       // Return equipment by
-      doc.setTextColor(0, 0, 0); // Black text
-      doc.text('RETURN EQUIPMENT BY:', margin, yPos);
+      currentY += 30;
+      doc.setTextColor(0, 0, 0); // Back to black
+      doc.text('RETURN EQUIPMENT BY:', margin, currentY);
+      
+      // Add underline for the date
+      doc.setDrawColor(120, 120, 120);
+      doc.line(margin + 150, currentY, pageWidth - margin, currentY);
+      
+      // Value
       doc.setFont('helvetica', 'normal');
-      doc.text(event.notes?.return_equipment_by ? new Date(event.notes.return_equipment_by).toLocaleDateString() : '', margin + 70, yPos);
+      if (event.notes?.return_equipment_by) {
+        doc.text(new Date(event.notes.return_equipment_by).toLocaleDateString(), margin + 150, currentY - 3);
+      }
       
       // Save the PDF
       doc.save(`${event.title.replace(/\s+/g, '_')}_Event_Form.pdf`);
@@ -1883,7 +2099,7 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
   return (
     <div className="dp-section">
       <h3 className="dp-subsection-title">Event Form PDF</h3>
-      <p>Click the button below to download the event form as a PDF:</p>
+      <p>Click the button below to download the DPBC Event Form as a PDF:</p>
       
       <div className="dp-button-group">
         <button onClick={generatePDF} className="dp-button dp-button-primary">
@@ -1896,7 +2112,7 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
       
       <div className="dp-form-group">
         <p className="dp-note">
-          Note: This will generate a simple PDF version of the event form that can be printed or saved.
+          Note: This will generate a PDF that exactly matches the DPBC Event Form template.
         </p>
       </div>
     </div>
