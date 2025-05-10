@@ -691,14 +691,68 @@ const AdminEvents = () => {
   };
 
   if (loading) {
-/* ORIGINAL RETURN BLOCK COMMENTED OUT
-    return (
-      <div className="dp-loading">
-        <div className="dp-loading-spinner"></div>
-        <p>Loading events...</p>
+// [COMMENTED OUT ORIGINAL RETURN BLOCK STARTS HERE]
+// return (
+// <div className="dp-loading">
+// <div className="dp-loading-spinner"></div>
+// <p>Loading events...</p>
+// </div>
+// );
+// [END ORIGINAL RETURN BLOCK]
+  return (
+    <div className="dp-section">
+      <h3 className="dp-subsection-title">Event List</h3>
+      <div className="dp-table-container">
+        <table className="dp-table">
+          <thead>
+            <tr>
+              <th>Event Name</th>
+              <th>Date</th>
+              <th>Duration</th>
+              <th>Staff</th>
+              <th>Location</th>
+              <th>Type</th>
+              <th className="dp-text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="dp-empty-table">No events found.</td>
+              </tr>
+            ) : (
+              events.map(event => (
+                <tr key={event.id} className="dp-table-row">
+                  <td>{event.title}</td>
+                  <td>{event.date}</td>
+                  <td>{event.duration || '—'}</td>
+                  <td>{event.staff_attending || '—'}</td>
+                  <td>{event.off_prem ? 'Off-premise' : 'On-premise'}</td>
+                  <td>{event.event_type}</td>
+                  <td className="dp-text-center">
+                    <div className="dp-button-group">
+                      <button
+                        onClick={() => generatePDF(event, employees, eventAssignments)}
+                        className="dp-button dp-button-secondary dp-button-sm"
+                      >
+                        Download PDF Form
+                      </button>
+                      <button
+                        onClick={() => viewPostEventNotes(event)}
+                        className="dp-button dp-button-secondary dp-button-sm"
+                      >
+                        Post-Event Notes
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-    );
-*/
+    </div>
+  );
   }
 
   return (
@@ -2194,57 +2248,3 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
   );
 };
 export default AdminEvents;
-  return (
-    <div className="dp-section">
-      <h3 className="dp-subsection-title">Event List</h3>
-      <div className="dp-table-container">
-        <table className="dp-table">
-          <thead>
-            <tr>
-              <th>Event Name</th>
-              <th>Date</th>
-              <th>Duration</th>
-              <th>Staff</th>
-              <th>Location</th>
-              <th>Type</th>
-              <th className="dp-text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="dp-empty-table">No events found.</td>
-              </tr>
-            ) : (
-              events.map(event => (
-                <tr key={event.id} className="dp-table-row">
-                  <td>{event.title}</td>
-                  <td>{event.date}</td>
-                  <td>{event.duration || '—'}</td>
-                  <td>{event.staff_attending || '—'}</td>
-                  <td>{event.off_prem ? 'Off-premise' : 'On-premise'}</td>
-                  <td>{event.event_type}</td>
-                  <td className="dp-text-center">
-                    <div className="dp-button-group">
-                      <button
-                        onClick={() => generatePDF(event, employees, eventAssignments)}
-                        className="dp-button dp-button-secondary dp-button-sm"
-                      >
-                        Download PDF Form
-                      </button>
-                      <button
-                        onClick={() => viewPostEventNotes(event)}
-                        className="dp-button dp-button-secondary dp-button-sm"
-                      >
-                        Post-Event Notes
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
