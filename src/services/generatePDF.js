@@ -1,71 +1,42 @@
 
-import { pdf, Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
-import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
 
-// Register Calibri fonts from public folder
-Font.register({
-  family: 'Calibri',
-  fonts: [
-    { src: '/fonts/calibri-regular.ttf' },
-    { src: '/fonts/calibri-bold.ttf', fontWeight: 'bold' },
-  ],
-});
+export function generatePDF(event) {
+  const doc = new jsPDF();
 
-const styles = StyleSheet.create({
-  page: {
-    fontFamily: 'Calibri',
-    fontSize: 11,
-    padding: 40,
-    lineHeight: 1.4,
-    flexDirection: 'column',
-  },
-  section: {
-    marginBottom: 10,
-  },
-  heading: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  label: {
-    fontWeight: 'bold',
-  },
-});
+  // Embed Calibri from public/fonts
+  const calibriPath = window.location.origin + '/fonts/calibri.ttf';
+  const calibriFontName = 'calibri';
 
-const EventPDFDocument = ({ event }) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.section}>
-        <Text style={styles.heading}>Devil's Purse Event Form</Text>
-        <View style={styles.row}>
-          <Text style={styles.label}>Event:</Text>
-          <Text>{event.title}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Date:</Text>
-          <Text>{event.date}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Location:</Text>
-          <Text>{event.location}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Type:</Text>
-          <Text>{event.event_type}</Text>
-        </View>
-        {/* Add more fields as needed */}
-      </View>
-    </Page>
-  </Document>
-);
+  // Load Calibri font
+  fetch(calibriPath)
+    .then(res => res.arrayBuffer())
+    .then(fontBuffer => {
+      doc.addFileToVFS("calibri.ttf", btoa(
+        new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+      ));
+      doc.addFont("calibri.ttf", calibriFontName, "normal");
+      doc.setFont(calibriFontName);
+      doc.setFontSize(12);
 
-// Main function to generate and download PDF
-export async function generatePDF(event, employees, eventAssignments) {
-  const blob = await pdf(<EventPDFDocument event={event} />).toBlob();
-  saveAs(blob, `DPBC_Event_${event.title.replace(/\s+/g, '_')}.pdf`);
+      // Header
+      doc.setFontSize(16);
+      doc.text("Devil's Purse Event Form", 20, 20);
+
+      // Event Information
+      doc.setFontSize(12);
+      doc.text(`Event: ${event.title || ''}`, 20, 35);
+      doc.text(`Date: ${event.date || ''}`, 20, 45);
+      doc.text(`Location: ${event.location || ''}`, 20, 55);
+      doc.text(`Type: ${event.event_type || ''}`, 20, 65);
+      doc.text(`Duration: ${event.duration || ''}`, 20, 75);
+      doc.text(`Staff Attending: ${event.staff_attending || ''}`, 20, 85);
+
+      // Save PDF
+      const safeTitle = (event.title || 'event_form').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      doc.save(`DPBC_${safeTitle}.pdf`);
+    })
+    .catch(err => {
+      console.error("Error loading Calibri font or generating PDF:", err);
+    });
 }
