@@ -18,6 +18,13 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
   form.getTextField('event_notes').setText(event.notes || '');
 
   // Additional beer information if present
+  event.beers?.forEach((beer, i) => {
+    const index = i + 1;
+    form.getTextField(`beer_${index}_name`).setText(beer.beer_name || '');
+    form.getTextField(`beer_${index}_style`).setText(beer.beer_style || '');
+    form.getTextField(`beer_${index}_packaging`).setText(beer.package_style || '');
+    form.getTextField(`beer_${index}_quantity`).setText(beer.quantity || '');
+  });
   if (event.beers?.length) {
     event.beers.forEach((beer, index) => {
       const i = index + 1;
