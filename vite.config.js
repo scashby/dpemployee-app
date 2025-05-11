@@ -9,7 +9,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: []
+      external: ['pdf-lib']  // ✅ Tell Vite not to try to bundle this module
     }
   }
 });
