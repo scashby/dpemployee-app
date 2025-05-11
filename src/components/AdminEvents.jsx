@@ -1291,12 +1291,17 @@ const AdminEvents = () => {
                           onClick={() => printEventForm(event)}
                           className="dp-button dp-button-secondary"
                         >
-                          Print Event Form
                         </button>
                         <button
                           onClick={() => viewPostEventNotes(event)}
                           className="dp-button dp-button-secondary"
                         >
+                      <button
+                        onClick={() => generatePDF(event, employees, eventAssignments)}
+                        className="dp-button dp-button-secondary dp-button-sm"
+                      >
+                        Download PDF
+                      </button>
                           Post-Event Notes
                         </button>
                       </div>
@@ -2056,7 +2061,6 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
       
       <div className="dp-button-group">
         <button onClick={generateBlankTemplate} className="dp-button dp-button-primary">
-          Download Blank Template
         </button>
         <button onClick={onClose} className="dp-button dp-button-secondary">
           Close
@@ -2099,6 +2103,12 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
 
   return (
     <div className="dp-post-notes-modal">
+                      <button
+                        onClick={() => generatePDF(event, employees, eventAssignments)}
+                        className="dp-button dp-button-secondary dp-button-sm"
+                      >
+                        Download PDF
+                      </button>
       <h2>Post-Event Notes: {event.title}</h2>
       <form onSubmit={handleSubmit}>
         <div className="dp-form-group">
