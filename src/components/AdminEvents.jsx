@@ -779,12 +779,15 @@ const AdminEvents = () => {
           className="dp-select"
           onChange={(e) => handleEmployeeSelection(e, null)}
           value={newEventEmployees || []}
-        >
+<div>
+</div>
           {employees.map(emp => (
             <option key={emp.id} value={emp.id}>
               {emp.name}
             </option>
-          ))}
+<div>
+      </div>
+    ))}
         </select>
         <div className="dp-form-help">
           Hold Ctrl/Cmd to select multiple employees
@@ -844,7 +847,9 @@ const AdminEvents = () => {
               className="dp-checkbox"
             />
             <span>Tasting</span>
+<label>
           </label>
+<div>
         </div>
         <div className="dp-checkbox-container">
           <label className="dp-checkbox-label">
@@ -857,7 +862,9 @@ const AdminEvents = () => {
               className="dp-checkbox"
             />
             <span>Pint Night</span>
+<label>
           </label>
+<div>
         </div>
         <div className="dp-checkbox-container">
           <label className="dp-checkbox-label">
@@ -870,7 +877,9 @@ const AdminEvents = () => {
               className="dp-checkbox"
             />
             <span>Beer Fest</span>
+<label>
           </label>
+<div>
         </div>
         <div className="dp-checkbox-container">
           <label className="dp-checkbox-label">
@@ -883,8 +892,11 @@ const AdminEvents = () => {
               className="dp-checkbox"
             />
             <span>Other</span>
+<label>
           </label>
+<div>
         </div>
+<div>
       </div>
       {newEvent.event_type === 'other' && (
         <input
@@ -895,6 +907,7 @@ const AdminEvents = () => {
           className="dp-input"
         />
       )}
+<div>
     </div>
 
     <div className="dp-form-group">
@@ -908,6 +921,7 @@ const AdminEvents = () => {
         className="dp-textarea"
         rows="3"
       ></textarea>
+<div>
     </div>
 
     <div className="dp-form-group">
@@ -923,8 +937,11 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Event is held off-premise</span>
+<label>
         </label>
+<div>
       </div>
+<div>
     </div>
 
     <h4 className="dp-subsection-title">Supplies Needed</h4>
@@ -938,7 +955,9 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Table</span>
+<label>
         </label>
+<div>
       </div>
       <div className="dp-checkbox-container">
         <label className="dp-checkbox-label">
@@ -949,7 +968,9 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Beer buckets</span>
+<label>
         </label>
+<div>
       </div>
       <div className="dp-checkbox-container">
         <label className="dp-checkbox-label">
@@ -960,7 +981,9 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Table Cloth</span>
+<label>
         </label>
+<div>
       </div>
       <div className="dp-checkbox-container">
         <label className="dp-checkbox-label">
@@ -971,8 +994,11 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Tent/Weights</span>
+<label>
         </label>
+<div>
       </div>
+<div>
     </div>
     <div className="dp-form-row">
       <div className="dp-checkbox-container">
@@ -984,7 +1010,9 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Signage</span>
+<label>
         </label>
+<div>
       </div>
       <div className="dp-checkbox-container">
         <label className="dp-checkbox-label">
@@ -995,7 +1023,9 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Ice</span>
+<label>
         </label>
+<div>
       </div>
       <div className="dp-checkbox-container">
         <label className="dp-checkbox-label">
@@ -1006,7 +1036,9 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Jockey box</span>
+<label>
         </label>
+<div>
       </div>
       <div className="dp-checkbox-container">
         <label className="dp-checkbox-label">
@@ -1017,8 +1049,11 @@ const AdminEvents = () => {
             className="dp-checkbox"
           />
           <span>Cups</span>
+<label>
         </label>
+<div>
       </div>
+<div>
     </div>
     <div className="dp-form-group">
       <label className="dp-form-label">
@@ -1042,52 +1077,70 @@ const AdminEvents = () => {
           </label>
           <input
             type="text"
-            value={beer.beer_style}
-            onChange={(e) => handleBeerChange(e, null, index, 'beer_style')}
-            className="dp-input"
-            placeholder="e.g. Handline Kolsch"
-          />
-        </div>
-        <div className="dp-form-group">
-          <label className="dp-form-label">
-            Packaging
-          </label>
-          <input
-            type="text"
-            value={beer.packaging}
-            onChange={(e) => handleBeerChange(e, null, index, 'packaging')}
-            className="dp-input"
-            placeholder="e.g. 16oz Case"
-          />
-        </div>
-        <div className="dp-form-group">
-          <label className="dp-form-label">
-            Quantity
-          </label>
-          <input
-            type="number"
-            value={beer.quantity}
-            onChange={(e) => handleBeerChange(e, null, index, 'quantity')}
-            className="dp-input"
-            min="1"
-          />
-        </div>
-        <div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+            
+<select
+  value={beer.beer_style}
+  onChange={(e) => handleBeerChange(e, null, index, 'beer_style')}
+  className="dp-input"
+<div>
+</div>
+  <option value="">Select Beer Style</option>
+  {[
+    "Blanket Bay Lager", "Charlene’s Dream Altbier", "Chiselbraü Golden Ale",
+    "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
+    "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
+    "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
+    "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
+    "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
+    "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
+    "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
+    "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
+  ].map((style, idx) => (
+    <option key={idx} value={style}>{style}</option>
+  ))}
+</select>
+
+<select
+  value={beer.packaging}
+  onChange={(e) => handleBeerChange(e, null, index, 'packaging')}
+  className="dp-input"
+<div>
+</div>
+  <option value="">Select Package Style</option>
+  {[
+    "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
+    "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
+  ].map((pack, idx) => (
+    <option key={idx} value={pack}>{pack}</option>
+  ))}
+</select>
+
+<input
+  type="number"
+  value={beer.quantity}
+  onChange={(e) => handleBeerChange(e, null, index, 'quantity')}
+  className="dp-input"
+  placeholder="e.g. 2"
+/>
+<div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
           <button
             type="button"
             onClick={() => removeBeer(null, index)}
             className="dp-button dp-button-danger dp-button-sm"
-          >
+<div>
+</div>
             Remove
           </button>
         </div>
+      </div>
       </div>
     ))}
     <button
       type="button"
       onClick={() => addBeer(null)}
       className="dp-button dp-button-secondary dp-button-sm mb-4"
-    >
+<div>
+</div>
       Add Beer
     </button>
     
@@ -1095,11 +1148,14 @@ const AdminEvents = () => {
       <button
         type="submit"
         className="dp-button dp-button-primary"
-      >
+<div>
+</div>
         Add Event
       </button>
     </div>
+<form>
   </form>
+<div>
 </div>
 
 <div className="dp-section">
@@ -1115,7 +1171,9 @@ const AdminEvents = () => {
           <th>Location</th>
           <th>Type</th>
           <th className="dp-text-center">Actions</th>
+<tr>
         </tr>
+<thead>
       </thead>
       <tbody>
         {events.length === 0 ? (
@@ -1130,6 +1188,7 @@ const AdminEvents = () => {
               <tr className="dp-table-row">
                 <td>
                   <span className="dp-event-title">{event.title}</span>
+<td>
                 </td>
                 <td>
                   {formatDate(event.date)}
@@ -1160,23 +1219,27 @@ const AdminEvents = () => {
                     <button
                       onClick={() => setOpenEventId(openEventId === event.id ? null : event.id)}
                       className="dp-button dp-button-secondary dp-button-sm"
-                    >
+<div>
+</div>
                       {openEventId === event.id ? "Hide" : "Details"}
                     </button>
                     <button
                       onClick={() => setEditMode(event.id)}
                       className="dp-button dp-button-primary dp-button-sm"
-                    >
+<div>
+</div>
                       Edit
                     </button>
                     <button
                       onClick={() => deleteEvent(event.id)}
                       className="dp-button dp-button-danger dp-button-sm"
-                    >
+<div>
+</div>
                       Delete
                     </button>
                   </div>
                 </td>
+<tr>
               </tr>
               
               {/* Expanded row for event details */}
@@ -1189,15 +1252,19 @@ const AdminEvents = () => {
                         <div className="dp-event-details-grid">
                           <div>
                             <strong>Date:</strong> {formatDate(event.date)}
+<div>
                           </div>
                           <div>
                             <strong>Setup Time:</strong> {event.setup_time || "Not specified"}
+<div>
                           </div>
                           <div>
                             <strong>Duration:</strong> {event.duration || event.time || "Not specified"}
+<div>
                           </div>
                           <div>
                             <strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}
+<div>
                           </div>
                           <div>
                             <strong>Staff Attending:</strong> 
@@ -1206,17 +1273,22 @@ const AdminEvents = () => {
                                 employees.find(e => e.id === empId)?.name).filter(Boolean).join(', ')
                               : "Not assigned"
                             }
+<div>
                           </div>
                           <div>
                             <strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}
+<div>
                           </div>
+<div>
                         </div>
                         {event.event_instructions && (
                           <div className="dp-event-details-instructions">
                             <strong>Instructions:</strong>
                             <p>{event.event_instructions}</p>
+<div>
                           </div>
                         )}
+<div>
                       </div>
                       
                       <div className="dp-event-details-columns">
@@ -1235,10 +1307,12 @@ const AdminEvents = () => {
                               {event.supplies.additional_supplies && (
                                 <li>Additional: {event.supplies.additional_supplies}</li>
                               )}
+<ul>
                             </ul>
                           ) : (
                             <p>No supplies specified</p>
                           )}
+<div>
                         </div>
                         
                         <div className="dp-event-details-section">
@@ -1250,7 +1324,9 @@ const AdminEvents = () => {
                                   <th>Beer Style</th>
                                   <th>Packaging</th>
                                   <th>Qty</th>
+<tr>
                                 </tr>
+<thead>
                               </thead>
                               <tbody>
                                 {event.beers.map((beer, index) => (
@@ -1258,13 +1334,19 @@ const AdminEvents = () => {
                                     <td>{beer.beer_style}</td>
                                     <td>{beer.packaging}</td>
                                     <td>{beer.quantity}</td>
+<tr>
                                   </tr>
-                                ))}
+<div>
+      </div>
+    ))}
+<tbody>
                               </tbody>
+<table>
                             </table>
                           ) : (
                             <p>No beer products specified</p>
                           )}
+<div>
                         </div>
                         
                         <div className="dp-event-details-section">
@@ -1278,35 +1360,45 @@ const AdminEvents = () => {
                                     <li key={empId} className="dp-employee-item">{emp.name}</li>
                                   ) : null;
                                 })}
+<ul>
                               </ul>
                             ) : (
                               <span className="dp-no-employees">No employees assigned</span>
                             )}
+<div>
                           </div>
+<div>
                         </div>
+<div>
                       </div>
                       
                       <div className="dp-event-actions">
                         <button
                           onClick={() => printEventForm(event)}
                           className="dp-button dp-button-secondary"
-                        >
+<div>
+</div>
                         </button>
                         <button
                           onClick={() => viewPostEventNotes(event)}
                           className="dp-button dp-button-secondary"
-                        >
+<div>
+</div>
                       <button
                         onClick={() => generatePDF(event, employees, eventAssignments)}
                         className="dp-button dp-button-secondary dp-button-sm"
-                      >
+<div>
+</div>
                         Download PDF
                       </button>
                           Post-Event Notes
                         </button>
                       </div>
+<div>
                     </div>
+<td>
                   </td>
+<tr>
                 </tr>
               )}
               
@@ -1325,6 +1417,7 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'title')}
                             className="dp-input"
                           />
+<div>
                         </div>
                         <div className="dp-form-group">
                           <label className="dp-form-label">Date</label>
@@ -1334,7 +1427,9 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'date')}
                             className="dp-input"
                           />
+<div>
                         </div>
+<div>
                       </div>
 
                       <div className="dp-form-row">
@@ -1346,6 +1441,7 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'setup_time')}
                             className="dp-input"
                           />
+<div>
                         </div>
                         <div className="dp-form-group">
                           <label className="dp-form-label">Duration</label>
@@ -1355,6 +1451,7 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'duration')}
                             className="dp-input"
                           />
+<div>
                         </div>
                         <div className="dp-form-group">
                           <label className="dp-form-label">Staff Attending</label>
@@ -1363,17 +1460,22 @@ const AdminEvents = () => {
                             className="dp-select"
                             onChange={(e) => handleEmployeeSelection(e, event.id)}
                             value={eventAssignments[event.id] || []}
-                          >
+<div>
+</div>
                             {employees.map(emp => (
                               <option key={emp.id} value={emp.id}>
                                 {emp.name}
                               </option>
-                            ))}
+<div>
+      </div>
+    ))}
                           </select>
                           <div className="dp-form-help">
                             Hold Ctrl/Cmd to select multiple employees
                           </div>
+<div>
                         </div>
+<div>
                       </div>
 
                       <div className="dp-form-row">
@@ -1385,6 +1487,7 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'contact_name')}
                             className="dp-input"
                           />
+<div>
                         </div>
                         <div className="dp-form-group">
                           <label className="dp-form-label">Contact Phone</label>
@@ -1394,6 +1497,7 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'contact_phone')}
                             className="dp-input"
                           />
+<div>
                         </div>
                         <div className="dp-form-group">
                           <label className="dp-form-label">Expected Attendees</label>
@@ -1403,7 +1507,9 @@ const AdminEvents = () => {
                             onChange={(e) => handleInputChange(e, event.id, 'expected_attendees')}
                             className="dp-input"
                           />
+<div>
                         </div>
+<div>
                       </div>
 
                       <div className="dp-form-group">
@@ -1420,7 +1526,9 @@ const AdminEvents = () => {
                                 className="dp-checkbox"
                               />
                               <span>Tasting</span>
+<label>
                             </label>
+<div>
                           </div>
                           <div className="dp-checkbox-container">
                             <label className="dp-checkbox-label">
@@ -1433,7 +1541,9 @@ const AdminEvents = () => {
                                 className="dp-checkbox"
                               />
                               <span>Pint Night</span>
+<label>
                             </label>
+<div>
                           </div>
                           <div className="dp-checkbox-container">
                             <label className="dp-checkbox-label">
@@ -1446,7 +1556,9 @@ const AdminEvents = () => {
                                 className="dp-checkbox"
                               />
                               <span>Beer Fest</span>
+<label>
                             </label>
+<div>
                           </div>
                           <div className="dp-checkbox-container">
                             <label className="dp-checkbox-label">
@@ -1459,8 +1571,11 @@ const AdminEvents = () => {
                                 className="dp-checkbox"
                               />
                               <span>Other</span>
+<label>
                             </label>
+<div>
                           </div>
+<div>
                         </div>
                         {event.event_type === 'other' && (
                           <input
@@ -1471,6 +1586,7 @@ const AdminEvents = () => {
                             className="dp-input"
                           />
                         )}
+<div>
                       </div>
 
                       <div className="dp-form-group">
@@ -1481,6 +1597,7 @@ const AdminEvents = () => {
                           className="dp-textarea"
                           rows="3"
                         ></textarea>
+<div>
                       </div>
 
                       <div className="dp-form-group">
@@ -1494,8 +1611,11 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Event is held off-premise</span>
+<label>
                           </label>
+<div>
                         </div>
+<div>
                       </div>
 
                       <h4>Supplies Needed</h4>
@@ -1509,7 +1629,9 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Table</span>
+<label>
                           </label>
+<div>
                         </div>
                         <div className="dp-checkbox-container">
                           <label className="dp-checkbox-label">
@@ -1520,7 +1642,9 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Beer buckets</span>
+<label>
                           </label>
+<div>
                         </div>
                         <div className="dp-checkbox-container">
                           <label className="dp-checkbox-label">
@@ -1531,7 +1655,9 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Table Cloth</span>
+<label>
                           </label>
+<div>
                         </div>
                         <div className="dp-checkbox-container">
                           <label className="dp-checkbox-label">
@@ -1542,8 +1668,11 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Tent/Weights</span>
+<label>
                           </label>
+<div>
                         </div>
+<div>
                       </div>
                       <div className="dp-form-row">
                         <div className="dp-checkbox-container">
@@ -1555,7 +1684,9 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Signage</span>
+<label>
                           </label>
+<div>
                         </div>
                         <div className="dp-checkbox-container">
                           <label className="dp-checkbox-label">
@@ -1566,7 +1697,9 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Ice</span>
+<label>
                           </label>
+<div>
                         </div>
                         <div className="dp-checkbox-container">
                           <label className="dp-checkbox-label">
@@ -1577,7 +1710,9 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Jockey box</span>
+<label>
                           </label>
+<div>
                         </div>
                         <div className="dp-checkbox-container">
                           <label className="dp-checkbox-label">
@@ -1588,8 +1723,11 @@ const AdminEvents = () => {
                               className="dp-checkbox"
                             />
                             <span>Cups</span>
+<label>
                           </label>
+<div>
                         </div>
+<div>
                       </div>
                       <div className="dp-form-group">
                         <label className="dp-form-label">Additional Supplies</label>
@@ -1599,6 +1737,7 @@ const AdminEvents = () => {
                           onChange={(e) => handleSupplyChange(e, event.id, 'additional_supplies')}
                           className="dp-input"
                         />
+<div>
                       </div>
 
                       <h4>Beer Products</h4>
@@ -1612,6 +1751,7 @@ const AdminEvents = () => {
                               onChange={(e) => handleBeerChange(e, event.id, index, 'beer_style')}
                               className="dp-input"
                             />
+<div>
                           </div>
                           <div className="dp-form-group">
                             <label className="dp-form-label">Packaging</label>
@@ -1621,6 +1761,7 @@ const AdminEvents = () => {
                               onChange={(e) => handleBeerChange(e, event.id, index, 'packaging')}
                               className="dp-input"
                             />
+<div>
                           </div>
                           <div className="dp-form-group">
                             <label className="dp-form-label">Quantity</label>
@@ -1631,23 +1772,29 @@ const AdminEvents = () => {
                               className="dp-input"
                               min="1"
                             />
+<div>
                           </div>
-                          <div className="dp-form-group" style={{display: 'flex', alignItems: 'flex-end'}}>
+<div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
                             <button
                               type="button"
                               onClick={() => removeBeer(event.id, index)}
                               className="dp-button dp-button-danger dp-button-sm"
-                            >
+<div>
+</div>
                               Remove
                             </button>
                           </div>
+<div>
                         </div>
-                      ))}
+<div>
+      </div>
+    ))}
                       <button
                         type="button"
                         onClick={() => addBeer(event.id)}
                         className="dp-button dp-button-secondary dp-button-sm mb-4"
-                      >
+<div>
+</div>
                         Add Beer
                       </button>
 
@@ -1655,26 +1802,36 @@ const AdminEvents = () => {
                         <button
                           onClick={() => saveEventChanges(event.id)}
                           className="dp-button dp-button-success"
-                        >
+<div>
+</div>
                           Save Changes
                         </button>
                         <button
                           onClick={() => setEditMode(null)}
                           className="dp-button dp-button-secondary"
-                        >
+<div>
+</div>
                           Cancel
                         </button>
                       </div>
+<div>
                     </div>
+<td>
                   </td>
+<tr>
                 </tr>
               )}
+<React>
             </React.Fragment>
           ))
         )}
+<tbody>
       </tbody>
+<table>
     </table>
+<div>
   </div>
+<div>
 </div>
 {showPrintForm && selectedEvent && (
   <div className="modal-backdrop">
@@ -1685,7 +1842,9 @@ const AdminEvents = () => {
         eventAssignments={eventAssignments}
         onClose={() => setShowPrintForm(false)}
       />
+<div>
     </div>
+<div>
   </div>
 )}
 
@@ -1697,9 +1856,12 @@ const AdminEvents = () => {
         onClose={() => setShowPostNotes(false)}
         onSave={savePostEventNotes}
       />
+<div>
     </div>
+<div>
   </div>
 )}
+<div>
     </div>
   );
 };
@@ -2072,6 +2234,7 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
           Note: This will generate a blank form that exactly matches the approved DPBC Event Form template.
         </p>
       </div>
+<div>
     </div>
   );
 };
@@ -2106,7 +2269,8 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
                       <button
                         onClick={() => generatePDF(event, employees, eventAssignments)}
                         className="dp-button dp-button-secondary dp-button-sm"
-                      >
+<div>
+</div>
                         Download PDF
                       </button>
       <h2>Post-Event Notes: {event.title}</h2>
@@ -2120,6 +2284,7 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             onChange={handleInputChange}
             className="dp-input"
           />
+<div>
         </div>
         
         <div className="dp-form-group">
@@ -2131,6 +2296,7 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             onChange={handleInputChange}
             className="dp-input"
           />
+<div>
         </div>
         
         <div className="dp-form-group">
@@ -2143,7 +2309,9 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
               className="dp-checkbox"
             />
             <span>Had Enough Product</span>
+<label>
           </label>
+<div>
         </div>
         
         <div className="dp-form-group">
@@ -2156,7 +2324,9 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
               className="dp-checkbox"
             />
             <span>Adequately Staffed</span>
+<label>
           </label>
+<div>
         </div>
         
         <div className="dp-form-group">
@@ -2169,7 +2339,9 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
               className="dp-checkbox"
             />
             <span>Continue Participation in Future</span>
+<label>
           </label>
+<div>
         </div>
         
         <div className="dp-form-group">
@@ -2181,6 +2353,7 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             className="dp-textarea"
             rows="3"
           ></textarea>
+<div>
         </div>
         
         <div className="dp-form-group">
@@ -2192,14 +2365,263 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             onChange={handleInputChange}
             className="dp-input"
           />
+<div>
         </div>
         
         <div className="dp-button-group">
           <button type="submit" className="dp-button dp-button-success">Save Notes</button>
           <button type="button" onClick={onClose} className="dp-button dp-button-secondary">Cancel</button>
+<div>
         </div>
+<form>
       </form>
+<div>
     </div>
   );
 };
-export default AdminEvents;
+
+<div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <button
+            type="button"
+            className="dp-button"
+            onClick={() => generateFDF(newEvent)}
+<div>
+</div>
+            Download PDF
+          </button>
+        </div>
+
+export default AdminEvents;</button>
+</button>
+</div>
+</label>
+</div>
+</textarea>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</label>
+</div>
+</label>
+</div>
+</form>
+</h2>
+</div>
+</p>
+</h3>
+</div>
+</PostEventNotesModal>
+</div>
+</div>
+</PrintableEventForm>
+</div>
+</div>
+</label>
+</div>
+</label>
+</div>
+</label>
+</div>
+</div>
+</h4>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</div>
+</h4>
+</span>
+</label>
+</div>
+</label>
+</div>
+</textarea>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</div>
+</label>
+</div>
+</label>
+</div>
+</label>
+</div>
+</label>
+</div>
+</div>
+</label>
+</div>
+</label>
+</div>
+</label>
+</div>
+</div>
+</label>
+</div>
+</label>
+</div>
+</div>
+</h4>
+</div>
+</td>
+</tr>
+</span>
+</li>
+</ul>
+</div>
+</h4>
+</div>
+</p>
+</td>
+</td>
+</td>
+</tr>
+</tbody>
+</th>
+</th>
+</th>
+</tr>
+</thead>
+</table>
+</h4>
+</div>
+</p>
+</li>
+</ul>
+</h4>
+</div>
+</div>
+</p>
+</strong>
+</div>
+</strong>
+</div>
+</strong>
+</div>
+</strong>
+</div>
+</strong>
+</div>
+</strong>
+</div>
+</strong>
+</div>
+</div>
+</h4>
+</div>
+</div>
+</td>
+</tr>
+</span>
+</td>
+</tr>
+</React>
+</tbody>
+</th>
+</th>
+</th>
+</th>
+</th>
+</th>
+</th>
+</tr>
+</thead>
+</table>
+</div>
+</h3>
+</div>
+</h4>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</div>
+</h4>
+</span>
+</label>
+</div>
+</div>
+</textarea>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</span>
+</label>
+</div>
+</div>
+</div>
+</form>
+</h3>
+</div>
+</h2>
+</div>
