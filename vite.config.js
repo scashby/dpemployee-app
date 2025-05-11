@@ -6,10 +6,5 @@ export default defineConfig({
   base: '/',
   optimizeDeps: {
     include: ['pdf-lib']
-  },
-  build: {
-    rollupOptions: {
-      external: ['pdf-lib']  // ✅ Tell Vite not to try to bundle this module
-    }
   }
 });
