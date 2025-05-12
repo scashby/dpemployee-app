@@ -155,11 +155,9 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       { name: "Beer Buckets", checked: event.supplies?.beer_buckets },
       { name: "Table Cloth", checked: event.supplies?.table_cloth },
       { name: "Tent Weights", checked: event.supplies?.tent_weights },
-      { name: "Tent/Weights", checked: event.supplies?.tent_weights }, // Alternative name
       { name: "Signage", checked: event.supplies?.signage },
       { name: "Ice", checked: event.supplies?.ice },
       { name: "Jockey Box", checked: event.supplies?.jockey_box },
-      { name: "Jockey box", checked: event.supplies?.jockey_box }, // Alternative name
       { name: "Cups", checked: event.supplies?.cups }
     ];
     
@@ -260,6 +258,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       
       // For package style - try different field name formats
       if (beer.packaging) {
+        // Fix for package style fields
+        // First try the exact field names
         const packageFieldNames = [`Package Style ${index}`, `Pkg ${index}`, `PackageStyle${index}`, `package_${index}`];
         let packageSet = false;
         
@@ -276,14 +276,34 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
             }
           }
         }
+        
+        // If exact field names didn't work, try to find fields by name pattern
+        if (!packageSet) {
+          // Look for fields with "pkg" in the name (case insensitive)
+          const pkgFields = fieldNames.filter(name => 
+            name.toLowerCase().includes('pkg')
+          );
+          
+          if (pkgFields.length > i) {
+            try {
+              const field = form.getTextField(pkgFields[i]);
+              field.setText(beer.packaging);
+              try { field.setFontSize(10); } catch (e) { /* ignore */ }
+              console.log(`Set package style ${index} to "${beer.packaging}" using alternate field "${pkgFields[i]}"`);
+              packageSet = true;
+            } catch (e) {
+              console.warn(`Could not set package style ${index} using alternate field:`, e);
+            }
+          }
+        }
       }
       
       // For quantity - try different field name formats
       if (beer.quantity) {
-        const qtyFieldNames = [`Quantity ${index}`, `Qty ${index}`, `quantity_${index}`];
+        const quantityFieldNames = [`Quantity ${index}`, `Qty ${index}`, `quantity_${index}`];
         let qtySet = false;
         
-        for (const fieldName of qtyFieldNames) {
+        for (const fieldName of quantityFieldNames) {
           if (!qtySet && fieldNames.includes(fieldName)) {
             try {
               const field = form.getTextField(fieldName);
