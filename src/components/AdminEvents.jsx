@@ -1305,14 +1305,8 @@ const AdminEvents = () => {
                             
                             <div className="dp-event-actions">
                               <button
-                                onClick={() => printEventForm(event)}
-                                className="dp-button dp-button-secondary"
-                              >
-                                Print Event Form
-                              </button>
-                              <button
                                 onClick={() => generatePDF(event, employees, eventAssignments)}
-                                className="dp-button dp-button-secondary"
+                                className="dp-button dp-button-secondary dp-button-sm"
                               >
                                 Download PDF
                               </button>
@@ -1624,21 +1618,42 @@ const AdminEvents = () => {
                               <div key={index} className="dp-form-row">
                                 <div className="dp-form-group">
                                   <label className="dp-form-label">Beer Style</label>
-                                  <input
-                                    type="text"
+                                  <select
                                     value={beer.beer_style || ''}
                                     onChange={(e) => handleBeerChange(e, event.id, index, 'beer_style')}
                                     className="dp-input"
-                                  />
+                                  >
+                                    <option value="">Select Beer Style</option>
+                                    {[
+                                      "Blanket Bay Lager", "Charlene's Dream Altbier", "Chiselbraü Golden Ale",
+                                      "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
+                                      "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
+                                      "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
+                                      "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
+                                      "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
+                                      "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
+                                      "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
+                                      "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
+                                    ].map((style, idx) => (
+                                      <option key={idx} value={style}>{style}</option>
+                                    ))}
+                                  </select>
                                 </div>
                                 <div className="dp-form-group">
                                   <label className="dp-form-label">Packaging</label>
-                                  <input
-                                    type="text"
+                                  <select
                                     value={beer.packaging || ''}
                                     onChange={(e) => handleBeerChange(e, event.id, index, 'packaging')}
                                     className="dp-input"
-                                  />
+                                  >
+                                    <option value="">Select Package Style</option>
+                                    {[
+                                      "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
+                                      "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
+                                    ].map((pack, idx) => (
+                                      <option key={idx} value={pack}>{pack}</option>
+                                    ))}
+                                  </select>
                                 </div>
                                 <div className="dp-form-group">
                                   <label className="dp-form-label">Quantity</label>
