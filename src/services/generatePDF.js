@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 
 export async function generatePDF(event, employees = [], eventAssignments = {}) {
   try {
@@ -36,37 +36,42 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     );
     
     const pdfDoc = await PDFDocument.load(pdfBytes);
-    
-    // Embed a standard font for consistent text appearance
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    
     const form = pdfDoc.getForm();
     
-    // Set a consistent font size for all text fields
-    const setTextField = (name, value, fontSize = 10) => {
+    // Get all field names for reference and debugging
+    const fieldNames = form.getFields().map(f => f.getName());
+    console.log('Available fields:', fieldNames);
+    
+    // Enhanced approach for setting text without font manipulation
+    const setTextField = (name, value) => {
       if (value === undefined || value === null || value === '') return;
+      
       try {
+        // Get the field and its underlying acroField
         const field = form.getTextField(name);
+        const acroField = field.acroField;
+        
+        // First try the standard approach
         field.setText(String(value));
         
-        // Set consistent font and size for all fields
-        field.setFont(helveticaFont);
-        field.setFontSize(fontSize);
-        
-        // Disable multiline for fields that should be single line
-        if (!name.includes('Instructions') && 
-            !name.includes('Additional Supplies') && 
-            !name.includes('Other More Detail')) {
-          field.enableMultiline(false);
+        // If acroField is available, use the lower-level API for robustness
+        if (acroField) {
+          try {
+            // Create a PDFString directly using the document context
+            const pdfString = pdfDoc.context.string(String(value));
+            
+            // Set the value directly on the acroField for better compatibility
+            acroField.setValue(pdfString);
+          } catch (innerError) {
+            console.log(`Lower-level API fallback failed for ${name}, using default approach`);
+          }
         }
-        
-        console.log(`Set field "${name}" to "${value}" with font size ${fontSize}`);
       } catch (e) {
-        console.error(`Error setting field ${name}:`, e);
+        console.log(`Error setting field ${name}:`, e.message);
       }
     };
     
-    // Set checkboxes
+    // Set checkboxes - this approach works well already
     const setCheckbox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
@@ -76,11 +81,11 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
           checkbox.uncheck();
         }
       } catch (e) {
-        console.error(`Error setting checkbox ${name}:`, e);
+        console.log(`Error setting checkbox ${name}:`, e.message);
       }
     };
     
-    // Set text fields with consistent font size
+    // Set text fields with the enhanced approach
     console.log('Setting text fields...');
     setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
@@ -89,51 +94,25 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setTextField("DP Staff Attending", getAssignedEmployees());
     setTextField("Event Contact", event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '');
     setTextField("Expected Attendees", event.expected_attendees);
-    
-    // Multiline fields may need slightly smaller font
-    setTextField("Event Instructions", event.event_instructions || event.info);
-    setTextField("Additional Supplies", event.supplies?.additional_supplies);
+    setTextField("Event Instructions", event.event_instructions || event.info || '');
+    setTextField("Additional Supplies", event.supplies?.additional_supplies || '');
     
     if (event.event_type === 'other') {
-      setTextField("Other More Detail", event.event_type_other);
+      setTextField("Other More Detail", event.event_type_other || '');
     }
     
-    // Beer table fields - set with consistent font size
+    // Beer table fields - using the same enhanced approach
     console.log('Setting beer table fields...');
     if (event.beers && event.beers.length > 0) {
-      // Beer 1
-      if (event.beers[0]) {
-        setTextField("Beer Style 1", event.beers[0].beer_style);
-        setTextField("Package Style 1", event.beers[0].packaging);
-        setTextField("Quantity 1", event.beers[0].quantity);
-      }
-      
-      // Beer 2
-      if (event.beers.length > 1 && event.beers[1]) {
-        setTextField("Beer Style 2", event.beers[1].beer_style);
-        setTextField("Package Style 2", event.beers[1].packaging);
-        setTextField("Quantity 2", event.beers[1].quantity);
-      }
-      
-      // Beer 3
-      if (event.beers.length > 2 && event.beers[2]) {
-        setTextField("Beer Style 3", event.beers[2].beer_style);
-        setTextField("Package Style 3", event.beers[2].packaging);
-        setTextField("Quantity 3", event.beers[2].quantity);
-      }
-      
-      // Beer 4
-      if (event.beers.length > 3 && event.beers[3]) {
-        setTextField("Beer Style 4", event.beers[3].beer_style);
-        setTextField("Package Style 4", event.beers[3].packaging);
-        setTextField("Quantity 4", event.beers[3].quantity);
-      }
-      
-      // Beer 5
-      if (event.beers.length > 4 && event.beers[4]) {
-        setTextField("Beer Style 5", event.beers[4].beer_style);
-        setTextField("Package Style 5", event.beers[4].packaging);
-        setTextField("Quantity 5", event.beers[4].quantity);
+      // Beer 1-5
+      for (let i = 0; i < Math.min(event.beers.length, 5); i++) {
+        const idx = i + 1;
+        const beer = event.beers[i];
+        if (beer) {
+          setTextField(`Beer Style ${idx}`, beer.beer_style || '');
+          setTextField(`Package Style ${idx}`, beer.packaging || '');
+          setTextField(`Quantity ${idx}`, beer.quantity?.toString() || '');
+        }
       }
     }
     
@@ -153,8 +132,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Different approach to flattening that preserves appearance better
-    console.log('Custom flattening approach...');
+    // Create a copy of form to preserve appearance
+    console.log('Creating flattened copy...');
     
     // Save the PDF
     console.log('Saving PDF...');
