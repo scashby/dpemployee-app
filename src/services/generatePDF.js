@@ -38,134 +38,46 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Get all form fields and log their names for debugging
+    // Get all form fields for debugging
     const fields = form.getFields();
     const fieldNames = fields.map(f => f.getName());
-    console.log('Available fields:', fieldNames);
+    console.log('PDF fields:', fieldNames);
     
-    // Debug by logging field types
-    const fieldTypes = {};
-    fields.forEach(field => {
-      fieldTypes[field.getName()] = field.constructor.name;
-    });
-    console.log('Field types:', fieldTypes);
-
-    // The FDF file shows these field names are definitely present as checkboxes
-    const knownFieldsFromFDF = [
-      "Beer Buckets", "Beer Fest", "Cups", "Ice", "Jockey Box", 
-      "Other", "Pint Night", "Signage", "Table", "Table Cloth", 
-      "Tasting", "Tent Weights"
-    ];
-    
-    // Try to infer the rest of the field structure from known fields
-    console.log('Known fields from FDF:', knownFieldsFromFDF);
-    console.log('Actual fields in PDF:', fieldNames);
-    
-    // Special handling specifically for the expected # of attendees field
-    // Look for a field that might hold a number and is near/related to "attendees"
-    const attendeesField = fieldNames.find(name => 
-      name.includes('Expected') || 
-      name.includes('Attendees') || 
-      name.includes('attendees') ||
-      name.startsWith('Expected #')
-    );
-    
-    if (attendeesField) {
-      console.log('Found attendees field:', attendeesField);
-      try {
-        const field = form.getTextField(attendeesField);
-        field.setText(event.expected_attendees?.toString() || '');
-        console.log(`Set ${attendeesField} to ${event.expected_attendees}`);
-      } catch (e) {
-        console.warn(`Error setting attendees field:`, e);
-      }
-    } else {
-      console.warn('Could not find Expected # of Attendees field');
-    }
-    
-    // Define all possible field name variations for important fields
-    const exactFieldMappings = {
-      // Event section - try many variations for each field
+    // Simple direct field mappings with exact names
+    const fieldMappings = {
+      // Event Information Section
       "Event Name :": event.title || '',
-      "Event Name": event.title || '',
-      "EventName": event.title || '',
-      
       "Event Date:": formatDate(event.date),
-      "Event Date": formatDate(event.date),
-      "EventDate": formatDate(event.date),
-      
       "Event Set Up Time:": formatTime(event.setup_time),
-      "Event Set Up Time": formatTime(event.setup_time),
-      "EventSetUpTime": formatTime(event.setup_time),
-      
       "Event Duration:": event.duration || '',
-      "Event Duration": event.duration || '',
-      "EventDuration": event.duration || '',
-      
       "DP Staff Attending:": getAssignedEmployees(),
-      "DP Staff Attending": getAssignedEmployees(),
-      "DPStaffAttending": getAssignedEmployees(),
-      
-      // For Contact field - try many variations
       "Event Contact(Name, Phone):": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
-      "Event Contact(Name, Phone)": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
-      "EventContact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
-      "Event Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
-      "Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+      "Expected # of Attendees:": event.expected_attendees?.toString() || '',
       
-      // Additional sections
+      // Other sections
       "Additional Supplies:": event.supplies?.additional_supplies || '',
-      "Additional Supplies": event.supplies?.additional_supplies || '',
-      
       "Event Instructions:": event.event_instructions || event.info || '',
-      "Event Instructions": event.event_instructions || event.info || '',
+      "Other :": event.event_type === 'other' ? event.event_type_other || '' : ''
     };
     
-    // Set all text fields with exact matches
-    console.log('Setting text fields...');
-    let textFieldsSet = 0;
-    
-    // Try to set fields with all possible name variations
-    for (const fieldName in exactFieldMappings) {
+    console.log('Setting basic text fields...');
+    for (const [fieldName, value] of Object.entries(fieldMappings)) {
       if (fieldNames.includes(fieldName)) {
         try {
-          const textField = form.getTextField(fieldName);
-          textField.setText(exactFieldMappings[fieldName]);
-          
-          // Try to set consistent font size
-          try { textField.setFontSize(10); } catch (e) { /* ignore */ }
-          
-          console.log(`Set field "${fieldName}" to "${exactFieldMappings[fieldName]}"`);
-          textFieldsSet++;
+          const field = form.getTextField(fieldName);
+          field.setText(value);
+          console.log(`Set field "${fieldName}" to "${value}"`);
         } catch (e) {
           console.warn(`Could not set field "${fieldName}":`, e);
         }
+      } else {
+        console.warn(`Field "${fieldName}" not found in PDF`);
       }
     }
     
-    // Special handling for the "Other" text field
-    if (event.event_type === 'other' && event.event_type_other) {
-      // Try to find the Other text field by looking for fields with similar names
-      const otherTextField = fieldNames.find(name => 
-        name.includes('Other :') ||
-        name.includes('Other Text') ||
-        (name.includes('Other') && !knownFieldsFromFDF.includes(name))
-      );
-      
-      if (otherTextField) {
-        try {
-          const field = form.getTextField(otherTextField);
-          field.setText(event.event_type_other);
-          console.log(`Set Other text field ${otherTextField} to ${event.event_type_other}`);
-        } catch (e) {
-          console.warn(`Error setting Other text field:`, e);
-        }
-      }
-    }
-    
-    // Set checkboxes - use the exact names from the FDF file
+    // Set checkboxes - use exact names from FDF file
     console.log('Setting checkboxes...');
-    const checkboxMappings = [
+    const checkboxes = [
       { name: "Tasting", checked: event.event_type === 'tasting' },
       { name: "Pint Night", checked: event.event_type === 'pint_night' },
       { name: "Beer Fest", checked: event.event_type === 'beer_fest' },
@@ -180,106 +92,103 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       { name: "Cups", checked: event.supplies?.cups }
     ];
     
-    let checkboxesSet = 0;
-    checkboxMappings.forEach(mapping => {
-      if (fieldNames.includes(mapping.name)) {
+    for (const { name, checked } of checkboxes) {
+      if (fieldNames.includes(name)) {
         try {
-          const checkbox = form.getCheckBox(mapping.name);
-          if (mapping.checked) {
+          const checkbox = form.getCheckBox(name);
+          if (checked) {
             checkbox.check();
-            console.log(`Checked "${mapping.name}"`);
-            checkboxesSet++;
+            console.log(`Checked "${name}"`);
           } else {
             checkbox.uncheck();
           }
         } catch (e) {
-          console.warn(`Failed to set checkbox "${mapping.name}":`, e);
+          console.warn(`Could not set checkbox "${name}":`, e);
         }
+      } else {
+        console.warn(`Checkbox "${name}" not found in PDF`);
       }
-    });
-    
-    // Handle beer table fields - special handling for package style fields
-    console.log('Setting beer table fields...');
+    }
+
+    // CRITICAL: Manual mapping for Beer Product table fields 
+    // Don't try to be clever - use exact matches only
+    const beerFieldMappings = [];
     const beers = event.beers || [];
     
-    // Find all potential table cells for beers
-    const beerStyleFields = fieldNames.filter(name => name.includes('Beer Style') || name.includes('BeerStyle'));
-    const pkgFields = fieldNames.filter(name => name.includes('Pkg') || name.includes('Package'));
-    const qtyFields = fieldNames.filter(name => name.includes('Qty') || name.includes('Quantity'));
+    if (beers.length > 0 && beers[0]?.beer_style) {
+      beerFieldMappings.push({ field: "Beer Style 1", value: beers[0].beer_style });
+      beerFieldMappings.push({ field: "Pkg 1", value: beers[0].packaging || '' });
+      beerFieldMappings.push({ field: "Qty 1", value: beers[0].quantity?.toString() || '' });
+    }
     
-    console.log('Found Beer Style fields:', beerStyleFields);
-    console.log('Found Package fields:', pkgFields);
-    console.log('Found Quantity fields:', qtyFields);
+    if (beers.length > 1 && beers[1]?.beer_style) {
+      beerFieldMappings.push({ field: "Beer Style 2", value: beers[1].beer_style });
+      beerFieldMappings.push({ field: "Pkg 2", value: beers[1].packaging || '' });
+      beerFieldMappings.push({ field: "Qty 2", value: beers[1].quantity?.toString() || '' });
+    }
     
-    // Clear all beer fields first
-    [...beerStyleFields, ...pkgFields, ...qtyFields].forEach(fieldName => {
-      try {
-        const field = form.getTextField(fieldName);
-        field.setText('');
-      } catch (e) {
-        // Ignore errors
-      }
-    });
+    if (beers.length > 2 && beers[2]?.beer_style) {
+      beerFieldMappings.push({ field: "Beer Style 3", value: beers[2].beer_style });
+      beerFieldMappings.push({ field: "Pkg 3", value: beers[2].packaging || '' });
+      beerFieldMappings.push({ field: "Qty 3", value: beers[2].quantity?.toString() || '' });
+    }
     
-    // Set beer values - Carefully handle the package fields which have the + sign issue
-    for (let i = 0; i < Math.min(beers.length, beerStyleFields.length); i++) {
-      const beer = beers[i];
-      if (!beer || (!beer.beer_style && !beer.packaging && !beer.quantity)) {
-        continue;
-      }
-      
-      // Set beer style
-      if (beer.beer_style && i < beerStyleFields.length) {
+    if (beers.length > 3 && beers[3]?.beer_style) {
+      beerFieldMappings.push({ field: "Beer Style 4", value: beers[3].beer_style });
+      beerFieldMappings.push({ field: "Pkg 4", value: beers[3].packaging || '' });
+      beerFieldMappings.push({ field: "Qty 4", value: beers[3].quantity?.toString() || '' });
+    }
+    
+    if (beers.length > 4 && beers[4]?.beer_style) {
+      beerFieldMappings.push({ field: "Beer Style 5", value: beers[4].beer_style });
+      beerFieldMappings.push({ field: "Pkg 5", value: beers[4].packaging || '' });
+      beerFieldMappings.push({ field: "Qty 5", value: beers[4].quantity?.toString() || '' });
+    }
+    
+    // Explicitly set beer table fields if found in the form
+    console.log('Setting beer table fields...');
+    for (const mapping of beerFieldMappings) {
+      // Try exact name first
+      if (fieldNames.includes(mapping.field)) {
         try {
-          const field = form.getTextField(beerStyleFields[i]);
-          field.setText(beer.beer_style);
-          console.log(`Set beer style ${i+1} to "${beer.beer_style}"`);
+          const field = form.getTextField(mapping.field);
+          field.setText(mapping.value);
+          console.log(`Set field "${mapping.field}" to "${mapping.value}"`);
         } catch (e) {
-          console.warn(`Error setting beer style ${i+1}:`, e);
+          console.warn(`Could not set field "${mapping.field}":`, e);
         }
-      }
-      
-      // Set package - CRITICAL FIX for + sign issue
-      if (beer.packaging && i < pkgFields.length) {
-        try {
-          const field = form.getTextField(pkgFields[i]);
-          
-          // Directly set the package field value, avoiding any automatic formatting
-          // and make sure it actually overrides any pre-existing content
-          field.setText('');  // Clear first
-          field.setFontSize(10);  // Set font size
-          
-          // Force it to update with the package value
-          setTimeout(() => {
-            field.setText(beer.packaging);
-            console.log(`Set package ${i+1} to "${beer.packaging}"`);
-          }, 0);
-        } catch (e) {
-          console.warn(`Error setting package ${i+1}:`, e);
+      } 
+      // Try other possible formats
+      else {
+        const variations = [
+          mapping.field,
+          mapping.field.replace(' ', ''),
+          mapping.field.toLowerCase()
+        ];
+        
+        let found = false;
+        for (const variation of variations) {
+          const possibleMatch = fieldNames.find(name => name.includes(variation));
+          if (possibleMatch) {
+            try {
+              const field = form.getTextField(possibleMatch);
+              field.setText(mapping.value);
+              console.log(`Set field "${possibleMatch}" to "${mapping.value}"`);
+              found = true;
+              break;
+            } catch (e) {
+              console.warn(`Could not set field "${possibleMatch}":`, e);
+            }
+          }
         }
-      }
-      
-      // Set quantity
-      if (beer.quantity && i < qtyFields.length) {
-        try {
-          const field = form.getTextField(qtyFields[i]);
-          field.setText(beer.quantity.toString());
-          console.log(`Set quantity ${i+1} to "${beer.quantity}"`);
-        } catch (e) {
-          console.warn(`Error setting quantity ${i+1}:`, e);
+        
+        if (!found) {
+          console.warn(`Could not find any matching field for "${mapping.field}"`);
         }
       }
     }
     
-    // Force flatten to lock in the values - might help with the package field issue
-    try {
-      // Form not flattened so user can still edit fields
-      console.log('Finalizing PDF...');
-    } catch (e) {
-      console.warn('Error finalizing form:', e);
-    }
-    
-    // Save the PDF
+    // Save and download the PDF
     console.log('Saving PDF...');
     const modifiedPdfBytes = await pdfDoc.save();
     
@@ -293,7 +202,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
     
-    console.log(`PDF downloaded successfully. Set ${textFieldsSet} text fields and ${checkboxesSet} checkboxes.`);
+    console.log('PDF downloaded successfully.');
     return true;
   } catch (error) {
     console.error("Error generating PDF:", error);
