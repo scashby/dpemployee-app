@@ -1,5 +1,4 @@
-import { PDFDocument, rgb } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
+import { PDFDocument } from 'pdf-lib';
 
 export async function generatePDF(event, employees = [], eventAssignments = {}) {
   try {
@@ -30,8 +29,6 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     };
 
-    // COMPLETELY NEW APPROACH: Draw on top of the PDF instead of using form fields
-    
     // Load the template PDF
     console.log('Loading PDF template...');
     const pdfBytes = await fetch('/DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf').then(res => 
@@ -41,39 +38,25 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Register fontkit and a standard font
-    pdfDoc.registerFontkit(fontkit);
-    
-    // Load a standard font for text fields
-    // This ensures consistent fonts across all text fields
-    const fontBytes = await fetch('/Helvetica.ttf').then(res => res.arrayBuffer())
-      .catch(() => {
-        console.log('Standard font not available, using built-in font');
-        return null;
-      });
-    
-    let font;
-    try {
-      if (fontBytes) {
-        font = await pdfDoc.embedFont(fontBytes);
-      } else {
-        font = await pdfDoc.embedFont('Helvetica');
-      }
-    } catch (e) {
-      console.warn('Failed to embed custom font, using standard font');
-      font = await pdfDoc.embedFont('Helvetica');
-    }
-    
-    // Get the first page of the PDF
-    const pages = pdfDoc.getPages();
-    const page = pages[0];
-    
     // Get all form fields
     const fields = form.getFields();
     const fieldNames = fields.map(f => f.getName());
     console.log('Available fields:', fieldNames);
     
-    // Handle checkboxes normally as they work fine
+    // Deep inspect all form fields to help with debugging
+    console.log('Inspecting field types:');
+    fields.forEach(field => {
+      console.log(`Field ${field.getName()}: ${field.constructor.name}`);
+      
+      // If this is a beer table field, log more details
+      if (field.getName().includes('Beer Style') || 
+          field.getName().includes('Package') || 
+          field.getName().includes('Quantity')) {
+        console.log(`  Details:`, field);
+      }
+    });
+    
+    // Set checkboxes (these work fine)
     console.log('Setting checkboxes...');
     const checkboxMappings = [
       { name: "Tasting", checked: event.event_type === 'tasting' },
@@ -105,8 +88,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     });
     
-    // For text fields, try using the form fields first
-    console.log('Setting text fields using form fields...');
+    // Set normal text fields (these work fine)
+    console.log('Setting regular text fields...');
     const textFieldMappings = [
       { name: "Event Name", value: event.title || '' },
       { name: "Event Date", value: formatDate(event.date) },
@@ -114,26 +97,19 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       { name: "Event Duration", value: event.duration || '' },
       { name: "DP Staff Attending", value: getAssignedEmployees() },
       { name: "Event Contact", value: event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '' },
-      { name: "Expected Attendees", value: event.expected_attendees?.toString() || '' },
+      { name: "Expected # of Attendees", value: event.expected_attendees?.toString() || '' },
+      { name: "Other :", value: event.event_type === 'other' ? event.event_type_other || '' : '' },
       { name: "Additional Supplies", value: event.supplies?.additional_supplies || '' },
       { name: "Event Instructions", value: event.event_instructions || event.info || '' }
     ];
     
-    if (event.event_type === 'other') {
-      textFieldMappings.push({
-        name: "Other More Detail",
-        value: event.event_type_other || ''
-      });
-    }
-    
-    // Try to use form fields for regular text fields
-    for (const mapping of textFieldMappings) {
+    textFieldMappings.forEach(mapping => {
       try {
-        // Try different variations of the field name
+        // Try basic variations
         const fieldVariations = [
           mapping.name,
           `${mapping.name}:`,
-          ...fieldNames.filter(name => name.toLowerCase().includes(mapping.name.toLowerCase()))
+          mapping.name.includes(':') ? mapping.name.replace(':', '') : `${mapping.name}:`
         ];
         
         let success = false;
@@ -147,73 +123,181 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
           }
         }
         
+        // If still not found, try looser matching
+        if (!success) {
+          const baseNameLower = mapping.name.toLowerCase().replace(':', '');
+          const matchingField = fieldNames.find(name => 
+            name.toLowerCase().includes(baseNameLower)
+          );
+          
+          if (matchingField) {
+            const field = form.getTextField(matchingField);
+            field.setText(mapping.value);
+            console.log(`Set ${matchingField} to ${mapping.value}`);
+            success = true;
+          }
+        }
+        
         if (!success) {
           console.warn(`Could not find field for "${mapping.name}"`);
         }
       } catch (e) {
         console.warn(`Error setting field "${mapping.name}":`, e.message);
       }
-    }
+    });
     
-    // BYPASS FORM FIELDS FOR PROBLEMATIC BEER TABLE
-    console.log('Using direct text drawing for beer table fields...');
+    // Now for the problematic beer table fields, try a different approach
+    console.log('Setting beer table with special handling...');
     
-    // Attempt to flatten the form to avoid field issues
-    // This makes the form non-editable but fixes appearance
-    form.flatten();
+    const beers = event.beers || [];
     
-    // Find the coordinates for the beer table cells
-    // These would need to be adjusted based on your actual PDF layout
-    const beerTableX = 620;  // X-coordinate for beer table
-    const beerTable = [
-      { y: 704, style: 'Handline Kolsch', pkg: '1/6 Barrel Keg', qty: '1' }, // Row 1
-      { y: 676, style: 'Stonehorse Citra IPA', pkg: 'Case - 16 oz', qty: '1' } // Row 2
-    ];
-    
-    // Draw the beer table values directly on the page
-    if (event.beers && event.beers.length > 0) {
-      for (let i = 0; i < Math.min(event.beers.length, 2); i++) {
-        const beer = event.beers[i];
-        if (!beer) continue;
-        
-        const row = beerTable[i];
-        
-        if (beer.beer_style) {
-          // Draw beer style
-          page.drawText(beer.beer_style, {
-            x: 555,
-            y: row.y,
-            size: 10,
-            font,
-            color: rgb(0, 0, 0)
-          });
+    if (beers.length > 0) {
+      // Get all beer-related fields
+      const beerStyleFields = fieldNames.filter(name => 
+        name.includes('Beer Style') || name.includes('BeerStyle')
+      );
+      const packageFields = fieldNames.filter(name => 
+        name.includes('Package') || name.includes('Pkg')
+      );
+      const quantityFields = fieldNames.filter(name => 
+        name.includes('Quantity') || name.includes('Qty')
+      );
+      
+      console.log('Beer style fields:', beerStyleFields);
+      console.log('Package fields:', packageFields);
+      console.log('Quantity fields:', quantityFields);
+      
+      // Try Beer Style 1 - manual attempt
+      if (beers[0]?.beer_style && beerStyleFields.length > 0) {
+        try {
+          const styleField = form.getTextField(beerStyleFields[0]);
+          
+          // First, try with an intermediate value like " "
+          styleField.setText(" ");
+          
+          // Force a redraw by waiting slightly
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // Now set the real value
+          styleField.setText(beers[0].beer_style);
+          console.log(`Set ${beerStyleFields[0]} to "${beers[0].beer_style}"`);
+        } catch (e) {
+          console.warn(`Error setting Beer Style 1:`, e);
+        }
+      }
+      
+      // Try Package Style 1 - manual attempt
+      if (beers[0]?.packaging && packageFields.length > 0) {
+        try {
+          const pkgField = form.getTextField(packageFields[0]);
+          
+          // First, try with an intermediate value like " "
+          pkgField.setText(" ");
+          
+          // Force a redraw by waiting slightly
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // Now set the real value
+          pkgField.setText(beers[0].packaging);
+          console.log(`Set ${packageFields[0]} to "${beers[0].packaging}"`);
+        } catch (e) {
+          console.warn(`Error setting Package Style 1:`, e);
+        }
+      }
+      
+      // Try Quantity 1 - manual attempt
+      if (beers[0]?.quantity && quantityFields.length > 0) {
+        try {
+          const qtyField = form.getTextField(quantityFields[0]);
+          qtyField.setText(beers[0].quantity.toString());
+          console.log(`Set ${quantityFields[0]} to "${beers[0].quantity}"`);
+        } catch (e) {
+          console.warn(`Error setting Quantity 1:`, e);
+        }
+      }
+      
+      // Row 2
+      if (beers.length > 1) {
+        // Beer Style 2 - manual attempt
+        if (beers[1]?.beer_style && beerStyleFields.length > 1) {
+          try {
+            const styleField = form.getTextField(beerStyleFields[1]);
+            
+            // First, try with an intermediate value like " "
+            styleField.setText(" ");
+            
+            // Force a redraw by waiting slightly
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Now set the real value
+            styleField.setText(beers[1].beer_style);
+            console.log(`Set ${beerStyleFields[1]} to "${beers[1].beer_style}"`);
+          } catch (e) {
+            console.warn(`Error setting Beer Style 2:`, e);
+          }
         }
         
-        if (beer.packaging) {
-          // Draw package type
-          page.drawText(beer.packaging, {
-            x: 726,
-            y: row.y,
-            size: 10,
-            font,
-            color: rgb(0, 0, 0)
-          });
+        // Package Style 2 - manual attempt
+        if (beers[1]?.packaging && packageFields.length > 1) {
+          try {
+            const pkgField = form.getTextField(packageFields[1]);
+            
+            // First, try with an intermediate value like " "
+            pkgField.setText(" ");
+            
+            // Force a redraw by waiting slightly
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Now set the real value
+            pkgField.setText(beers[1].packaging);
+            console.log(`Set ${packageFields[1]} to "${beers[1].packaging}"`);
+          } catch (e) {
+            console.warn(`Error setting Package Style 2:`, e);
+          }
         }
         
-        if (beer.quantity) {
-          // Draw quantity
-          page.drawText(beer.quantity.toString(), {
-            x: 810,
-            y: row.y,
-            size: 10,
-            font,
-            color: rgb(0, 0, 0)
-          });
+        // Quantity 2 - manual attempt
+        if (beers[1]?.quantity && quantityFields.length > 1) {
+          try {
+            const qtyField = form.getTextField(quantityFields[1]);
+            qtyField.setText(beers[1].quantity.toString());
+            console.log(`Set ${quantityFields[1]} to "${beers[1].quantity}"`);
+          } catch (e) {
+            console.warn(`Error setting Quantity 2:`, e);
+          }
         }
       }
     }
     
-    // Save and download the PDF
+    // Last resort: create serialized FDF data with field values
+    try {
+      console.log('Creating FDF data for Beer Style/Package fields...');
+      
+      // Create FDF entries for problematic fields
+      const fdfEntries = [];
+      
+      if (beers[0]?.beer_style) {
+        fdfEntries.push(`<</T(Beer Style 1)/V(${beers[0].beer_style})>>`);
+      }
+      
+      if (beers[0]?.packaging) {
+        fdfEntries.push(`<</T(Package Style 1)/V(${beers[0].packaging})>>`);
+      }
+      
+      if (beers.length > 1 && beers[1]?.beer_style) {
+        fdfEntries.push(`<</T(Beer Style 2)/V(${beers[1].beer_style})>>`);
+      }
+      
+      if (beers.length > 1 && beers[1]?.packaging) {
+        fdfEntries.push(`<</T(Package Style 2)/V(${beers[1].packaging})>>`);
+      }
+      
+      console.log('FDF entries:', fdfEntries);
+    } catch (e) {
+      console.warn('Error creating FDF data:', e);
+    }
+    
+    // Save the PDF
     console.log('Saving PDF...');
     const modifiedPdfBytes = await pdfDoc.save();
     
