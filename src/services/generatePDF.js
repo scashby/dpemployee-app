@@ -26,181 +26,218 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     // Get form
     const form = pdfDoc.getForm();
     
-    // List all form fields to see their actual names
+    // List all fields to debug
     const fields = form.getFields();
-    console.log("PDF form fields:", fields.map(f => ({ name: f.getName(), type: f.constructor.name })));
+    console.log("All form fields:", fields.map(f => ({
+      name: f.getName(),
+      type: f.constructor.name
+    })));
     
+    // Try directly setting field values by name, regardless of type
     try {
-      // DIRECT FIELD MAPPING APPROACH - Map each field individually
-      
-      // Step 1: Get each text field directly by index to ensure correct order
-      const textFields = fields.filter(field => field.constructor.name === 'PDFTextField');
-      console.log("Text fields:", textFields.map(f => f.getName()));
-      
-      // Step 2: Get each checkbox directly by index
-      const checkboxFields = fields.filter(field => field.constructor.name === 'PDFCheckBox');
-      console.log("Checkbox fields:", checkboxFields.map(f => f.getName()));
-      
-      // Map values to correct text fields by index
-      const textFieldValues = [
-        event.title || '',                         // Event Name (field 0)
-        formatDate(event.date),                    // Event Date (field 1)
-        event.setup_time || '',                    // Event Set Up Time (field 2)
-        event.duration || event.time || '',        // Event Duration (field 3)
-        assignedEmployees,                         // DP Staff Attending (field 4)
-        event.contact_name ? 
-          `${event.contact_name} ${event.contact_phone || ''}` : '',  // Event Contact (field 5)
-        event.expected_attendees?.toString() || '' // Expected # of Attendees (field 6)
+      const fieldData = [
+        { name: "event_name", value: event.title || '' },
+        { name: "event_date", value: formatDate(event.date) },
+        { name: "event_setup", value: event.setup_time || '' },
+        { name: "event_time", value: event.time || '' },
+        { name: "event_duration", value: event.duration || '' },
+        { name: "event_staff", value: assignedEmployees },
+        { name: "event_contact", value: event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '' },
+        { name: "expected_attendees", value: event.expected_attendees?.toString() || '' },
+        { name: "additional_supplies", value: event.supplies?.additional_supplies || '' },
+        { name: "event_instructions", value: event.event_instructions || event.info || '' },
+        { name: "event_notes", value: event.notes?.critiques || '' }
       ];
       
-      // Fill text fields in the correct order
-      textFieldValues.forEach((value, index) => {
-        if (index < textFields.length) {
+      // Try to set each field
+      for (const field of fieldData) {
+        try {
+          // Try multiple methods of setting the field
           try {
-            textFields[index].setText(value);
-            console.log(`Set field #${index} to "${value}"`);
+            // Try setting as text field
+            form.getTextField(field.name).setText(field.value);
+            console.log(`Set text field ${field.name}`);
           } catch (e) {
-            console.warn(`Failed to set field #${index}:`, e);
-          }
-        }
-      });
-      
-      // Event type checkboxes (field indices may vary - adjust based on console output)
-      const eventTypeIndex = {
-        'tasting': 0,      // Index of Tasting checkbox
-        'pint_night': 1,   // Index of Pint Night checkbox
-        'beer_fest': 2,    // Index of Beer Fest checkbox
-        'other': 3         // Index of Other checkbox
-      };
-      
-      // Check the appropriate event type checkbox
-      const eventTypeCheckboxIndex = eventTypeIndex[event.event_type] || 3;
-      if (eventTypeCheckboxIndex < checkboxFields.length) {
-        try {
-          checkboxFields[eventTypeCheckboxIndex].check();
-          console.log(`Checked event type checkbox #${eventTypeCheckboxIndex}`);
-        } catch (e) {
-          console.warn(`Failed to check event type checkbox #${eventTypeCheckboxIndex}:`, e);
-        }
-      }
-      
-      // Set other text if applicable
-      if (event.event_type === 'other' && event.event_type_other) {
-        // Other text field is typically after the main fields
-        const otherTextField = textFields[7]; // Adjust this index if needed
-        if (otherTextField) {
-          try {
-            otherTextField.setText(event.event_type_other);
-            console.log(`Set other text to "${event.event_type_other}"`);
-          } catch (e) {
-            console.warn('Failed to set other text:', e);
-          }
-        }
-      }
-      
-      // Supply checkboxes (these will be after the event type checkboxes)
-      const supplyCheckboxes = [
-        { name: 'Table', checked: event.supplies?.table_needed, index: 4 },
-        { name: 'Beer buckets', checked: event.supplies?.beer_buckets, index: 5 },
-        { name: 'Table Cloth', checked: event.supplies?.table_cloth, index: 6 },
-        { name: 'Tent/Weights', checked: event.supplies?.tent_weights, index: 7 },
-        { name: 'Signage', checked: event.supplies?.signage, index: 8 },
-        { name: 'Ice', checked: event.supplies?.ice, index: 9 },
-        { name: 'Jockey box', checked: event.supplies?.jockey_box, index: 10 },
-        { name: 'Cups', checked: event.supplies?.cups, index: 11 }
-      ];
-      
-      supplyCheckboxes.forEach(supply => {
-        if (supply.checked && supply.index < checkboxFields.length) {
-          try {
-            checkboxFields[supply.index].check();
-            console.log(`Checked ${supply.name} checkbox #${supply.index}`);
-          } catch (e) {
-            console.warn(`Failed to check ${supply.name} checkbox #${supply.index}:`, e);
-          }
-        }
-      });
-      
-      // Additional supplies text field
-      const additionalSuppliesIndex = 8; // Adjust based on your form
-      if (additionalSuppliesIndex < textFields.length) {
-        try {
-          textFields[additionalSuppliesIndex].setText(event.supplies?.additional_supplies || '');
-          console.log(`Set additional supplies text`);
-        } catch (e) {
-          console.warn('Failed to set additional supplies text:', e);
-        }
-      }
-      
-      // Event instructions text field
-      const eventInstructionsIndex = 9; // Adjust based on your form
-      if (eventInstructionsIndex < textFields.length) {
-        try {
-          textFields[eventInstructionsIndex].setText(event.event_instructions || event.info || '');
-          console.log(`Set event instructions text`);
-        } catch (e) {
-          console.warn('Failed to set event instructions text:', e);
-        }
-      }
-      
-      // Beer table (assuming these are additional text fields)
-      const beers = event.beers || [];
-      const beerFieldStartIndex = 10; // Adjust based on your form
-      
-      for (let i = 0; i < Math.min(beers.length, 4); i++) { // Limit to 4 beers or however many rows your form has
-        const beer = beers[i];
-        const styleIndex = beerFieldStartIndex + (i * 3);
-        const pkgIndex = styleIndex + 1;
-        const qtyIndex = styleIndex + 2;
-        
-        try {
-          if (styleIndex < textFields.length) {
-            textFields[styleIndex].setText(beer.beer_style || '');
-            console.log(`Set beer ${i+1} style to "${beer.beer_style}"`);
-          }
-          
-          if (pkgIndex < textFields.length) {
-            textFields[pkgIndex].setText(beer.packaging || '');
-            console.log(`Set beer ${i+1} packaging to "${beer.packaging}"`);
-          }
-          
-          if (qtyIndex < textFields.length) {
-            textFields[qtyIndex].setText(beer.quantity?.toString() || '');
-            console.log(`Set beer ${i+1} quantity to "${beer.quantity}"`);
-          }
-        } catch (e) {
-          console.warn(`Failed to set beer ${i+1} fields:`, e);
-        }
-      }
-      
-      // Post-event notes
-      const postEventFieldStartIndex = beerFieldStartIndex + 12; // Adjust based on your form
-      if (event.notes) {
-        const noteFields = [
-          { name: 'Estimated attendees', value: event.notes.estimated_attendees?.toString() || '', index: postEventFieldStartIndex },
-          { name: 'Favorite beer', value: event.notes.favorite_beer || '', index: postEventFieldStartIndex + 1 },
-          { name: 'Critiques', value: event.notes.critiques || '', index: postEventFieldStartIndex + 5 },
-          { name: 'Return equipment by', value: event.notes.return_equipment_by ? formatDate(event.notes.return_equipment_by) : '', index: postEventFieldStartIndex + 6 }
-        ];
-        
-        noteFields.forEach(note => {
-          if (note.index < textFields.length) {
-            try {
-              textFields[note.index].setText(note.value);
-              console.log(`Set ${note.name} to "${note.value}"`);
-            } catch (e) {
-              console.warn(`Failed to set ${note.name}:`, e);
+            console.log(`Could not set as text field: ${field.name}`, e);
+            
+            // Try looking for fields with similar names
+            const matchingFields = fields.filter(f => 
+              f.getName().toLowerCase().includes(field.name.toLowerCase()) ||
+              field.name.toLowerCase().includes(f.getName().toLowerCase())
+            );
+            
+            if (matchingFields.length > 0) {
+              console.log(`Found ${matchingFields.length} similar fields for ${field.name}:`, 
+                matchingFields.map(f => f.getName()));
+                
+              // Try to set each matching field
+              for (const matchField of matchingFields) {
+                try {
+                  // Try generic "setValue" method
+                  matchField.setValue(field.value);
+                  console.log(`Set field ${matchField.getName()} using setValue`);
+                } catch (e2) {
+                  console.log(`Could not set ${matchField.getName()} using setValue`, e2);
+                }
+              }
             }
           }
-        });
+        } catch (fieldError) {
+          console.warn(`Failed to set field ${field.name}:`, fieldError);
+        }
       }
       
-    } catch (fieldError) {
-      console.error('Error filling form fields:', fieldError);
+      // Try to handle checkboxes - if checking doesn't work, try to fill with "X"
+      const checkboxData = [
+        { name: "tasting", checked: event.event_type === 'tasting' },
+        { name: "pint_night", checked: event.event_type === 'pint_night' },
+        { name: "beer_fest", checked: event.event_type === 'beer_fest' },
+        { name: "other", checked: event.event_type === 'other' },
+        { name: "table", checked: event.supplies?.table_needed },
+        { name: "beer_buckets", checked: event.supplies?.beer_buckets },
+        { name: "table_cloth", checked: event.supplies?.table_cloth },
+        { name: "tent_weights", checked: event.supplies?.tent_weights },
+        { name: "signage", checked: event.supplies?.signage },
+        { name: "ice", checked: event.supplies?.ice },
+        { name: "jockey_box", checked: event.supplies?.jockey_box },
+        { name: "cups", checked: event.supplies?.cups }
+      ];
+      
+      for (const checkbox of checkboxData) {
+        if (checkbox.checked) {
+          // Try to find matching checkbox fields
+          const matchingFields = fields.filter(f => 
+            f.getName().toLowerCase().includes(checkbox.name.toLowerCase()) ||
+            checkbox.name.toLowerCase().includes(f.getName().toLowerCase())
+          );
+          
+          if (matchingFields.length > 0) {
+            console.log(`Found ${matchingFields.length} similar fields for ${checkbox.name}:`, 
+              matchingFields.map(f => f.getName()));
+              
+            // Try to check each matching field
+            for (const matchField of matchingFields) {
+              try {
+                // Try as checkbox
+                try {
+                  matchField.check();
+                  console.log(`Checked ${matchField.getName()}`);
+                } catch (e) {
+                  // If can't check, try to set text "X"
+                  try {
+                    matchField.setValue("X");
+                    console.log(`Set ${matchField.getName()} to "X"`);
+                  } catch (e2) {
+                    console.log(`Could not check or set ${matchField.getName()}`, e2);
+                  }
+                }
+              } catch (checkError) {
+                console.warn(`Failed to check ${matchField.getName()}:`, checkError);
+              }
+            }
+          }
+        }
+      }
+      
+      // Try to handle beer table
+      const beers = event.beers || [];
+      for (let i = 0; i < Math.min(beers.length, 4); i++) {
+        const beer = beers[i];
+        const idx = i + 1;
+        
+        // Try with several naming patterns
+        const beerFieldPatterns = [
+          { style: `beer_${idx}_style`, pkg: `beer_${idx}_package`, qty: `beer_${idx}_quantity` },
+          { style: `beer_${idx}`, pkg: `package_${idx}`, qty: `quantity_${idx}` },
+          { style: `beer_style_${idx}`, pkg: `beer_pkg_${idx}`, qty: `beer_qty_${idx}` }
+        ];
+        
+        for (const pattern of beerFieldPatterns) {
+          try {
+            // Try to find and set style field
+            const styleFields = fields.filter(f => 
+              f.getName().toLowerCase().includes(pattern.style.toLowerCase()) ||
+              pattern.style.toLowerCase().includes(f.getName().toLowerCase())
+            );
+            
+            if (styleFields.length > 0) {
+              try {
+                styleFields[0].setValue(beer.beer_style || '');
+                console.log(`Set beer style ${idx} to "${beer.beer_style}"`);
+              } catch (e) {
+                console.warn(`Could not set beer style ${idx}`, e);
+              }
+            }
+            
+            // Try to find and set package field
+            const pkgFields = fields.filter(f => 
+              f.getName().toLowerCase().includes(pattern.pkg.toLowerCase()) ||
+              pattern.pkg.toLowerCase().includes(f.getName().toLowerCase())
+            );
+            
+            if (pkgFields.length > 0) {
+              try {
+                pkgFields[0].setValue(beer.packaging || '');
+                console.log(`Set beer package ${idx} to "${beer.packaging}"`);
+              } catch (e) {
+                console.warn(`Could not set beer package ${idx}`, e);
+              }
+            }
+            
+            // Try to find and set quantity field
+            const qtyFields = fields.filter(f => 
+              f.getName().toLowerCase().includes(pattern.qty.toLowerCase()) ||
+              pattern.qty.toLowerCase().includes(f.getName().toLowerCase())
+            );
+            
+            if (qtyFields.length > 0) {
+              try {
+                qtyFields[0].setValue(beer.quantity?.toString() || '');
+                console.log(`Set beer quantity ${idx} to "${beer.quantity}"`);
+              } catch (e) {
+                console.warn(`Could not set beer quantity ${idx}`, e);
+              }
+            }
+          } catch (beerFieldError) {
+            console.warn(`Failed with beer pattern ${JSON.stringify(pattern)}:`, beerFieldError);
+          }
+        }
+      }
+      
+    } catch (formError) {
+      console.error('Error filling form:', formError);
     }
     
-    // Font sizing issues - don't flatten the form
-    // form.flatten();
+    // Last resort approach - try to set all fields just to see if any of them work
+    try {
+      const allValues = [
+        event.title || '',
+        formatDate(event.date),
+        event.setup_time || '',
+        event.duration || '',
+        assignedEmployees,
+        event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+        event.expected_attendees?.toString() || '',
+        "X", // For checkboxes
+        event.supplies?.additional_supplies || '',
+        event.event_instructions || event.info || ''
+      ];
+      
+      // Try setting each field with each value to see if any work
+      fields.forEach((field, idx) => {
+        const valueIdx = idx % allValues.length;
+        try {
+          field.setValue(allValues[valueIdx]);
+          console.log(`Successfully set field ${field.getName()} with value ${allValues[valueIdx]}`);
+        } catch (e) {
+          // Just ignore errors
+        }
+      });
+    } catch (e) {
+      console.warn("Last resort approach failed:", e);
+    }
+    
+    // Don't flatten form to maintain formatting
     
     // Save the PDF
     const modifiedPdfBytes = await pdfDoc.save();
