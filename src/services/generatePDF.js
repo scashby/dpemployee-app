@@ -16,7 +16,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     };
 
     // Load the template PDF from the public folder
-    const pdfBytes = await fetch('/pdfs/DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf').then(res => 
+    const pdfBytes = await fetch('/DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf').then(res => 
       res.arrayBuffer()
     );
     
