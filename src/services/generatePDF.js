@@ -38,36 +38,11 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Enhanced text field setter that ensures 10pt font
+    // Ultra-simple field setter - just sets the value and nothing else
     const setTextField = (name, value) => {
       if (value === undefined || value === null || value === '') return;
-      
       try {
         const field = form.getTextField(name);
-        
-        // Important: Set the default appearance BEFORE setting text
-        const acroField = field.acroField;
-        
-        // Directly modify the PDF dictionary to ensure consistent font appearance
-        if (acroField && acroField.dict) {
-          // This is the critical part: set font to Helvetica (Helv) at exactly 10pt
-          // The format is: /FontName Size Tf R G B rg
-          const da = '/Helv 10 Tf 0 g';
-          acroField.dict.set(pdfDoc.context.obj('DA'), pdfDoc.context.string(da));
-          
-          // Also ensure the appearance characteristics dictionary is set properly
-          if (!acroField.dict.has('DR')) {
-            const fontDict = pdfDoc.context.obj({});
-            fontDict.set(pdfDoc.context.obj('Helv'), pdfDoc.context.obj('Helvetica'));
-            
-            const resources = pdfDoc.context.obj({});
-            resources.set(pdfDoc.context.obj('Font'), fontDict);
-            
-            acroField.dict.set(pdfDoc.context.obj('DR'), resources);
-          }
-        }
-        
-        // Now set the text value
         field.setText(String(value));
       } catch (e) {
         console.log(`Error setting field ${name}:`, e.message);
@@ -88,7 +63,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     };
     
-    // Set text fields with consistent 10pt font
+    // Set text fields
     console.log('Setting text fields...');
     setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
@@ -104,7 +79,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       setTextField("Other More Detail", event.event_type_other || '');
     }
     
-    // Beer table fields - special attention to ensure consistent font
+    // Beer table fields
     console.log('Setting beer table fields...');
     if (event.beers && event.beers.length > 0) {
       for (let i = 0; i < Math.min(event.beers.length, 5); i++) {
@@ -134,11 +109,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Flatten the form
-    console.log('Flattening form...');
-    form.flatten();
-    
-    // Save the PDF
+    // Try saving without flattening first
+    // This should at least give us a filled form
     console.log('Saving PDF...');
     const modifiedPdfBytes = await pdfDoc.save();
     
