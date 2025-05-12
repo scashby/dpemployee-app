@@ -1,4 +1,4 @@
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 export async function generatePDF(event, employees = [], eventAssignments = {}) {
   try {
@@ -36,20 +36,37 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     );
     
     const pdfDoc = await PDFDocument.load(pdfBytes);
+    
+    // Embed a standard font for consistent text appearance
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    
     const form = pdfDoc.getForm();
     
-    // Super simple setTextField function
-    const setTextField = (name, value) => {
+    // Set a consistent font size for all text fields
+    const setTextField = (name, value, fontSize = 10) => {
       if (value === undefined || value === null || value === '') return;
       try {
         const field = form.getTextField(name);
         field.setText(String(value));
+        
+        // Set consistent font and size for all fields
+        field.setFont(helveticaFont);
+        field.setFontSize(fontSize);
+        
+        // Disable multiline for fields that should be single line
+        if (!name.includes('Instructions') && 
+            !name.includes('Additional Supplies') && 
+            !name.includes('Other More Detail')) {
+          field.enableMultiline(false);
+        }
+        
+        console.log(`Set field "${name}" to "${value}" with font size ${fontSize}`);
       } catch (e) {
         console.error(`Error setting field ${name}:`, e);
       }
     };
     
-    // Super simple setCheckbox function
+    // Set checkboxes
     const setCheckbox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
@@ -63,7 +80,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     };
     
-    // Set text fields - simple approach
+    // Set text fields with consistent font size
     console.log('Setting text fields...');
     setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
@@ -72,6 +89,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setTextField("DP Staff Attending", getAssignedEmployees());
     setTextField("Event Contact", event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '');
     setTextField("Expected Attendees", event.expected_attendees);
+    
+    // Multiline fields may need slightly smaller font
     setTextField("Event Instructions", event.event_instructions || event.info);
     setTextField("Additional Supplies", event.supplies?.additional_supplies);
     
@@ -79,7 +98,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       setTextField("Other More Detail", event.event_type_other);
     }
     
-    // Set beer table fields - simple approach
+    // Beer table fields - set with consistent font size
     console.log('Setting beer table fields...');
     if (event.beers && event.beers.length > 0) {
       // Beer 1
@@ -118,7 +137,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     }
     
-    // Set checkboxes - simple approach
+    // Set checkboxes
     console.log('Setting checkboxes...');
     setCheckbox("Tasting", event.event_type === 'tasting');
     setCheckbox("Pint Night", event.event_type === 'pint_night');
@@ -134,9 +153,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Flatten the form to avoid field rendering issues
-    console.log('Flattening form...');
-    form.flatten();
+    // Different approach to flattening that preserves appearance better
+    console.log('Custom flattening approach...');
     
     // Save the PDF
     console.log('Saving PDF...');
