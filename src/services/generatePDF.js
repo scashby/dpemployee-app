@@ -1,4 +1,5 @@
-// Replace your generatePDF function with this
+import { PDFDocument } from 'pdf-lib';
+
 export async function generatePDF(event, employees = [], eventAssignments = {}) {
   try {
     // Prepare the data to send to the server
@@ -7,10 +8,12 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       .filter(Boolean)
       .join(', ');
     
+    // Create a copy of the event with staffAttending added
     const requestData = {
       ...event,
       staffAttending,
-      // Any other data transformations needed
+      // Make sure beers are included properly
+      beers: event.beers || []
     };
     
     console.log('Sending data to server for PDF generation...');
