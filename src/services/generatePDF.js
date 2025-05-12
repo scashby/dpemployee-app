@@ -29,7 +29,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     };
 
-    // Load the updated template PDF
+    // Load the template PDF
     console.log('Loading PDF template...');
     const pdfBytes = await fetch('/DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf').then(res => 
       res.arrayBuffer()
@@ -38,50 +38,113 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Get all form fields to identify available fields
+    // Get all form fields and log their names for debugging
     const fields = form.getFields();
     const fieldNames = fields.map(f => f.getName());
     console.log('Available fields:', fieldNames);
     
-    // Step 1: Set the event details text fields
-    console.log('Setting event text fields...');
-    const textFieldMappings = [
-      { names: ["Event Name :", "Event Name"], value: event.title || '' },
-      { names: ["Event Date:", "Event Date"], value: formatDate(event.date) },
-      { names: ["Event Set Up Time:", "Event Set Up Time"], value: formatTime(event.setup_time) },
-      { names: ["Event Duration:", "Event Duration"], value: event.duration || '' },
-      { names: ["DP Staff Attending:", "DP Staff Attending"], value: getAssignedEmployees() },
-      { names: ["Event Contact(Name, Phone):", "Event Contact(Name, Phone)"], value: event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '' },
-      { names: ["Expected # of Attendees:", "Expected # of Attendees"], value: event.expected_attendees?.toString() || '' },
-      { names: ["Additional Supplies:", "Additional Supplies"], value: event.supplies?.additional_supplies || '' },
-      { names: ["Event Instructions:", "Event Instructions"], value: event.event_instructions || event.info || '' }
-    ];
+    // Debug by logging field types
+    const fieldTypes = {};
+    fields.forEach(field => {
+      fieldTypes[field.getName()] = field.constructor.name;
+    });
+    console.log('Field types:', fieldTypes);
     
-    // Try each name variation for each field
-    textFieldMappings.forEach(mapping => {
-      let fieldSet = false;
+    // Define all possible field name variations for important fields
+    const exactFieldMappings = {
+      // Event section - try many variations for each field
+      "Event Name :": event.title || '',
+      "Event Name": event.title || '',
+      "EventName": event.title || '',
       
-      for (const name of mapping.names) {
-        if (!fieldSet && fieldNames.includes(name)) {
-          try {
-            const textField = form.getTextField(name);
-            textField.setText(mapping.value);
-            // Set consistent font size
-            try { textField.setFontSize(10); } catch (e) { /* ignore font errors */ }
-            console.log(`Set field "${name}" to "${mapping.value}"`);
-            fieldSet = true;
-          } catch (e) {
-            console.warn(`Could not set field "${name}":`, e);
-          }
+      "Event Date:": formatDate(event.date),
+      "Event Date": formatDate(event.date),
+      "EventDate": formatDate(event.date),
+      
+      "Event Set Up Time:": formatTime(event.setup_time),
+      "Event Set Up Time": formatTime(event.setup_time),
+      "EventSetUpTime": formatTime(event.setup_time),
+      
+      "Event Duration:": event.duration || '',
+      "Event Duration": event.duration || '',
+      "EventDuration": event.duration || '',
+      
+      "DP Staff Attending:": getAssignedEmployees(),
+      "DP Staff Attending": getAssignedEmployees(),
+      "DPStaffAttending": getAssignedEmployees(),
+      
+      // For Contact field - try many variations
+      "Event Contact(Name, Phone):": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+      "Event Contact(Name, Phone)": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+      "EventContact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+      "Event Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+      "Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
+      
+      // For Expected Attendees - try many variations
+      "Expected # of Attendees:": event.expected_attendees?.toString() || '',
+      "Expected # of Attendees": event.expected_attendees?.toString() || '',
+      "ExpectedAttendees": event.expected_attendees?.toString() || '',
+      "Expected": event.expected_attendees?.toString() || '',
+      "Attendees": event.expected_attendees?.toString() || '',
+      
+      // Other sections
+      "Additional Supplies:": event.supplies?.additional_supplies || '',
+      "Additional Supplies": event.supplies?.additional_supplies || '',
+      
+      "Event Instructions:": event.event_instructions || event.info || '',
+      "Event Instructions": event.event_instructions || event.info || '',
+      
+      // Other text field variations
+      "Other :": event.event_type === 'other' ? event.event_type_other || '' : '',
+      "Other Text": event.event_type === 'other' ? event.event_type_other || '' : '',
+      "OtherText": event.event_type === 'other' ? event.event_type_other || '' : ''
+    };
+    
+    // Set all text fields with exact matches
+    console.log('Setting text fields...');
+    let textFieldsSet = 0;
+    
+    // Try to set fields with all possible name variations
+    for (const fieldName in exactFieldMappings) {
+      if (fieldNames.includes(fieldName)) {
+        try {
+          const textField = form.getTextField(fieldName);
+          textField.setText(exactFieldMappings[fieldName]);
+          
+          // Try to set consistent font size
+          try { textField.setFontSize(10); } catch (e) { /* ignore */ }
+          
+          console.log(`Set field "${fieldName}" to "${exactFieldMappings[fieldName]}"`);
+          textFieldsSet++;
+        } catch (e) {
+          console.warn(`Could not set field "${fieldName}":`, e);
         }
       }
-      
-      if (!fieldSet) {
-        console.warn(`Could not find field for: ${mapping.names.join(', ')}`);
-      }
-    });
+    }
     
-    // Step 2: Set checkbox fields
+    // If the expected # of attendees wasn't set, do a broader search
+    if (!Object.keys(exactFieldMappings).some(key => key.includes('Expected') && fieldNames.includes(key))) {
+      // Try any field with "expect" or "attend" in the name (case insensitive)
+      const attendeesFields = fieldNames.filter(name => 
+        name.toLowerCase().includes('expect') || 
+        name.toLowerCase().includes('attend')
+      );
+      
+      for (const fieldName of attendeesFields) {
+        try {
+          const field = form.getTextField(fieldName);
+          field.setText(event.expected_attendees?.toString() || '');
+          try { field.setFontSize(10); } catch (e) { /* ignore */ }
+          console.log(`Set attendees field "${fieldName}" to "${event.expected_attendees}"`);
+          textFieldsSet++;
+          break; // Stop after first successful set
+        } catch (e) {
+          console.warn(`Could not set attendees field "${fieldName}":`, e);
+        }
+      }
+    }
+    
+    // Set checkboxes
     console.log('Setting checkboxes...');
     const checkboxMappings = [
       { name: "Tasting", checked: event.event_type === 'tasting' },
@@ -92,12 +155,15 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       { name: "Beer Buckets", checked: event.supplies?.beer_buckets },
       { name: "Table Cloth", checked: event.supplies?.table_cloth },
       { name: "Tent Weights", checked: event.supplies?.tent_weights },
+      { name: "Tent/Weights", checked: event.supplies?.tent_weights }, // Alternative name
       { name: "Signage", checked: event.supplies?.signage },
       { name: "Ice", checked: event.supplies?.ice },
       { name: "Jockey Box", checked: event.supplies?.jockey_box },
+      { name: "Jockey box", checked: event.supplies?.jockey_box }, // Alternative name
       { name: "Cups", checked: event.supplies?.cups }
     ];
     
+    let checkboxesSet = 0;
     checkboxMappings.forEach(mapping => {
       if (fieldNames.includes(mapping.name)) {
         try {
@@ -105,6 +171,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
           if (mapping.checked) {
             checkbox.check();
             console.log(`Checked "${mapping.name}"`);
+            checkboxesSet++;
           } else {
             checkbox.uncheck();
           }
@@ -114,98 +181,120 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     });
     
-    // Step 3: If "Other" is checked, set the "Other" text field
-    if (event.event_type === 'other' && event.event_type_other) {
-      const otherTextFieldNames = ["Other :", "Other :"];
-      
-      let otherFieldSet = false;
-      for (const name of otherTextFieldNames) {
-        if (!otherFieldSet && fieldNames.includes(name)) {
-          try {
-            const textField = form.getTextField(name);
-            textField.setText(event.event_type_other);
-            try { textField.setFontSize(10); } catch (e) { /* ignore */ }
-            console.log(`Set Other text field "${name}" to "${event.event_type_other}"`);
-            otherFieldSet = true;
-          } catch (e) {
-            console.warn(`Could not set Other text field "${name}":`, e);
-          }
-        }
-      }
-    }
-    
-    // Step 4: Set beer table fields - now they should be text fields in the updated template
+    // Handle beer table fields - now they should be text fields
     console.log('Setting beer table fields...');
     const beers = event.beers || [];
     
-    // First, clear all beer fields to ensure empty rows stay empty
+    // Clear all beer fields first
     for (let i = 1; i <= 5; i++) {
-      try {
-        // Clear beer style field
-        if (fieldNames.includes(`Beer Style ${i}`)) {
-          const textField = form.getTextField(`Beer Style ${i}`);
-          textField.setText('');
+      // Try various versions of the field names
+      const styleFieldNames = [`Beer Style ${i}`, `BeerStyle${i}`, `beer_style_${i}`];
+      const packageFieldNames = [`Package Style ${i}`, `Pkg ${i}`, `PackageStyle${i}`, `package_${i}`];
+      const quantityFieldNames = [`Quantity ${i}`, `Qty ${i}`, `quantity_${i}`];
+      
+      // Try to clear beer style
+      for (const fieldName of styleFieldNames) {
+        if (fieldNames.includes(fieldName)) {
+          try {
+            form.getTextField(fieldName).setText('');
+            break;
+          } catch (e) {
+            // Ignore errors
+          }
         }
-        
-        // Clear package style field
-        if (fieldNames.includes(`Package Style ${i}`)) {
-          const textField = form.getTextField(`Package Style ${i}`);
-          textField.setText('');
+      }
+      
+      // Try to clear package style
+      for (const fieldName of packageFieldNames) {
+        if (fieldNames.includes(fieldName)) {
+          try {
+            form.getTextField(fieldName).setText('');
+            break;
+          } catch (e) {
+            // Ignore errors
+          }
         }
-        
-        // Clear quantity field
-        if (fieldNames.includes(`Quantity ${i}`)) {
-          const textField = form.getTextField(`Quantity ${i}`);
-          textField.setText('');
+      }
+      
+      // Try to clear quantity
+      for (const fieldName of quantityFieldNames) {
+        if (fieldNames.includes(fieldName)) {
+          try {
+            form.getTextField(fieldName).setText('');
+            break;
+          } catch (e) {
+            // Ignore errors
+          }
         }
-      } catch (e) {
-        console.warn(`Error clearing beer row ${i}:`, e);
       }
     }
     
     // Now set only beer rows that have data
     for (let i = 0; i < Math.min(beers.length, 5); i++) {
       const beer = beers[i];
-      // Skip empty beer entries
       if (!beer || (!beer.beer_style && !beer.packaging && !beer.quantity)) {
         continue;
       }
       
       const index = i + 1;
       
-      // Set beer style
-      if (beer.beer_style && fieldNames.includes(`Beer Style ${index}`)) {
-        try {
-          const textField = form.getTextField(`Beer Style ${index}`);
-          textField.setText(beer.beer_style);
-          try { textField.setFontSize(10); } catch (e) { /* ignore */ }
-          console.log(`Set beer style ${index} to "${beer.beer_style}"`);
-        } catch (e) {
-          console.warn(`Failed to set beer style ${index}:`, e);
+      // For beer style - try different field name formats
+      if (beer.beer_style) {
+        const styleFieldNames = [`Beer Style ${index}`, `BeerStyle${index}`, `beer_style_${index}`];
+        let styleSet = false;
+        
+        for (const fieldName of styleFieldNames) {
+          if (!styleSet && fieldNames.includes(fieldName)) {
+            try {
+              const field = form.getTextField(fieldName);
+              field.setText(beer.beer_style);
+              try { field.setFontSize(10); } catch (e) { /* ignore */ }
+              console.log(`Set beer style ${index} to "${beer.beer_style}" using field "${fieldName}"`);
+              styleSet = true;
+            } catch (e) {
+              console.warn(`Could not set beer style ${index} using field "${fieldName}":`, e);
+            }
+          }
         }
       }
       
-      // Set package style
-      if (beer.packaging && fieldNames.includes(`Package Style ${index}`)) {
-        try {
-          const textField = form.getTextField(`Package Style ${index}`);
-          textField.setText(beer.packaging);
-          try { textField.setFontSize(10); } catch (e) { /* ignore */ }
-          console.log(`Set package style ${index} to "${beer.packaging}"`);
-        } catch (e) {
-          console.warn(`Failed to set package style ${index}:`, e);
+      // For package style - try different field name formats
+      if (beer.packaging) {
+        const packageFieldNames = [`Package Style ${index}`, `Pkg ${index}`, `PackageStyle${index}`, `package_${index}`];
+        let packageSet = false;
+        
+        for (const fieldName of packageFieldNames) {
+          if (!packageSet && fieldNames.includes(fieldName)) {
+            try {
+              const field = form.getTextField(fieldName);
+              field.setText(beer.packaging);
+              try { field.setFontSize(10); } catch (e) { /* ignore */ }
+              console.log(`Set package style ${index} to "${beer.packaging}" using field "${fieldName}"`);
+              packageSet = true;
+            } catch (e) {
+              console.warn(`Could not set package style ${index} using field "${fieldName}":`, e);
+            }
+          }
         }
       }
       
-      // Set quantity
-      if (beer.quantity && fieldNames.includes(`Quantity ${index}`)) {
-        try {
-          const textField = form.getTextField(`Quantity ${index}`);
-          textField.setText(beer.quantity.toString());
-          try { textField.setFontSize(10); } catch (e) { /* ignore */ }
-          console.log(`Set quantity ${index} to "${beer.quantity}"`);
-        } catch (e) {
-          console.warn(`Failed to set quantity ${index}:`, e);
+      // For quantity - try different field name formats
+      if (beer.quantity) {
+        const qtyFieldNames = [`Quantity ${index}`, `Qty ${index}`, `quantity_${index}`];
+        let qtySet = false;
+        
+        for (const fieldName of qtyFieldNames) {
+          if (!qtySet && fieldNames.includes(fieldName)) {
+            try {
+              const field = form.getTextField(fieldName);
+              field.setText(beer.quantity.toString());
+              try { field.setFontSize(10); } catch (e) { /* ignore */ }
+              console.log(`Set quantity ${index} to "${beer.quantity}" using field "${fieldName}"`);
+              qtySet = true;
+            } catch (e) {
+              console.warn(`Could not set quantity ${index} using field "${fieldName}":`, e);
+            }
+          }
         }
       }
     }
@@ -224,7 +313,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
     
-    console.log("PDF downloaded successfully");
+    console.log(`PDF downloaded successfully. Set ${textFieldsSet} text fields and ${checkboxesSet} checkboxes.`);
     return true;
   } catch (error) {
     console.error("Error generating PDF:", error);
