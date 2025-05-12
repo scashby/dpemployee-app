@@ -29,7 +29,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     };
 
-    // Load the template PDF - make sure to use the correct path
+    // Load the template PDF
     console.log('Loading PDF template...');
     const pdfBytes = await fetch('/DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf').then(res => 
       res.arrayBuffer()
@@ -38,39 +38,81 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Log all available fields
-    const fields = form.getFields();
-    const fieldNames = fields.map(f => f.getName());
-    console.log('PDF Form Fields:', fieldNames);
-    
-    // Set text fields directly
+    // Set ALL text fields using the EXACT same consistent approach
     console.log('Setting text fields...');
     
-    // Basic text fields - set directly with exact field names
+    // First, create a uniform function for setting all text fields the same way
     const setTextField = (name, value) => {
+      if (value === undefined || value === null || value === '') return;
       try {
-        if (value === undefined || value === null || value === '') return;
         const field = form.getTextField(name);
-        field.setText(value.toString());
-        console.log(`Set ${name} = "${value}"`);
+        
+        // Convert input to string - ensure consistent handling
+        const stringValue = String(value).trim();
+        
+        // Use the exact same field setting approach for ALL fields
+        field.setText(stringValue);
+        
+        console.log(`Set ${name} = "${stringValue}"`);
       } catch (e) {
-        console.warn(`Error setting ${name}:`, e);
+        console.error(`Error setting ${name}:`, e);
       }
     };
     
+    // Use the EXACT same function to set all text fields
+    // No special cases or different handling
+    
     // Basic form fields
-    setTextField("Event Name", event.title || '');
+    setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
     setTextField("Event Set Up Time", formatTime(event.setup_time));
-    setTextField("Event Duration", event.duration || '');
+    setTextField("Event Duration", event.duration);
     setTextField("DP Staff Attending", getAssignedEmployees());
     setTextField("Event Contact", event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '');
-    setTextField("Expected Attendees", event.expected_attendees?.toString() || '');
-    setTextField("Event Instructions", event.event_instructions || event.info || '');
-    setTextField("Additional Supplies", event.supplies?.additional_supplies || '');
+    setTextField("Expected Attendees", event.expected_attendees);
+    setTextField("Event Instructions", event.event_instructions || event.info);
+    setTextField("Additional Supplies", event.supplies?.additional_supplies);
     
     if (event.event_type === 'other') {
-      setTextField("Other More Detail", event.event_type_other || '');
+      setTextField("Other More Detail", event.event_type_other);
+    }
+    
+    // Beer table fields - USE EXACT SAME APPROACH as other fields
+    if (event.beers && event.beers.length > 0) {
+      // Beer 1
+      if (event.beers[0]) {
+        // Treat these EXACTLY the same as other text fields
+        setTextField("Beer Style 1", event.beers[0].beer_style);
+        setTextField("Package Style 1", event.beers[0].packaging);
+        setTextField("Quantity 1", event.beers[0].quantity);
+      }
+      
+      // Beer 2
+      if (event.beers.length > 1 && event.beers[1]) {
+        // Treat these EXACTLY the same as other text fields
+        setTextField("Beer Style 2", event.beers[1].beer_style);
+        setTextField("Package Style 2", event.beers[1].packaging);
+        setTextField("Quantity 2", event.beers[1].quantity);
+      }
+      
+      // Beer 3-5 (if needed)
+      if (event.beers.length > 2 && event.beers[2]) {
+        setTextField("Beer Style 3", event.beers[2].beer_style);
+        setTextField("Package Style 3", event.beers[2].packaging);
+        setTextField("Quantity 3", event.beers[2].quantity);
+      }
+      
+      if (event.beers.length > 3 && event.beers[3]) {
+        setTextField("Beer Style 4", event.beers[3].beer_style);
+        setTextField("Package Style 4", event.beers[3].packaging);
+        setTextField("Quantity 4", event.beers[3].quantity);
+      }
+      
+      if (event.beers.length > 4 && event.beers[4]) {
+        setTextField("Beer Style 5", event.beers[4].beer_style);
+        setTextField("Package Style 5", event.beers[4].packaging);
+        setTextField("Quantity 5", event.beers[4].quantity);
+      }
     }
     
     // Set checkboxes
@@ -83,9 +125,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
         } else {
           checkbox.uncheck();
         }
-        console.log(`Set checkbox ${name} = ${checked}`);
       } catch (e) {
-        console.warn(`Error setting checkbox ${name}:`, e);
+        console.error(`Error setting checkbox ${name}:`, e);
       }
     };
     
@@ -102,46 +143,6 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Ice", event.supplies?.ice);
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
-    
-    // Beer table fields - KEY INSIGHT: Map "packaging" property to "Package Style" fields
-    console.log('Setting beer table fields...');
-    
-    if (event.beers && event.beers.length > 0) {
-      // Beer 1
-      if (event.beers[0]) {
-        setTextField("Beer Style 1", event.beers[0].beer_style || '');
-        // IMPORTANT: Map 'packaging' to 'Package Style'
-        setTextField("Package Style 1", event.beers[0].packaging || ''); 
-        setTextField("Quantity 1", event.beers[0].quantity?.toString() || '');
-      }
-      
-      // Beer 2
-      if (event.beers.length > 1 && event.beers[1]) {
-        setTextField("Beer Style 2", event.beers[1].beer_style || '');
-        // IMPORTANT: Map 'packaging' to 'Package Style'
-        setTextField("Package Style 2", event.beers[1].packaging || '');
-        setTextField("Quantity 2", event.beers[1].quantity?.toString() || '');
-      }
-      
-      // Beer 3-5 (if needed)
-      if (event.beers.length > 2 && event.beers[2]) {
-        setTextField("Beer Style 3", event.beers[2].beer_style || '');
-        setTextField("Package Style 3", event.beers[2].packaging || '');
-        setTextField("Quantity 3", event.beers[2].quantity?.toString() || '');
-      }
-      
-      if (event.beers.length > 3 && event.beers[3]) {
-        setTextField("Beer Style 4", event.beers[3].beer_style || '');
-        setTextField("Package Style 4", event.beers[3].packaging || '');
-        setTextField("Quantity 4", event.beers[3].quantity?.toString() || '');
-      }
-      
-      if (event.beers.length > 4 && event.beers[4]) {
-        setTextField("Beer Style 5", event.beers[4].beer_style || '');
-        setTextField("Package Style 5", event.beers[4].packaging || '');
-        setTextField("Quantity 5", event.beers[4].quantity?.toString() || '');
-      }
-    }
     
     // Save the PDF
     console.log('Saving PDF...');
