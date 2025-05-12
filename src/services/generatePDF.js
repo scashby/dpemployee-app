@@ -38,31 +38,90 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Set ALL text fields using the EXACT same consistent approach
-    console.log('Setting text fields...');
+    // DIAGNOSTIC: Get detailed information about all fields
+    console.log('DIAGNOSTIC: Examining all form fields...');
+    const fields = form.getFields();
     
-    // First, create a uniform function for setting all text fields the same way
+    // Detailed field examination
+    fields.forEach(field => {
+      // Get field type and name
+      const fieldType = field.constructor.name;
+      const fieldName = field.getName();
+      
+      // Get detailed field properties
+      try {
+        const acroField = field.acroField;
+        const hasAppearances = !!acroField?.getAppearances();
+        const dictionary = acroField?.dict;
+        const dictEntries = dictionary ? Object.keys(dictionary.dict) : [];
+        
+        console.log(`Field "${fieldName}" (${fieldType}):`);
+        console.log(`  Has appearances: ${hasAppearances}`);
+        console.log(`  Dictionary entries: ${dictEntries.join(', ')}`);
+        
+        // If this is one of our problematic fields, log even more details
+        if (fieldName.includes('Beer Style') || fieldName.includes('Package Style')) {
+          console.log(`  DETAILED ANALYSIS FOR "${fieldName}":`);
+          if (acroField) {
+            console.log(`  Field value: ${acroField.getValueAsString()}`);
+            
+            // Check if it has options (like a dropdown would)
+            const options = acroField.getOptions?.() || [];
+            if (options.length > 0) {
+              console.log(`  Has ${options.length} options`);
+            }
+            
+            // Other properties that might be relevant
+            console.log(`  Field flags: ${acroField.getFlags?.() || 'N/A'}`);
+          }
+        }
+      } catch (e) {
+        console.log(`  Error examining field: ${e.message}`);
+      }
+    });
+    
+    // Create a universal text field setter that logs everything
+    console.log('Setting text fields...');
     const setTextField = (name, value) => {
       if (value === undefined || value === null || value === '') return;
       try {
+        console.log(`Setting field "${name}" to "${value}"...`);
+        
         const field = form.getTextField(name);
+        const originalValue = field.getText();
+        console.log(`  Original value: "${originalValue}"`);
         
-        // Convert input to string - ensure consistent handling
-        const stringValue = String(value).trim();
+        // Try to clear the field first
+        field.setText('');
+        console.log(`  Cleared field`);
         
-        // Use the exact same field setting approach for ALL fields
-        field.setText(stringValue);
+        // Now set the actual value
+        field.setText(String(value).trim());
+        const newValue = field.getText();
+        console.log(`  New value: "${newValue}"`);
         
-        console.log(`Set ${name} = "${stringValue}"`);
+        if (newValue !== String(value).trim()) {
+          console.log(`  WARNING: Field value doesn't match what we set!`);
+          // Try alternate setting method for problematic fields
+          try {
+            const acroField = field.acroField;
+            if (acroField) {
+              console.log(`  Trying alternate method via acroField...`);
+              // Use the string encoder from pdfDoc
+              const pdfString = pdfDoc.context.string(String(value).trim());
+              acroField.setValue(pdfString);
+              console.log(`  Set via alternate method`);
+            }
+          } catch (e2) {
+            console.log(`  Alternate method failed: ${e2.message}`);
+          }
+        }
       } catch (e) {
         console.error(`Error setting ${name}:`, e);
       }
     };
     
-    // Use the EXACT same function to set all text fields
-    // No special cases or different handling
-    
-    // Basic form fields
+    // Set normal fields - these work fine
     setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
     setTextField("Event Set Up Time", formatTime(event.setup_time));
@@ -77,45 +136,43 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       setTextField("Other More Detail", event.event_type_other);
     }
     
-    // Beer table fields - USE EXACT SAME APPROACH as other fields
+    // FOCUS ON PROBLEMATIC FIELDS
+    console.log('SPECIAL FOCUS: Setting beer table fields...');
     if (event.beers && event.beers.length > 0) {
       // Beer 1
       if (event.beers[0]) {
-        // Treat these EXACTLY the same as other text fields
+        // Try multiple different ways to set these problematic fields
+        // 1. Standard approach
         setTextField("Beer Style 1", event.beers[0].beer_style);
         setTextField("Package Style 1", event.beers[0].packaging);
         setTextField("Quantity 1", event.beers[0].quantity);
+        
+        // 2. Try force-removing any default appearance and then setting
+        try {
+          console.log("Trying to forcibly override appearances for Beer Style 1...");
+          const field = form.getTextField("Beer Style 1");
+          const acroField = field.acroField;
+          
+          if (acroField) {
+            // Try to force-clear any appearance streams
+            acroField.dict.set('AP', pdfDoc.context.obj({}));
+            field.setText(event.beers[0].beer_style);
+            console.log("Applied appearance override for Beer Style 1");
+          }
+        } catch (e) {
+          console.log("Appearance override failed:", e);
+        }
       }
       
-      // Beer 2
+      // Beer 2 (if any)
       if (event.beers.length > 1 && event.beers[1]) {
-        // Treat these EXACTLY the same as other text fields
         setTextField("Beer Style 2", event.beers[1].beer_style);
         setTextField("Package Style 2", event.beers[1].packaging);
         setTextField("Quantity 2", event.beers[1].quantity);
       }
-      
-      // Beer 3-5 (if needed)
-      if (event.beers.length > 2 && event.beers[2]) {
-        setTextField("Beer Style 3", event.beers[2].beer_style);
-        setTextField("Package Style 3", event.beers[2].packaging);
-        setTextField("Quantity 3", event.beers[2].quantity);
-      }
-      
-      if (event.beers.length > 3 && event.beers[3]) {
-        setTextField("Beer Style 4", event.beers[3].beer_style);
-        setTextField("Package Style 4", event.beers[3].packaging);
-        setTextField("Quantity 4", event.beers[3].quantity);
-      }
-      
-      if (event.beers.length > 4 && event.beers[4]) {
-        setTextField("Beer Style 5", event.beers[4].beer_style);
-        setTextField("Package Style 5", event.beers[4].packaging);
-        setTextField("Quantity 5", event.beers[4].quantity);
-      }
     }
     
-    // Set checkboxes
+    // Set checkboxes normally
     console.log('Setting checkboxes...');
     const setCheckbox = (name, checked) => {
       try {
@@ -144,11 +201,10 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Save the PDF
+    // Save and download the PDF
     console.log('Saving PDF...');
     const modifiedPdfBytes = await pdfDoc.save();
     
-    // Create a blob and download the PDF
     const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
