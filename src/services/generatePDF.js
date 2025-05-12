@@ -38,136 +38,135 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Get all form fields
-    const fields = form.getFields();
-    const fieldNames = fields.map(f => f.getName());
-    console.log('Available fields:', fieldNames);
+    // Set checkboxes - direct access, no clever code
+    if (event.event_type === 'tasting') {
+      form.getCheckBox("Tasting").check();
+    } else {
+      form.getCheckBox("Tasting").uncheck();
+    }
     
-    // Set checkboxes - these work fine
-    console.log('Setting checkboxes...');
-    const checkboxMappings = [
-      { name: "Tasting", checked: event.event_type === 'tasting' },
-      { name: "Pint Night", checked: event.event_type === 'pint_night' },
-      { name: "Beer Fest", checked: event.event_type === 'beer_fest' },
-      { name: "Other", checked: event.event_type === 'other' },
-      { name: "Table", checked: event.supplies?.table_needed },
-      { name: "Beer Buckets", checked: event.supplies?.beer_buckets },
-      { name: "Table Cloth", checked: event.supplies?.table_cloth },
-      { name: "Tent Weights", checked: event.supplies?.tent_weights },
-      { name: "Signage", checked: event.supplies?.signage },
-      { name: "Ice", checked: event.supplies?.ice },
-      { name: "Jockey Box", checked: event.supplies?.jockey_box },
-      { name: "Cups", checked: event.supplies?.cups }
-    ];
+    if (event.event_type === 'pint_night') {
+      form.getCheckBox("Pint Night").check();
+    } else {
+      form.getCheckBox("Pint Night").uncheck();
+    }
     
-    for (const mapping of checkboxMappings) {
-      if (fieldNames.includes(mapping.name)) {
-        try {
-          const checkbox = form.getCheckBox(mapping.name);
-          if (mapping.checked) {
-            checkbox.check();
-          } else {
-            checkbox.uncheck();
-          }
-        } catch (e) {
-          console.warn(`Failed to set checkbox "${mapping.name}":`, e.message);
-        }
+    if (event.event_type === 'beer_fest') {
+      form.getCheckBox("Beer Fest").check();
+    } else {
+      form.getCheckBox("Beer Fest").uncheck();
+    }
+    
+    if (event.event_type === 'other') {
+      form.getCheckBox("Other").check();
+    } else {
+      form.getCheckBox("Other").uncheck();
+    }
+    
+    if (event.supplies?.table_needed) {
+      form.getCheckBox("Table").check();
+    } else {
+      form.getCheckBox("Table").uncheck();
+    }
+    
+    if (event.supplies?.beer_buckets) {
+      form.getCheckBox("Beer Buckets").check();
+    } else {
+      form.getCheckBox("Beer Buckets").uncheck();
+    }
+    
+    if (event.supplies?.table_cloth) {
+      form.getCheckBox("Table Cloth").check();
+    } else {
+      form.getCheckBox("Table Cloth").uncheck();
+    }
+    
+    if (event.supplies?.tent_weights) {
+      form.getCheckBox("Tent Weights").check();
+    } else {
+      form.getCheckBox("Tent Weights").uncheck();
+    }
+    
+    if (event.supplies?.signage) {
+      form.getCheckBox("Signage").check();
+    } else {
+      form.getCheckBox("Signage").uncheck();
+    }
+    
+    if (event.supplies?.ice) {
+      form.getCheckBox("Ice").check();
+    } else {
+      form.getCheckBox("Ice").uncheck();
+    }
+    
+    if (event.supplies?.jockey_box) {
+      form.getCheckBox("Jockey Box").check();
+    } else {
+      form.getCheckBox("Jockey Box").uncheck();
+    }
+    
+    if (event.supplies?.cups) {
+      form.getCheckBox("Cups").check();
+    } else {
+      form.getCheckBox("Cups").uncheck();
+    }
+    
+    // Set basic text fields - direct access, no clever code
+    form.getTextField("Event Name").setText(event.title || '');
+    form.getTextField("Event Date").setText(formatDate(event.date));
+    form.getTextField("Event Set Up Time").setText(formatTime(event.setup_time));
+    form.getTextField("Event Duration").setText(event.duration || '');
+    form.getTextField("DP Staff Attending").setText(getAssignedEmployees());
+    form.getTextField("Event Contact").setText(event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '');
+    form.getTextField("Expected Attendees").setText(event.expected_attendees?.toString() || '');
+    
+    // Other text fields
+    if (event.event_type === 'other') {
+      form.getTextField("Other More Detail").setText(event.event_type_other || '');
+    }
+    
+    form.getTextField("Additional Supplies").setText(event.supplies?.additional_supplies || '');
+    form.getTextField("Event Instructions").setText(event.event_instructions || event.info || '');
+    
+    // Beer table fields - direct access, no fancy logic
+    if (event.beers && event.beers.length > 0) {
+      // Beer 1
+      if (event.beers[0]) {
+        form.getTextField("Beer Style 1").setText(event.beers[0].beer_style || '');
+        form.getTextField("Package Style 1").setText(event.beers[0].packaging || '');
+        form.getTextField("Quantity 1").setText(event.beers[0].quantity?.toString() || '');
+      }
+      
+      // Beer 2
+      if (event.beers.length > 1 && event.beers[1]) {
+        form.getTextField("Beer Style 2").setText(event.beers[1].beer_style || '');
+        form.getTextField("Package Style 2").setText(event.beers[1].packaging || '');
+        form.getTextField("Quantity 2").setText(event.beers[1].quantity?.toString() || '');
+      }
+      
+      // Beer 3
+      if (event.beers.length > 2 && event.beers[2]) {
+        form.getTextField("Beer Style 3").setText(event.beers[2].beer_style || '');
+        form.getTextField("Package Style 3").setText(event.beers[2].packaging || '');
+        form.getTextField("Quantity 3").setText(event.beers[2].quantity?.toString() || '');
+      }
+      
+      // Beer 4
+      if (event.beers.length > 3 && event.beers[3]) {
+        form.getTextField("Beer Style 4").setText(event.beers[3].beer_style || '');
+        form.getTextField("Package Style 4").setText(event.beers[3].packaging || '');
+        form.getTextField("Quantity 4").setText(event.beers[3].quantity?.toString() || '');
+      }
+      
+      // Beer 5
+      if (event.beers.length > 4 && event.beers[4]) {
+        form.getTextField("Beer Style 5").setText(event.beers[4].beer_style || '');
+        form.getTextField("Package Style 5").setText(event.beers[4].packaging || '');
+        form.getTextField("Quantity 5").setText(event.beers[4].quantity?.toString() || '');
       }
     }
     
-    // EXACT FIELD MAPPINGS ONLY - No clever name matching algorithms
-    console.log('Setting text fields with EXACT name matching only...');
-    
-    // List of fields from the log inspection - use EXACT names only
-    const textFieldValues = {
-      "Event Name": event.title || '',
-      "Event Date": formatDate(event.date),
-      "Event Set Up Time": formatTime(event.setup_time),
-      "Event Duration": event.duration || '',
-      "DP Staff Attending": getAssignedEmployees(),
-      "Event Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
-      "Expected Attendees": event.expected_attendees?.toString() || '',
-      "Other More Detail": event.event_type === 'other' ? event.event_type_other || '' : '',
-      "Additional Supplies": event.supplies?.additional_supplies || '',
-      "Event Instructions": event.event_instructions || event.info || '',
-      
-      // CRITICAL: Ensure the beer fields use exact field names and values
-      // DO NOT use the wrong beer for the wrong field
-      "Beer Style 1": event.beers?.[0]?.beer_style || '',
-      "Package Style 1": event.beers?.[0]?.packaging || '',
-      "Quantity 1": event.beers?.[0]?.quantity?.toString() || '',
-      
-      "Beer Style 2": event.beers?.[1]?.beer_style || '',
-      "Package Style 2": event.beers?.[1]?.packaging || '',
-      "Quantity 2": event.beers?.[1]?.quantity?.toString() || ''
-    };
-    
-    // Only set fields that EXACTLY match the names in our mapping
-    for (const [fieldName, fieldValue] of Object.entries(textFieldValues)) {
-      if (fieldNames.includes(fieldName)) {
-        try {
-          const field = form.getTextField(fieldName);
-          field.setText(fieldValue);
-          console.log(`Set ${fieldName} to "${fieldValue}"`);
-        } catch (e) {
-          console.warn(`Error setting ${fieldName}:`, e);
-        }
-      } else {
-        console.warn(`Field "${fieldName}" does not exist in the PDF`);
-      }
-    }
-    
-    // Try to solve the plus sign problem
-    try {
-      // Access the problematic fields directly and try to set values with different technique
-      if (fieldNames.includes("Beer Style 1") && event.beers?.[0]?.beer_style) {
-        const field = form.getTextField("Beer Style 1");
-        
-        // Clear first
-        field.setText("");
-        
-        // Then set value
-        field.setText(event.beers[0].beer_style);
-        console.log(`Reset Beer Style 1 to "${event.beers[0].beer_style}"`);
-      }
-      
-      if (fieldNames.includes("Beer Style 2") && event.beers?.[1]?.beer_style) {
-        const field = form.getTextField("Beer Style 2");
-        
-        // Clear first
-        field.setText("");
-        
-        // Then set value
-        field.setText(event.beers[1].beer_style);
-        console.log(`Reset Beer Style 2 to "${event.beers[1].beer_style}"`);
-      }
-      
-      if (fieldNames.includes("Package Style 1") && event.beers?.[0]?.packaging) {
-        const field = form.getTextField("Package Style 1");
-        
-        // Clear first
-        field.setText("");
-        
-        // Then set value
-        field.setText(event.beers[0].packaging);
-        console.log(`Reset Package Style 1 to "${event.beers[0].packaging}"`);
-      }
-      
-      if (fieldNames.includes("Package Style 2") && event.beers?.[1]?.packaging) {
-        const field = form.getTextField("Package Style 2");
-        
-        // Clear first
-        field.setText("");
-        
-        // Then set value
-        field.setText(event.beers[1].packaging);
-        console.log(`Reset Package Style 2 to "${event.beers[1].packaging}"`);
-      }
-    } catch (e) {
-      console.warn("Failed special handling for beer fields:", e);
-    }
-    
-    // Save and download the PDF
+    // Save the PDF
     console.log('Saving PDF...');
     const modifiedPdfBytes = await pdfDoc.save();
     
