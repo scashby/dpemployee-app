@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     const buf = await buffer(req);
     const data = JSON.parse(buf.toString());
     
-    // Format helper functions (copied from client-side)
+    // Format helper functions
     const formatDate = (dateString) => {
       if (!dateString) return '';
       const [year, month, day] = dateString.split('-');
@@ -40,9 +40,6 @@ export default async function handler(req, res) {
       }
     };
     
-    // Log the data received for debugging
-    console.log('Received data:', data);
-    
     // Load the template PDF
     const templatePath = path.join(process.cwd(), 'public', 'DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf');
     const templateBytes = fs.readFileSync(templatePath);
@@ -51,146 +48,118 @@ export default async function handler(req, res) {
     // Get the form
     const form = pdfDoc.getForm();
     
-    // Fill form fields - using direct field access
-    // Basic fields
-    try {
-      form.getTextField("Event Name").setText(data.title || '');
-      form.getTextField("Event Date").setText(formatDate(data.date));
-      form.getTextField("Event Set Up Time").setText(formatTime(data.setup_time));
-      form.getTextField("Event Duration").setText(data.duration || '');
-      form.getTextField("DP Staff Attending").setText(data.staffAttending || '');
-      form.getTextField("Event Contact").setText(data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '');
-      form.getTextField("Expected Attendees").setText(data.expected_attendees?.toString() || '');
-      
-      if (data.event_type === 'other') {
-        form.getTextField("Other More Detail").setText(data.event_type_other || '');
-      }
-      
-      form.getTextField("Additional Supplies").setText(data.supplies?.additional_supplies || '');
-      form.getTextField("Event Instructions").setText(data.event_instructions || data.info || '');
-    } catch (e) {
-      console.error('Error setting text fields:', e);
-    }
+    // Get all fields for debugging
+    const fields = form.getFields();
+    const fieldNames = fields.map(f => f.getName());
+    console.log('Available fields:', fieldNames);
     
-    // Set checkboxes
-    try {
-      if (data.event_type === 'tasting') form.getCheckBox("Tasting").check();
-      else form.getCheckBox("Tasting").uncheck();
+    // Create a universal approach to set fields
+    // This function handles all form fields consistently
+    const setField = (fieldName, value) => {
+      if (!fieldName || value === undefined || value === null) return;
       
-      if (data.event_type === 'pint_night') form.getCheckBox("Pint Night").check();
-      else form.getCheckBox("Pint Night").uncheck();
-      
-      if (data.event_type === 'beer_fest') form.getCheckBox("Beer Fest").check();
-      else form.getCheckBox("Beer Fest").uncheck();
-      
-      if (data.event_type === 'other') form.getCheckBox("Other").check();
-      else form.getCheckBox("Other").uncheck();
-      
-      if (data.supplies?.table_needed) form.getCheckBox("Table").check();
-      else form.getCheckBox("Table").uncheck();
-      
-      if (data.supplies?.beer_buckets) form.getCheckBox("Beer Buckets").check();
-      else form.getCheckBox("Beer Buckets").uncheck();
-      
-      if (data.supplies?.table_cloth) form.getCheckBox("Table Cloth").check();
-      else form.getCheckBox("Table Cloth").uncheck();
-      
-      if (data.supplies?.tent_weights) form.getCheckBox("Tent Weights").check();
-      else form.getCheckBox("Tent Weights").uncheck();
-      
-      if (data.supplies?.signage) form.getCheckBox("Signage").check();
-      else form.getCheckBox("Signage").uncheck();
-      
-      if (data.supplies?.ice) form.getCheckBox("Ice").check();
-      else form.getCheckBox("Ice").uncheck();
-      
-      if (data.supplies?.jockey_box) form.getCheckBox("Jockey Box").check();
-      else form.getCheckBox("Jockey Box").uncheck();
-      
-      if (data.supplies?.cups) form.getCheckBox("Cups").check();
-      else form.getCheckBox("Cups").uncheck();
-    } catch (e) {
-      console.error('Error setting checkboxes:', e);
-    }
-    
-    // Fill beer table
-    if (data.beers && data.beers.length > 0) {
       try {
-        // Beer 1
-        if (data.beers[0]) {
-          form.getTextField("Beer Style 1").setText(data.beers[0].beer_style || '');
-          form.getTextField("Package Style 1").setText(data.beers[0].packaging || '');
-          form.getTextField("Quantity 1").setText(data.beers[0].quantity?.toString() || '');
+        // Check if the field exists
+        if (!fieldNames.includes(fieldName)) {
+          console.log(`Field "${fieldName}" not found in the form`);
+          return;
         }
         
-        // Beer 2
-        if (data.beers.length > 1 && data.beers[1]) {
-          form.getTextField("Beer Style 2").setText(data.beers[1].beer_style || '');
-          form.getTextField("Package Style 2").setText(data.beers[1].packaging || '');
-          form.getTextField("Quantity 2").setText(data.beers[1].quantity?.toString() || '');
+        // Get field type
+        const field = form.getFieldMaybe(fieldName);
+        if (!field) {
+          console.log(`Field "${fieldName}" could not be accessed`);
+          return;
         }
         
-        // Beer 3-5 (similar pattern)
-        // ...
+        // Handle based on field type
+        const fieldType = field.constructor.name;
+        
+        if (fieldType === 'PDFCheckBox') {
+          // Handle checkbox
+          if (value === true) {
+            field.check();
+          } else {
+            field.uncheck();
+          }
+          console.log(`Set checkbox "${fieldName}" to ${value}`);
+        } 
+        else if (fieldType === 'PDFTextField') {
+          // Handle text field - using a UNIVERSAL approach for all text fields
+          
+          // Step 1: Clear the field first
+          field.setText('');
+          
+          // Step 2: Get the acroField for lower-level access 
+          const acroField = field.acroField;
+          
+          // Step 3: Set the field value directly using the lower-level API if possible
+          if (acroField) {
+            // Use the context object to create a proper PDF string
+            const pdfString = pdfDoc.context.string(value.toString());
+            acroField.setValue(pdfString);
+          } 
+          // Step 4: Fallback to the standard method if needed
+          else {
+            field.setText(value.toString());
+          }
+          
+          console.log(`Set text field "${fieldName}" to "${value}"`);
+        }
+        else {
+          console.log(`Unsupported field type ${fieldType} for field "${fieldName}"`);
+        }
       } catch (e) {
-        console.error('Error setting beer table fields:', e);
+        console.error(`Error setting field "${fieldName}":`, e);
+      }
+    };
+    
+    // Map form data to PDF fields
+    const formMappings = {
+      // Basic text fields
+      "Event Name": data.title || '',
+      "Event Date": formatDate(data.date),
+      "Event Set Up Time": formatTime(data.setup_time),
+      "Event Duration": data.duration || '',
+      "DP Staff Attending": data.staffAttending || '',
+      "Event Contact": data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '',
+      "Expected Attendees": data.expected_attendees?.toString() || '',
+      "Other More Detail": data.event_type === 'other' ? data.event_type_other || '' : '',
+      "Additional Supplies": data.supplies?.additional_supplies || '',
+      "Event Instructions": data.event_instructions || data.info || '',
+      
+      // Checkboxes
+      "Tasting": data.event_type === 'tasting',
+      "Pint Night": data.event_type === 'pint_night',
+      "Beer Fest": data.event_type === 'beer_fest',
+      "Other": data.event_type === 'other',
+      "Table": data.supplies?.table_needed,
+      "Beer Buckets": data.supplies?.beer_buckets,
+      "Table Cloth": data.supplies?.table_cloth,
+      "Tent Weights": data.supplies?.tent_weights,
+      "Signage": data.supplies?.signage,
+      "Ice": data.supplies?.ice,
+      "Jockey Box": data.supplies?.jockey_box,
+      "Cups": data.supplies?.cups
+    };
+    
+    // Add beer table fields
+    if (data.beers && data.beers.length > 0) {
+      for (let i = 0; i < data.beers.length && i < 5; i++) {
+        const idx = i + 1;
+        const beer = data.beers[i];
         
-        // Fallback - try drawing text directly for beer fields
-        try {
-          // Get the first page
-          const pages = pdfDoc.getPages();
-          const page = pages[0];
-          
-          // Define coordinates for beer table fields (approximate)
-          const fieldCoordinates = {
-            "Beer Style 1": { x: 610, y: 705 },
-            "Package Style 1": { x: 770, y: 705 },
-            "Beer Style 2": { x: 610, y: 675 },
-            "Package Style 2": { x: 770, y: 675 }
-            // Add more as needed
-          };
-          
-          // Draw beer 1
-          if (data.beers[0]) {
-            if (data.beers[0].beer_style) {
-              page.drawText(data.beers[0].beer_style, {
-                x: fieldCoordinates["Beer Style 1"].x,
-                y: fieldCoordinates["Beer Style 1"].y,
-                size: 10
-              });
-            }
-            
-            if (data.beers[0].packaging) {
-              page.drawText(data.beers[0].packaging, {
-                x: fieldCoordinates["Package Style 1"].x,
-                y: fieldCoordinates["Package Style 1"].y,
-                size: 10
-              });
-            }
-          }
-          
-          // Draw beer 2
-          if (data.beers.length > 1 && data.beers[1]) {
-            if (data.beers[1].beer_style) {
-              page.drawText(data.beers[1].beer_style, {
-                x: fieldCoordinates["Beer Style 2"].x,
-                y: fieldCoordinates["Beer Style 2"].y,
-                size: 10
-              });
-            }
-            
-            if (data.beers[1].packaging) {
-              page.drawText(data.beers[1].packaging, {
-                x: fieldCoordinates["Package Style 2"].x,
-                y: fieldCoordinates["Package Style 2"].y,
-                size: 10
-              });
-            }
-          }
-        } catch (drawError) {
-          console.error('Error drawing text directly:', drawError);
+        if (beer) {
+          formMappings[`Beer Style ${idx}`] = beer.beer_style || '';
+          formMappings[`Package Style ${idx}`] = beer.packaging || '';
+          formMappings[`Quantity ${idx}`] = beer.quantity?.toString() || '';
         }
       }
+    }
+    
+    // Set all form fields using our universal approach
+    for (const [fieldName, value] of Object.entries(formMappings)) {
+      setField(fieldName, value);
     }
     
     // Save the PDF
