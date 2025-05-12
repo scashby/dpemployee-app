@@ -38,37 +38,18 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Force the default appearance of ALL text fields to use 10pt font
-    const allFields = form.getFields();
-    for (const field of allFields) {
-      try {
-        // Only modify text fields
-        if (field.constructor.name === 'PDFTextField') {
-          const acroField = field.acroField;
-          if (acroField && acroField.dict) {
-            // Set a consistent 10pt font size in the Default Appearance string
-            acroField.dict.set(
-              pdfDoc.context.obj('DA'),
-              pdfDoc.context.string('/Helv 10 Tf 0 g')
-            );
-          }
-        }
-      } catch (e) {
-        // Ignore errors when modifying appearance
-      }
-    }
-    
-    // Fill in fields
+    // Super simple setTextField function
     const setTextField = (name, value) => {
       if (value === undefined || value === null || value === '') return;
       try {
         const field = form.getTextField(name);
         field.setText(String(value));
       } catch (e) {
-        console.log(`Error setting field ${name}:`, e.message);
+        console.error(`Error setting field ${name}:`, e);
       }
     };
     
+    // Super simple setCheckbox function
     const setCheckbox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
@@ -78,11 +59,11 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
           checkbox.uncheck();
         }
       } catch (e) {
-        console.log(`Error setting checkbox ${name}:`, e.message);
+        console.error(`Error setting checkbox ${name}:`, e);
       }
     };
     
-    // Set text fields
+    // Set text fields - simple approach
     console.log('Setting text fields...');
     setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
@@ -98,21 +79,46 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       setTextField("Other More Detail", event.event_type_other);
     }
     
-    // Beer table fields
+    // Set beer table fields - simple approach
     console.log('Setting beer table fields...');
     if (event.beers && event.beers.length > 0) {
-      for (let i = 0; i < Math.min(event.beers.length, 5); i++) {
-        const idx = i + 1;
-        const beer = event.beers[i];
-        if (beer) {
-          setTextField(`Beer Style ${idx}`, beer.beer_style);
-          setTextField(`Package Style ${idx}`, beer.packaging);
-          setTextField(`Quantity ${idx}`, beer.quantity?.toString());
-        }
+      // Beer 1
+      if (event.beers[0]) {
+        setTextField("Beer Style 1", event.beers[0].beer_style);
+        setTextField("Package Style 1", event.beers[0].packaging);
+        setTextField("Quantity 1", event.beers[0].quantity);
+      }
+      
+      // Beer 2
+      if (event.beers.length > 1 && event.beers[1]) {
+        setTextField("Beer Style 2", event.beers[1].beer_style);
+        setTextField("Package Style 2", event.beers[1].packaging);
+        setTextField("Quantity 2", event.beers[1].quantity);
+      }
+      
+      // Beer 3
+      if (event.beers.length > 2 && event.beers[2]) {
+        setTextField("Beer Style 3", event.beers[2].beer_style);
+        setTextField("Package Style 3", event.beers[2].packaging);
+        setTextField("Quantity 3", event.beers[2].quantity);
+      }
+      
+      // Beer 4
+      if (event.beers.length > 3 && event.beers[3]) {
+        setTextField("Beer Style 4", event.beers[3].beer_style);
+        setTextField("Package Style 4", event.beers[3].packaging);
+        setTextField("Quantity 4", event.beers[3].quantity);
+      }
+      
+      // Beer 5
+      if (event.beers.length > 4 && event.beers[4]) {
+        setTextField("Beer Style 5", event.beers[4].beer_style);
+        setTextField("Package Style 5", event.beers[4].packaging);
+        setTextField("Quantity 5", event.beers[4].quantity);
       }
     }
     
-    // Set checkboxes
+    // Set checkboxes - simple approach
     console.log('Setting checkboxes...');
     setCheckbox("Tasting", event.event_type === 'tasting');
     setCheckbox("Pint Night", event.event_type === 'pint_night');
@@ -128,8 +134,8 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Flatten the form after all fields are set
-    // This removes interactivity but makes the form printable
+    // Flatten the form to avoid field rendering issues
+    console.log('Flattening form...');
     form.flatten();
     
     // Save the PDF
