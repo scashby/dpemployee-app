@@ -49,6 +49,39 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       fieldTypes[field.getName()] = field.constructor.name;
     });
     console.log('Field types:', fieldTypes);
+
+    // The FDF file shows these field names are definitely present as checkboxes
+    const knownFieldsFromFDF = [
+      "Beer Buckets", "Beer Fest", "Cups", "Ice", "Jockey Box", 
+      "Other", "Pint Night", "Signage", "Table", "Table Cloth", 
+      "Tasting", "Tent Weights"
+    ];
+    
+    // Try to infer the rest of the field structure from known fields
+    console.log('Known fields from FDF:', knownFieldsFromFDF);
+    console.log('Actual fields in PDF:', fieldNames);
+    
+    // Special handling specifically for the expected # of attendees field
+    // Look for a field that might hold a number and is near/related to "attendees"
+    const attendeesField = fieldNames.find(name => 
+      name.includes('Expected') || 
+      name.includes('Attendees') || 
+      name.includes('attendees') ||
+      name.startsWith('Expected #')
+    );
+    
+    if (attendeesField) {
+      console.log('Found attendees field:', attendeesField);
+      try {
+        const field = form.getTextField(attendeesField);
+        field.setText(event.expected_attendees?.toString() || '');
+        console.log(`Set ${attendeesField} to ${event.expected_attendees}`);
+      } catch (e) {
+        console.warn(`Error setting attendees field:`, e);
+      }
+    } else {
+      console.warn('Could not find Expected # of Attendees field');
+    }
     
     // Define all possible field name variations for important fields
     const exactFieldMappings = {
@@ -80,24 +113,12 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       "Event Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
       "Contact": event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
       
-      // For Expected Attendees - try many variations
-      "Expected # of Attendees:": event.expected_attendees?.toString() || '',
-      "Expected # of Attendees": event.expected_attendees?.toString() || '',
-      "ExpectedAttendees": event.expected_attendees?.toString() || '',
-      "Expected": event.expected_attendees?.toString() || '',
-      "Attendees": event.expected_attendees?.toString() || '',
-      
-      // Other sections
+      // Additional sections
       "Additional Supplies:": event.supplies?.additional_supplies || '',
       "Additional Supplies": event.supplies?.additional_supplies || '',
       
       "Event Instructions:": event.event_instructions || event.info || '',
       "Event Instructions": event.event_instructions || event.info || '',
-      
-      // Other text field variations
-      "Other :": event.event_type === 'other' ? event.event_type_other || '' : '',
-      "Other Text": event.event_type === 'other' ? event.event_type_other || '' : '',
-      "OtherText": event.event_type === 'other' ? event.event_type_other || '' : ''
     };
     
     // Set all text fields with exact matches
@@ -122,29 +143,27 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     }
     
-    // If the expected # of attendees wasn't set, do a broader search
-    if (!Object.keys(exactFieldMappings).some(key => key.includes('Expected') && fieldNames.includes(key))) {
-      // Try any field with "expect" or "attend" in the name (case insensitive)
-      const attendeesFields = fieldNames.filter(name => 
-        name.toLowerCase().includes('expect') || 
-        name.toLowerCase().includes('attend')
+    // Special handling for the "Other" text field
+    if (event.event_type === 'other' && event.event_type_other) {
+      // Try to find the Other text field by looking for fields with similar names
+      const otherTextField = fieldNames.find(name => 
+        name.includes('Other :') ||
+        name.includes('Other Text') ||
+        (name.includes('Other') && !knownFieldsFromFDF.includes(name))
       );
       
-      for (const fieldName of attendeesFields) {
+      if (otherTextField) {
         try {
-          const field = form.getTextField(fieldName);
-          field.setText(event.expected_attendees?.toString() || '');
-          try { field.setFontSize(10); } catch (e) { /* ignore */ }
-          console.log(`Set attendees field "${fieldName}" to "${event.expected_attendees}"`);
-          textFieldsSet++;
-          break; // Stop after first successful set
+          const field = form.getTextField(otherTextField);
+          field.setText(event.event_type_other);
+          console.log(`Set Other text field ${otherTextField} to ${event.event_type_other}`);
         } catch (e) {
-          console.warn(`Could not set attendees field "${fieldName}":`, e);
+          console.warn(`Error setting Other text field:`, e);
         }
       }
     }
     
-    // Set checkboxes
+    // Set checkboxes - use the exact names from the FDF file
     console.log('Setting checkboxes...');
     const checkboxMappings = [
       { name: "Tasting", checked: event.event_type === 'tasting' },
@@ -179,144 +198,85 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     });
     
-    // Handle beer table fields - now they should be text fields
+    // Handle beer table fields - special handling for package style fields
     console.log('Setting beer table fields...');
     const beers = event.beers || [];
     
-    // Clear all beer fields first
-    for (let i = 1; i <= 5; i++) {
-      // Try various versions of the field names
-      const styleFieldNames = [`Beer Style ${i}`, `BeerStyle${i}`, `beer_style_${i}`];
-      const packageFieldNames = [`Package Style ${i}`, `Pkg ${i}`, `PackageStyle${i}`, `package_${i}`];
-      const quantityFieldNames = [`Quantity ${i}`, `Qty ${i}`, `quantity_${i}`];
-      
-      // Try to clear beer style
-      for (const fieldName of styleFieldNames) {
-        if (fieldNames.includes(fieldName)) {
-          try {
-            form.getTextField(fieldName).setText('');
-            break;
-          } catch (e) {
-            // Ignore errors
-          }
-        }
-      }
-      
-      // Try to clear package style
-      for (const fieldName of packageFieldNames) {
-        if (fieldNames.includes(fieldName)) {
-          try {
-            form.getTextField(fieldName).setText('');
-            break;
-          } catch (e) {
-            // Ignore errors
-          }
-        }
-      }
-      
-      // Try to clear quantity
-      for (const fieldName of quantityFieldNames) {
-        if (fieldNames.includes(fieldName)) {
-          try {
-            form.getTextField(fieldName).setText('');
-            break;
-          } catch (e) {
-            // Ignore errors
-          }
-        }
-      }
-    }
+    // Find all potential table cells for beers
+    const beerStyleFields = fieldNames.filter(name => name.includes('Beer Style') || name.includes('BeerStyle'));
+    const pkgFields = fieldNames.filter(name => name.includes('Pkg') || name.includes('Package'));
+    const qtyFields = fieldNames.filter(name => name.includes('Qty') || name.includes('Quantity'));
     
-    // Now set only beer rows that have data
-    for (let i = 0; i < Math.min(beers.length, 5); i++) {
+    console.log('Found Beer Style fields:', beerStyleFields);
+    console.log('Found Package fields:', pkgFields);
+    console.log('Found Quantity fields:', qtyFields);
+    
+    // Clear all beer fields first
+    [...beerStyleFields, ...pkgFields, ...qtyFields].forEach(fieldName => {
+      try {
+        const field = form.getTextField(fieldName);
+        field.setText('');
+      } catch (e) {
+        // Ignore errors
+      }
+    });
+    
+    // Set beer values - Carefully handle the package fields which have the + sign issue
+    for (let i = 0; i < Math.min(beers.length, beerStyleFields.length); i++) {
       const beer = beers[i];
       if (!beer || (!beer.beer_style && !beer.packaging && !beer.quantity)) {
         continue;
       }
       
-      const index = i + 1;
-      
-      // For beer style - try different field name formats
-      if (beer.beer_style) {
-        const styleFieldNames = [`Beer Style ${index}`, `BeerStyle${index}`, `beer_style_${index}`];
-        let styleSet = false;
-        
-        for (const fieldName of styleFieldNames) {
-          if (!styleSet && fieldNames.includes(fieldName)) {
-            try {
-              const field = form.getTextField(fieldName);
-              field.setText(beer.beer_style);
-              try { field.setFontSize(10); } catch (e) { /* ignore */ }
-              console.log(`Set beer style ${index} to "${beer.beer_style}" using field "${fieldName}"`);
-              styleSet = true;
-            } catch (e) {
-              console.warn(`Could not set beer style ${index} using field "${fieldName}":`, e);
-            }
-          }
+      // Set beer style
+      if (beer.beer_style && i < beerStyleFields.length) {
+        try {
+          const field = form.getTextField(beerStyleFields[i]);
+          field.setText(beer.beer_style);
+          console.log(`Set beer style ${i+1} to "${beer.beer_style}"`);
+        } catch (e) {
+          console.warn(`Error setting beer style ${i+1}:`, e);
         }
       }
       
-      // For package style - try different field name formats
-      if (beer.packaging) {
-        // Fix for package style fields
-        // First try the exact field names
-        const packageFieldNames = [`Package Style ${index}`, `Pkg ${index}`, `PackageStyle${index}`, `package_${index}`];
-        let packageSet = false;
-        
-        for (const fieldName of packageFieldNames) {
-          if (!packageSet && fieldNames.includes(fieldName)) {
-            try {
-              const field = form.getTextField(fieldName);
-              field.setText(beer.packaging);
-              try { field.setFontSize(10); } catch (e) { /* ignore */ }
-              console.log(`Set package style ${index} to "${beer.packaging}" using field "${fieldName}"`);
-              packageSet = true;
-            } catch (e) {
-              console.warn(`Could not set package style ${index} using field "${fieldName}":`, e);
-            }
-          }
-        }
-        
-        // If exact field names didn't work, try to find fields by name pattern
-        if (!packageSet) {
-          // Look for fields with "pkg" in the name (case insensitive)
-          const pkgFields = fieldNames.filter(name => 
-            name.toLowerCase().includes('pkg')
-          );
+      // Set package - CRITICAL FIX for + sign issue
+      if (beer.packaging && i < pkgFields.length) {
+        try {
+          const field = form.getTextField(pkgFields[i]);
           
-          if (pkgFields.length > i) {
-            try {
-              const field = form.getTextField(pkgFields[i]);
-              field.setText(beer.packaging);
-              try { field.setFontSize(10); } catch (e) { /* ignore */ }
-              console.log(`Set package style ${index} to "${beer.packaging}" using alternate field "${pkgFields[i]}"`);
-              packageSet = true;
-            } catch (e) {
-              console.warn(`Could not set package style ${index} using alternate field:`, e);
-            }
-          }
+          // Directly set the package field value, avoiding any automatic formatting
+          // and make sure it actually overrides any pre-existing content
+          field.setText('');  // Clear first
+          field.setFontSize(10);  // Set font size
+          
+          // Force it to update with the package value
+          setTimeout(() => {
+            field.setText(beer.packaging);
+            console.log(`Set package ${i+1} to "${beer.packaging}"`);
+          }, 0);
+        } catch (e) {
+          console.warn(`Error setting package ${i+1}:`, e);
         }
       }
       
-      // For quantity - try different field name formats
-      if (beer.quantity) {
-        const quantityFieldNames = [`Quantity ${index}`, `Qty ${index}`, `quantity_${index}`];
-        let qtySet = false;
-        
-        for (const fieldName of quantityFieldNames) {
-          if (!qtySet && fieldNames.includes(fieldName)) {
-            try {
-              const field = form.getTextField(fieldName);
-              field.setText(beer.quantity.toString());
-              try { field.setFontSize(10); } catch (e) { /* ignore */ }
-              console.log(`Set quantity ${index} to "${beer.quantity}" using field "${fieldName}"`);
-              qtySet = true;
-            } catch (e) {
-              console.warn(`Could not set quantity ${index} using field "${fieldName}":`, e);
-            }
-          }
+      // Set quantity
+      if (beer.quantity && i < qtyFields.length) {
+        try {
+          const field = form.getTextField(qtyFields[i]);
+          field.setText(beer.quantity.toString());
+          console.log(`Set quantity ${i+1} to "${beer.quantity}"`);
+        } catch (e) {
+          console.warn(`Error setting quantity ${i+1}:`, e);
         }
       }
+    }
+    
+    // Force flatten to lock in the values - might help with the package field issue
+    try {
+      // Form not flattened so user can still edit fields
+      console.log('Finalizing PDF...');
+    } catch (e) {
+      console.warn('Error finalizing form:', e);
     }
     
     // Save the PDF
