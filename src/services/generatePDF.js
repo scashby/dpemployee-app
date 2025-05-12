@@ -20,13 +20,12 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const formatTime = (timeString) => {
       if (!timeString) return '';
       try {
-        // Parse HH:MM 24-hour format
         const [hours, minutes] = timeString.split(':').map(Number);
         const period = hours >= 12 ? 'PM' : 'AM';
         const hour12 = hours % 12 || 12;
         return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
       } catch (e) {
-        return timeString; // Return as is if parsing fails
+        return timeString;
       }
     };
 
@@ -39,201 +38,58 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Get all form fields for reference
+    // Get all form fields to identify field types and names
     const fields = form.getFields();
-    console.log('All fields:', fields.map(f => ({ name: f.getName(), type: f.constructor.name })));
+    const fieldNames = fields.map(f => f.getName());
+    console.log('Available fields:', fieldNames);
     
-    // Find and set Event section fields using brute force approach
-    // We'll try to find fields by string matching on all available fields
-    console.log('Setting event fields...');
+    // Step 1: Set the event detail text fields
+    // Using an array of objects to map field names to values
+    const textFieldMappings = [
+      // Try multiple naming formats for each field
+      { names: ["Event Name :", "Event Name", "EventName"], value: event.title || '' },
+      { names: ["Event Date:", "Event Date", "EventDate"], value: formatDate(event.date) },
+      { names: ["Event Set Up Time:", "Event Set Up Time", "EventSetUpTime"], value: formatTime(event.setup_time) },
+      { names: ["Event Duration:", "Event Duration", "EventDuration"], value: event.duration || '' },
+      { names: ["DP Staff Attending:", "DP Staff Attending", "DPStaffAttending"], value: getAssignedEmployees() },
+      { names: ["Event Contact(Name, Phone):", "Event Contact", "EventContact"], value: event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '' },
+      { names: ["Expected # of Attendees:", "Expected # of Attendees", "ExpectedAttendees"], value: event.expected_attendees?.toString() || '' },
+      { names: ["Additional Supplies:", "Additional Supplies"], value: event.supplies?.additional_supplies || '' },
+      { names: ["Event Instructions:", "Event Instructions"], value: event.event_instructions || event.info || '' }
+    ];
     
-    // First, create a map of data we want to set
-    const eventData = {
-      eventName: event.title || '',
-      eventDate: formatDate(event.date),
-      eventSetUpTime: formatTime(event.setup_time),
-      eventDuration: event.duration || '',
-      staffAttending: getAssignedEmployees(),
-      contactInfo: event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '',
-      expectedAttendees: event.expected_attendees?.toString() || '',
-      additionalSupplies: event.supplies?.additional_supplies || '',
-      eventInstructions: event.event_instructions || event.info || '',
-      otherDetails: event.event_type === 'other' ? event.event_type_other || '' : ''
-    };
+    // Process event section text fields
+    console.log('Setting event text fields...');
+    let textFieldsSet = 0;
     
-    // Try to find and set text fields based on partial name matching
-    fields.forEach(field => {
-      const fieldName = field.getName();
-      const fieldType = field.constructor.name;
+    // Try each name variation for each field
+    textFieldMappings.forEach(mapping => {
+      let fieldSet = false;
       
-      // Only process text fields
-      if (fieldType.includes('Text')) {
-        const fieldNameLower = fieldName.toLowerCase();
-        
-        try {
-          // Match field name to data
-          if (fieldNameLower.includes('name') && !fieldNameLower.includes('contact')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.eventName);
-            textField.setFontSize(10);
-            console.log(`Set event name in field "${fieldName}"`);
+      for (const name of mapping.names) {
+        if (!fieldSet && fieldNames.includes(name)) {
+          try {
+            const textField = form.getTextField(name);
+            textField.setText(mapping.value);
+            // Set a consistent font size
+            try { textField.setFontSize(10); } catch (e) { /* ignore font errors */ }
+            console.log(`Set field "${name}" to "${mapping.value}"`);
+            fieldSet = true;
+            textFieldsSet++;
+          } catch (e) {
+            console.warn(`Could not set field "${name}":`, e);
           }
-          else if (fieldNameLower.includes('date')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.eventDate);
-            textField.setFontSize(10);
-            console.log(`Set event date in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('set up') || fieldNameLower.includes('setup')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.eventSetUpTime);
-            textField.setFontSize(10);
-            console.log(`Set event setup time in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('duration')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.eventDuration);
-            textField.setFontSize(10);
-            console.log(`Set event duration in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('staff')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.staffAttending);
-            textField.setFontSize(10);
-            console.log(`Set staff attending in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('contact')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.contactInfo);
-            textField.setFontSize(10);
-            console.log(`Set contact info in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('attendee') || fieldNameLower.includes('expected')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.expectedAttendees);
-            textField.setFontSize(10);
-            console.log(`Set expected attendees in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('additional') && fieldNameLower.includes('suppl')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.additionalSupplies);
-            textField.setFontSize(10);
-            console.log(`Set additional supplies in field "${fieldName}"`);
-          }
-          else if (fieldNameLower.includes('instruction')) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.eventInstructions);
-            textField.setFontSize(10);
-            console.log(`Set event instructions in field "${fieldName}"`);
-          }
-          else if (event.event_type === 'other' && 
-                (fieldNameLower.includes('other') && 
-                 !fieldNameLower.includes('checkbox') && 
-                 !fieldNameLower.includes('check'))) {
-            const textField = form.getTextField(fieldName);
-            textField.setText(eventData.otherDetails);
-            textField.setFontSize(10);
-            console.log(`Set other details in field "${fieldName}"`);
-          }
-        } catch (e) {
-          // Ignore errors - this is a broad attempt
         }
       }
-    });
-    
-    // Special focused search for missing fields
-    console.log('Looking for specific missing fields...');
-    
-    // Try all possible field patterns for Event Contact
-    const contactPatterns = [
-      "Event Contact", "EventContact", "Contact", "ContactInfo", 
-      "Contact Name", "ContactName", "Contact Phone", "ContactPhone",
-      "Event Contact(Name, Phone)", "Name, Phone", "NamePhone"
-    ];
-    
-    let contactFieldSet = false;
-    contactPatterns.forEach(pattern => {
-      if (!contactFieldSet) {
-        fields.forEach(field => {
-          if (!contactFieldSet && field.constructor.name.includes('Text')) {
-            const fieldName = field.getName();
-            if (fieldName.toLowerCase().includes(pattern.toLowerCase())) {
-              try {
-                const textField = form.getTextField(fieldName);
-                textField.setText(eventData.contactInfo);
-                textField.setFontSize(10);
-                console.log(`Set contact info in field "${fieldName}"`);
-                contactFieldSet = true;
-              } catch (e) {
-                console.warn(`Failed to set contact in field "${fieldName}":`, e.message);
-              }
-            }
-          }
-        });
+      
+      if (!fieldSet) {
+        console.warn(`Could not find field for values: ${mapping.value} (tried names: ${mapping.names.join(', ')})`);
       }
     });
     
-    // Try all possible field patterns for Expected Attendees
-    const attendeePatterns = [
-      "Expected", "Attendees", "Expected Attendees", "ExpectedAttendees",
-      "Expected # of Attendees", "Expected#ofAttendees", "# of Attendees", "#ofAttendees"
-    ];
-    
-    let attendeeFieldSet = false;
-    attendeePatterns.forEach(pattern => {
-      if (!attendeeFieldSet) {
-        fields.forEach(field => {
-          if (!attendeeFieldSet && field.constructor.name.includes('Text')) {
-            const fieldName = field.getName();
-            if (fieldName.toLowerCase().includes(pattern.toLowerCase())) {
-              try {
-                const textField = form.getTextField(fieldName);
-                textField.setText(eventData.expectedAttendees);
-                textField.setFontSize(10);
-                console.log(`Set expected attendees in field "${fieldName}"`);
-                attendeeFieldSet = true;
-              } catch (e) {
-                console.warn(`Failed to set attendees in field "${fieldName}":`, e.message);
-              }
-            }
-          }
-        });
-      }
-    });
-    
-    // Try all possible field patterns for Other Details
-    const otherDetailPatterns = [
-      "Other Text", "OtherText", "Other Details", "OtherDetails",
-      "Other Information", "OtherInformation", "Other Specify", "OtherSpecify"
-    ];
-    
-    let otherDetailFieldSet = false;
-    if (event.event_type === 'other' && event.event_type_other) {
-      otherDetailPatterns.forEach(pattern => {
-        if (!otherDetailFieldSet) {
-          fields.forEach(field => {
-            if (!otherDetailFieldSet && field.constructor.name.includes('Text')) {
-              const fieldName = field.getName();
-              if (fieldName.toLowerCase().includes(pattern.toLowerCase())) {
-                try {
-                  const textField = form.getTextField(fieldName);
-                  textField.setText(eventData.otherDetails);
-                  textField.setFontSize(10);
-                  console.log(`Set other details in field "${fieldName}"`);
-                  otherDetailFieldSet = true;
-                } catch (e) {
-                  console.warn(`Failed to set other details in field "${fieldName}":`, e.message);
-                }
-              }
-            }
-          });
-        }
-      });
-    }
-    
-    // Set checkboxes - we know these work
+    // Step 2: Set checkbox fields - we know these work from the FDF
     console.log('Setting checkboxes...');
-    const checkboxMap = [
+    const checkboxMappings = [
       { name: "Tasting", checked: event.event_type === 'tasting' },
       { name: "Pint Night", checked: event.event_type === 'pint_night' },
       { name: "Beer Fest", checked: event.event_type === 'beer_fest' },
@@ -248,156 +104,148 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       { name: "Cups", checked: event.supplies?.cups }
     ];
     
-    checkboxMap.forEach(checkbox => {
-      try {
-        const checkboxField = form.getCheckBox(checkbox.name);
-        if (checkbox.checked) {
-          checkboxField.check();
-          console.log(`Checked "${checkbox.name}"`);
-        } else {
-          checkboxField.uncheck();
+    checkboxMappings.forEach(mapping => {
+      if (fieldNames.includes(mapping.name)) {
+        try {
+          const checkbox = form.getCheckBox(mapping.name);
+          if (mapping.checked) {
+            checkbox.check();
+            console.log(`Checked "${mapping.name}"`);
+          } else {
+            checkbox.uncheck();
+          }
+        } catch (e) {
+          console.warn(`Failed to set checkbox "${mapping.name}":`, e);
         }
-      } catch (e) {
-        console.warn(`Failed to set checkbox "${checkbox.name}":`, e.message);
       }
     });
     
-    // Handle beer fields - convert dropdowns to text fields
-    console.log('Setting beer fields as text...');
-    const beers = event.beers || [];
-    
-    // This is our main approach - use direct field modification
-    for (let i = 0; i < 5; i++) {  // Process all 5 possible beer rows
-      const beer = beers[i] || null;  // Use null for empty rows
-      const index = i + 1;
+    // Step 3: If "Other" is checked, try to find a field for the "Other" text
+    if (event.event_type === 'other' && event.event_type_other) {
+      // First try to find a field for Other text
+      const otherTextFieldNames = [
+        `Other :`,
+        `Other:`,
+        `Other Text`,
+        `OtherText`
+      ];
       
-      // Style field
-      try {
-        const styleFieldName = `Beer Style ${index}`;
-        const styleField = form.getDropdown(styleFieldName);
-        
-        // If we have a beer for this row, set it; otherwise leave blank
-        if (beer && beer.beer_style) {
-          // Try to directly set the value - this is not standard pdf-lib usage
-          // but might work with some PDF forms
+      let otherFieldSet = false;
+      for (const name of otherTextFieldNames) {
+        if (!otherFieldSet && fieldNames.includes(name)) {
           try {
-            // Override the default appearance stream to display as text
-            styleField.setText(beer.beer_style);
-            console.log(`Set beer style ${index} text to "${beer.beer_style}"`);
+            const textField = form.getTextField(name);
+            textField.setText(event.event_type_other);
+            try { textField.setFontSize(10); } catch (e) { /* ignore font errors */ }
+            console.log(`Set Other text field "${name}" to "${event.event_type_other}"`);
+            otherFieldSet = true;
           } catch (e) {
-            // Fall back to selecting from options
-            styleField.select(beer.beer_style);
-            console.log(`Selected beer style ${index} option "${beer.beer_style}"`);
+            console.warn(`Could not set Other text field "${name}":`, e);
           }
-        } else {
-          // Clear the dropdown for empty rows
-          styleField.select('');
-          console.log(`Cleared beer style ${index}`);
         }
-      } catch (e) {
-        console.warn(`Failed to set beer style ${index}:`, e.message);
       }
       
-      // Package field
-      try {
-        const packageFieldName = `Package Style ${index}`;
-        const packageField = form.getDropdown(packageFieldName);
+      // If we couldn't find a specific field, look for any field with "Other" in the name
+      if (!otherFieldSet) {
+        const otherFields = fieldNames.filter(name => 
+          name.includes('Other') && 
+          name !== 'Other' && 
+          !name.endsWith('Off')
+        );
         
-        // If we have a beer for this row, set it; otherwise leave blank
-        if (beer && beer.packaging) {
-          // Try to directly set the value
-          try {
-            // Override the default appearance stream to display as text
-            packageField.setText(beer.packaging);
-            console.log(`Set package style ${index} text to "${beer.packaging}"`);
-          } catch (e) {
-            // Fall back to selecting from options
-            packageField.select(beer.packaging);
-            console.log(`Selected package style ${index} option "${beer.packaging}"`);
-          }
-        } else {
-          // Clear the dropdown for empty rows
-          packageField.select('');
-          console.log(`Cleared package style ${index}`);
-        }
-      } catch (e) {
-        console.warn(`Failed to set package style ${index}:`, e.message);
-      }
-      
-      // Quantity field
-      try {
-        const qtyFieldName = `Quantity ${index}`;
-        try {
-          const qtyField = form.getTextField(qtyFieldName);
-          
-          if (beer && beer.quantity) {
-            qtyField.setText(beer.quantity.toString());
-            qtyField.setFontSize(10);
-            console.log(`Set quantity ${index} to "${beer.quantity}"`);
-          } else {
-            qtyField.setText('');
-            console.log(`Cleared quantity ${index}`);
-          }
-        } catch (e) {
-          console.warn(`Failed to set quantity ${index}:`, e.message);
-        }
-      } catch (e) {
-        console.warn(`Error with quantity ${index}:`, e.message);
-      }
-    }
-    
-    // Alternative approach for beer dropdowns - try to completely remove them
-    // and create new text fields in their place
-    console.log('Trying alternative approach for beer dropdowns...');
-    
-    try {
-      // First, let's try to get the coordinates of the dropdown fields
-      const dropdownFields = fields.filter(f => 
-        f.getName().includes('Beer Style') || 
-        f.getName().includes('Package Style')
-      );
-      
-      // Create a new page layer for each dropdown field
-      dropdownFields.forEach(field => {
-        const fieldName = field.getName();
-        // Determine which beer and property this is
-        let beerIndex = -1;
-        const match = fieldName.match(/\d+/);
-        if (match) {
-          beerIndex = parseInt(match[0]) - 1;
-        }
-        
-        if (beerIndex >= 0 && beerIndex < beers.length) {
-          const beer = beers[beerIndex];
-          let value = '';
-          
-          if (fieldName.includes('Beer Style')) {
-            value = beer.beer_style || '';
-          } else if (fieldName.includes('Package Style')) {
-            value = beer.packaging || '';
-          }
-          
-          // If we have a value, try to place text directly on the page
-          if (value) {
+        for (const name of otherFields) {
+          if (!otherFieldSet) {
             try {
-              // This is experimental and may not work with all PDFs
-              // Add a text annotation on top of the dropdown
-              const pages = pdfDoc.getPages();
-              const page = pages[0]; // Assuming the form is on the first page
-              
-              // Create a text annotation (this is not standard pdf-lib usage)
-              // and requires knowledge of the PDF structure
-              // This is a sophisticated approach that might not work
-              console.log(`Attempted to overlay text "${value}" on field "${fieldName}"`);
+              const textField = form.getTextField(name);
+              textField.setText(event.event_type_other);
+              try { textField.setFontSize(10); } catch (e) { /* ignore font errors */ }
+              console.log(`Set Other text field "${name}" to "${event.event_type_other}"`);
+              otherFieldSet = true;
             } catch (e) {
-              console.warn(`Could not overlay text on field "${fieldName}":`, e.message);
+              // Ignore errors
             }
           }
         }
-      });
-    } catch (e) {
-      console.warn('Alternative approach for beer dropdowns failed:', e.message);
+      }
     }
+    
+    // Step 4: Handle beer table fields
+    console.log('Setting beer fields...');
+    const beers = event.beers || [];
+    
+    // For each beer row (up to 5 rows)
+    for (let i = 0; i < Math.min(beers.length, 5); i++) {
+      const beer = beers[i];
+      const index = i + 1;
+      
+      // Process beer style field (dropdown)
+      if (beer.beer_style) {
+        const styleFieldName = `Beer Style ${index}`;
+        if (fieldNames.includes(styleFieldName)) {
+          try {
+            const styleField = form.getDropdown(styleFieldName);
+            // Attempt to select the value
+            styleField.select(beer.beer_style);
+            console.log(`Set beer style ${index} to "${beer.beer_style}"`);
+          } catch (e) {
+            // If selecting fails, try alternative approach
+            console.warn(`Failed to set beer style ${index}:`, e);
+            
+            // Try as a text field instead
+            try {
+              const textField = form.getTextField(styleFieldName);
+              textField.setText(beer.beer_style);
+              console.log(`Set beer style ${index} as text to "${beer.beer_style}"`);
+            } catch (e2) {
+              console.warn(`Also failed to set beer style ${index} as text:`, e2);
+            }
+          }
+        }
+      }
+      
+      // Process package style field (dropdown)
+      if (beer.packaging) {
+        const packageFieldName = `Package Style ${index}`;
+        if (fieldNames.includes(packageFieldName)) {
+          try {
+            const packageField = form.getDropdown(packageFieldName);
+            // Attempt to select the value
+            packageField.select(beer.packaging);
+            console.log(`Set package style ${index} to "${beer.packaging}"`);
+          } catch (e) {
+            // If selecting fails, try alternative approach
+            console.warn(`Failed to set package style ${index}:`, e);
+            
+            // Try as a text field instead
+            try {
+              const textField = form.getTextField(packageFieldName);
+              textField.setText(beer.packaging);
+              console.log(`Set package style ${index} as text to "${beer.packaging}"`);
+            } catch (e2) {
+              console.warn(`Also failed to set package style ${index} as text:`, e2);
+            }
+          }
+        }
+      }
+      
+      // Process quantity field (text field)
+      const qtyFieldName = `Quantity ${index}`;
+      if (fieldNames.includes(qtyFieldName)) {
+        try {
+          const qtyField = form.getTextField(qtyFieldName);
+          qtyField.setText(beer.quantity?.toString() || '');
+          try { qtyField.setFontSize(10); } catch (e) { /* ignore font errors */ }
+          console.log(`Set quantity ${index} to "${beer.quantity}"`);
+        } catch (e) {
+          console.warn(`Failed to set quantity ${index}:`, e);
+        }
+      }
+    }
+    
+    // Step 5: For beer styles and packages that weren't set, attempt a more direct approach
+    // This handles the case where the PDF doesn't let us directly modify dropdowns
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
     
     // Save the PDF
     console.log('Saving PDF...');
