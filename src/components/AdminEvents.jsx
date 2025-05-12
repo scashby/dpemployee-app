@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import '../styles/devils-purse.css';
-// import { generatePDF } from './EventPDF';  // [DISABLED: original broken PDF renderer import]
-import { generatePDF } from '../services/generatePDF';  // [SAFE: jsPDF version]
-
+import { generatePDF } from '../services/generatePDF';
 
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
@@ -196,8 +194,8 @@ const AdminEvents = () => {
   };
 
   const handleEmployeeSelection = (e, eventId) => {
-  const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-  
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    
     if (eventId) {
       // Update event assignments for existing event
       setEventAssignments({
@@ -317,174 +315,174 @@ const AdminEvents = () => {
   };
 
   const saveEventChanges = async (id) => {
-  try {
-    const eventToUpdate = events.find(evt => evt.id === id);
-    console.log('saveEventChanges called with ID:', id);
-    console.log('Found event to update:', eventToUpdate);
-    // Update event details
-    const { error } = await supabase
-    .from('events')
-    .update({
-      title: eventToUpdate.title,
-      date: eventToUpdate.date,
-      time: eventToUpdate.time,
-      setup_time: eventToUpdate.setup_time,
-      duration: eventToUpdate.duration,
-      contact_name: eventToUpdate.contact_name,
-      contact_phone: eventToUpdate.contact_phone,
-      expected_attendees: eventToUpdate.expected_attendees,
-      event_type: eventToUpdate.event_type,
-      event_type_other: eventToUpdate.event_type_other,
-      event_instructions: eventToUpdate.event_instructions || eventToUpdate.info || '',
-      info: null, // Set info to null to avoid duplication
-      off_prem: eventToUpdate.off_prem
-    })
-    .eq('id', id);
+    try {
+      const eventToUpdate = events.find(evt => evt.id === id);
+      console.log('saveEventChanges called with ID:', id);
+      console.log('Found event to update:', eventToUpdate);
+      // Update event details
+      const { error } = await supabase
+      .from('events')
+      .update({
+        title: eventToUpdate.title,
+        date: eventToUpdate.date,
+        time: eventToUpdate.time,
+        setup_time: eventToUpdate.setup_time,
+        duration: eventToUpdate.duration,
+        contact_name: eventToUpdate.contact_name,
+        contact_phone: eventToUpdate.contact_phone,
+        expected_attendees: eventToUpdate.expected_attendees,
+        event_type: eventToUpdate.event_type,
+        event_type_other: eventToUpdate.event_type_other,
+        event_instructions: eventToUpdate.event_instructions || eventToUpdate.info || '',
+        info: null, // Set info to null to avoid duplication
+        off_prem: eventToUpdate.off_prem
+      })
+      .eq('id', id);
 
-    if (error) throw error;
-    
-    // Try a different approach for event supplies
-    if (eventToUpdate.supplies) {
-      // First check if supplies record exists
-      const { data: existingSupplies } = await supabase
-        .from('event_supplies')
-        .select('*')
-        .eq('event_id', id)
-        .single();
+      if (error) throw error;
       
-      console.log('Existing supplies:', existingSupplies);
-      
-      if (existingSupplies) {
-        // Update existing record
-        const { error: updateError } = await supabase
+      // Try a different approach for event supplies
+      if (eventToUpdate.supplies) {
+        // First check if supplies record exists
+        const { data: existingSupplies } = await supabase
           .from('event_supplies')
-          .update({
-            table_needed: eventToUpdate.supplies.table_needed || false,
-            beer_buckets: eventToUpdate.supplies.beer_buckets || false,
-            table_cloth: eventToUpdate.supplies.table_cloth || false,
-            tent_weights: eventToUpdate.supplies.tent_weights || false,
-            signage: eventToUpdate.supplies.signage || false,
-            ice: eventToUpdate.supplies.ice || false,
-            jockey_box: eventToUpdate.supplies.jockey_box || false,
-            cups: eventToUpdate.supplies.cups || false,
-            additional_supplies: eventToUpdate.supplies.additional_supplies || ''
-          })
-          .eq('event_id', id);
+          .select('*')
+          .eq('event_id', id)
+          .single();
         
-        if (updateError) {
-          console.error('Error updating supplies:', updateError);
-          throw updateError;
-        }
-      } else {
-        // Insert new record
-        const { error: insertError } = await supabase
-          .from('event_supplies')
-          .insert([{
-            event_id: id,
-            table_needed: eventToUpdate.supplies.table_needed || false,
-            beer_buckets: eventToUpdate.supplies.beer_buckets || false,
-            table_cloth: eventToUpdate.supplies.table_cloth || false,
-            tent_weights: eventToUpdate.supplies.tent_weights || false,
-            signage: eventToUpdate.supplies.signage || false,
-            ice: eventToUpdate.supplies.ice || false,
-            jockey_box: eventToUpdate.supplies.jockey_box || false,
-            cups: eventToUpdate.supplies.cups || false,
-            additional_supplies: eventToUpdate.supplies.additional_supplies || ''
-          }]);
+        console.log('Existing supplies:', existingSupplies);
         
-        if (insertError) {
-          console.error('Error inserting supplies:', insertError);
-          throw insertError;
+        if (existingSupplies) {
+          // Update existing record
+          const { error: updateError } = await supabase
+            .from('event_supplies')
+            .update({
+              table_needed: eventToUpdate.supplies.table_needed || false,
+              beer_buckets: eventToUpdate.supplies.beer_buckets || false,
+              table_cloth: eventToUpdate.supplies.table_cloth || false,
+              tent_weights: eventToUpdate.supplies.tent_weights || false,
+              signage: eventToUpdate.supplies.signage || false,
+              ice: eventToUpdate.supplies.ice || false,
+              jockey_box: eventToUpdate.supplies.jockey_box || false,
+              cups: eventToUpdate.supplies.cups || false,
+              additional_supplies: eventToUpdate.supplies.additional_supplies || ''
+            })
+            .eq('event_id', id);
+          
+          if (updateError) {
+            console.error('Error updating supplies:', updateError);
+            throw updateError;
+          }
+        } else {
+          // Insert new record
+          const { error: insertError } = await supabase
+            .from('event_supplies')
+            .insert([{
+              event_id: id,
+              table_needed: eventToUpdate.supplies.table_needed || false,
+              beer_buckets: eventToUpdate.supplies.beer_buckets || false,
+              table_cloth: eventToUpdate.supplies.table_cloth || false,
+              tent_weights: eventToUpdate.supplies.tent_weights || false,
+              signage: eventToUpdate.supplies.signage || false,
+              ice: eventToUpdate.supplies.ice || false,
+              jockey_box: eventToUpdate.supplies.jockey_box || false,
+              cups: eventToUpdate.supplies.cups || false,
+              additional_supplies: eventToUpdate.supplies.additional_supplies || ''
+            }]);
+          
+          if (insertError) {
+            console.error('Error inserting supplies:', insertError);
+            throw insertError;
+          }
         }
       }
-    }
-    
-    // Update beer products - first delete existing ones
-    if (eventToUpdate.beers && eventToUpdate.beers.length > 0) {
-      // First delete all existing beer products for this event
-      const { error: deleteBeersError } = await supabase
-        .from('event_beers')
-        .delete()
-        .eq('event_id', id);
-        
-      if (deleteBeersError) throw deleteBeersError;
       
-      // Then insert the updated beer products
-      const beersToInsert = eventToUpdate.beers
-        .filter(beer => beer.beer_style && beer.beer_style.trim() !== '')
-        .map(beer => ({
+      // Update beer products - first delete existing ones
+      if (eventToUpdate.beers && eventToUpdate.beers.length > 0) {
+        // First delete all existing beer products for this event
+        const { error: deleteBeersError } = await supabase
+          .from('event_beers')
+          .delete()
+          .eq('event_id', id);
+          
+        if (deleteBeersError) throw deleteBeersError;
+        
+        // Then insert the updated beer products
+        const beersToInsert = eventToUpdate.beers
+          .filter(beer => beer.beer_style && beer.beer_style.trim() !== '')
+          .map(beer => ({
+            event_id: id,
+            beer_style: beer.beer_style,
+            packaging: beer.packaging || '',
+            quantity: beer.quantity || 1
+          }));
+          
+        if (beersToInsert.length > 0) {
+          const { error: insertBeersError } = await supabase
+            .from('event_beers')
+            .insert(beersToInsert);
+            
+          if (insertBeersError) throw insertBeersError;
+        }
+      }
+      
+      // Get current assignments for this event
+      const { data: currentAssignments, error: fetchError } = await supabase
+        .from('event_assignments')
+        .select('*')
+        .eq('event_id', id);
+      
+      if (fetchError) throw fetchError;
+      
+      // Get the employee IDs that are currently assigned
+      const currentEmployeeIds = currentAssignments.map(a => a.employee_id);
+      
+      // Get the new employee IDs from the state
+      const newEmployeeIds = eventAssignments[id] || [];
+      
+      // Employees to add (in new but not in current)
+      const employeesToAdd = newEmployeeIds.filter(empId => !currentEmployeeIds.includes(empId));
+      
+      // Employees to remove (in current but not in new)
+      const employeesToRemove = currentEmployeeIds.filter(empId => !newEmployeeIds.includes(empId));
+      
+      // Add new assignments
+      if (employeesToAdd.length > 0) {
+        const assignmentsToAdd = employeesToAdd.map(empId => ({
           event_id: id,
-          beer_style: beer.beer_style,
-          packaging: beer.packaging || '',
-          quantity: beer.quantity || 1
+          employee_id: empId
         }));
         
-      if (beersToInsert.length > 0) {
-        const { error: insertBeersError } = await supabase
-          .from('event_beers')
-          .insert(beersToInsert);
-          
-        if (insertBeersError) throw insertBeersError;
+        const { error: insertError } = await supabase
+          .from('event_assignments')
+          .insert(assignmentsToAdd);
+        
+        if (insertError) throw insertError;
       }
-    }
-    
-    // Get current assignments for this event
-    const { data: currentAssignments, error: fetchError } = await supabase
-      .from('event_assignments')
-      .select('*')
-      .eq('event_id', id);
-    
-    if (fetchError) throw fetchError;
-    
-    // Get the employee IDs that are currently assigned
-    const currentEmployeeIds = currentAssignments.map(a => a.employee_id);
-    
-    // Get the new employee IDs from the state
-    const newEmployeeIds = eventAssignments[id] || [];
-    
-    // Employees to add (in new but not in current)
-    const employeesToAdd = newEmployeeIds.filter(empId => !currentEmployeeIds.includes(empId));
-    
-    // Employees to remove (in current but not in new)
-    const employeesToRemove = currentEmployeeIds.filter(empId => !newEmployeeIds.includes(empId));
-    
-    // Add new assignments
-    if (employeesToAdd.length > 0) {
-      const assignmentsToAdd = employeesToAdd.map(empId => ({
-        event_id: id,
-        employee_id: empId
-      }));
       
-      const { error: insertError } = await supabase
-        .from('event_assignments')
-        .insert(assignmentsToAdd);
+      // Remove assignments that are no longer needed
+      if (employeesToRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('event_assignments')
+          .delete()
+          .eq('event_id', id)
+          .in('employee_id', employeesToRemove);
+        
+        if (deleteError) throw deleteError;
+      }
       
-      if (insertError) throw insertError;
-    }
-    
-    // Remove assignments that are no longer needed
-    if (employeesToRemove.length > 0) {
-      const { error: deleteError } = await supabase
-        .from('event_assignments')
-        .delete()
-        .eq('event_id', id)
-        .in('employee_id', employeesToRemove);
+      setSuccessMessage('Event updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setEditMode(null);
       
-      if (deleteError) throw deleteError;
+      // Refresh events to get updated data
+      await fetchEvents();
+    } catch (error) {
+      console.error('Error updating event:', error);
+      setError(`Failed to update event: ${error.message}`);
+      setTimeout(() => setError(''), 3000);
     }
-    
-    setSuccessMessage('Event updated successfully!');
-    setTimeout(() => setSuccessMessage(''), 3000);
-    setEditMode(null);
-    
-    // Refresh events to get updated data
-    await fetchEvents();
-  } catch (error) {
-    console.error('Error updating event:', error);
-    setError(`Failed to update event: ${error.message}`);
-    setTimeout(() => setError(''), 3000);
-  }
-};
+  };
 
   const addEvent = async (e) => {
     e.preventDefault();
@@ -716,1152 +714,1011 @@ const AdminEvents = () => {
         </div>
       )}
 
-<div className="dp-section">
-  <h3 className="dp-subsection-title">Add New Event</h3>
-  <form onSubmit={addEvent} className="dp-form">
-    <div className="dp-form-row">
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Event Name<span className="dp-required">*</span>
-        </label>
-        <input
-          type="text"
-          value={newEvent.title}
-          onChange={(e) => handleInputChange(e, null, 'title')}
-          className="dp-input"
-          required
-        />
-      </div>
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Event Date<span className="dp-required">*</span>
-        </label>
-        <input
-          type="date"
-          value={newEvent.date}
-          onChange={(e) => handleInputChange(e, null, 'date')}
-          className="dp-input"
-          required
-        />
-      </div>
-    </div>
+      <div className="dp-section">
+        <h3 className="dp-subsection-title">Add New Event</h3>
+        <form onSubmit={addEvent} className="dp-form">
+          <div className="dp-form-row">
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Event Name<span className="dp-required">*</span>
+              </label>
+              <input
+                type="text"
+                value={newEvent.title}
+                onChange={(e) => handleInputChange(e, null, 'title')}
+                className="dp-input"
+                required
+              />
+            </div>
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Event Date<span className="dp-required">*</span>
+              </label>
+              <input
+                type="date"
+                value={newEvent.date}
+                onChange={(e) => handleInputChange(e, null, 'date')}
+                className="dp-input"
+                required
+              />
+            </div>
+          </div>
 
-    <div className="dp-form-row">
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Setup Time
-        </label>
-        <input
-          type="time"
-          value={newEvent.setup_time}
-          onChange={(e) => handleInputChange(e, null, 'setup_time')}
-          className="dp-input"
-        />
-      </div>
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Event Duration
-        </label>
-        <input
-          type="text"
-          value={newEvent.duration}
-          placeholder="e.g. 1pm - 3:30pm"
-          onChange={(e) => handleInputChange(e, null, 'duration')}
-          className="dp-input"
-        />
-      </div>
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          DP Staff Attending
-        </label>
-        <select
-          multiple
-          className="dp-select"
-          onChange={(e) => handleEmployeeSelection(e, null)}
-          value={newEventEmployees || []}
-<div>
-</div>
-          {employees.map(emp => (
-            <option key={emp.id} value={emp.id}>
-              {emp.name}
-            </option>
-<div>
-      </div>
-    ))}
-        </select>
-        <div className="dp-form-help">
-          Hold Ctrl/Cmd to select multiple employees
-        </div>
-      </div>
-    </div>
+          <div className="dp-form-row">
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Setup Time
+              </label>
+              <input
+                type="time"
+                value={newEvent.setup_time}
+                onChange={(e) => handleInputChange(e, null, 'setup_time')}
+                className="dp-input"
+              />
+            </div>
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Event Duration
+              </label>
+              <input
+                type="text"
+                value={newEvent.duration}
+                placeholder="e.g. 1pm - 3:30pm"
+                onChange={(e) => handleInputChange(e, null, 'duration')}
+                className="dp-input"
+              />
+            </div>
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                DP Staff Attending
+              </label>
+              <select
+                multiple
+                className="dp-select"
+                onChange={(e) => handleEmployeeSelection(e, null)}
+                value={newEventEmployees || []}
+              >
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+              <div className="dp-form-help">
+                Hold Ctrl/Cmd to select multiple employees
+              </div>
+            </div>
+          </div>
 
-    <div className="dp-form-row">
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Contact Name
-        </label>
-        <input
-          type="text"
-          value={newEvent.contact_name}
-          onChange={(e) => handleInputChange(e, null, 'contact_name')}
-          className="dp-input"
-        />
-      </div>
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Contact Phone
-        </label>
-        <input
-          type="text"
-          value={newEvent.contact_phone}
-          onChange={(e) => handleInputChange(e, null, 'contact_phone')}
-          className="dp-input"
-        />
-      </div>
-      <div className="dp-form-group">
-        <label className="dp-form-label">
-          Expected # of Attendees
-        </label>
-        <input
-          type="number"
-          value={newEvent.expected_attendees}
-          onChange={(e) => handleInputChange(e, null, 'expected_attendees')}
-          className="dp-input"
-        />
-      </div>
-    </div>
+          <div className="dp-form-row">
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Contact Name
+              </label>
+              <input
+                type="text"
+                value={newEvent.contact_name}
+                onChange={(e) => handleInputChange(e, null, 'contact_name')}
+                className="dp-input"
+              />
+            </div>
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Contact Phone
+              </label>
+              <input
+                type="text"
+                value={newEvent.contact_phone}
+                onChange={(e) => handleInputChange(e, null, 'contact_phone')}
+                className="dp-input"
+              />
+            </div>
+            <div className="dp-form-group">
+              <label className="dp-form-label">
+                Expected # of Attendees
+              </label>
+              <input
+                type="number"
+                value={newEvent.expected_attendees}
+                onChange={(e) => handleInputChange(e, null, 'expected_attendees')}
+                className="dp-input"
+              />
+            </div>
+          </div>
 
-    <div className="dp-form-group">
-      <label className="dp-form-label">
-        Type of Event
-      </label>
-      <div className="dp-form-row" style={{ marginBottom: "0.5rem" }}>
-        <div className="dp-checkbox-container">
-          <label className="dp-checkbox-label">
+          <div className="dp-form-group">
+            <label className="dp-form-label">
+              Type of Event
+            </label>
+            <div className="dp-form-row" style={{ marginBottom: "0.5rem" }}>
+              <div className="dp-checkbox-container">
+                <label className="dp-checkbox-label">
+                  <input
+                    type="radio"
+                    name="event_type"
+                    value="tasting"
+                    checked={newEvent.event_type === 'tasting'}
+                    onChange={(e) => handleInputChange(e, null, 'event_type')}
+                    className="dp-checkbox"
+                  />
+                  <span>Tasting</span>
+                </label>
+              </div>
+              <div className="dp-checkbox-container">
+                <label className="dp-checkbox-label">
+                  <input
+                    type="radio"
+                    name="event_type"
+                    value="pint_night"
+                    checked={newEvent.event_type === 'pint_night'}
+                    onChange={(e) => handleInputChange(e, null, 'event_type')}
+                    className="dp-checkbox"
+                  />
+                  <span>Pint Night</span>
+                </label>
+              </div>
+              <div className="dp-checkbox-container">
+                <label className="dp-checkbox-label">
+                  <input
+                    type="radio"
+                    name="event_type"
+                    value="beer_fest"
+                    checked={newEvent.event_type === 'beer_fest'}
+                    onChange={(e) => handleInputChange(e, null, 'event_type')}
+                    className="dp-checkbox"
+                  />
+                  <span>Beer Fest</span>
+                </label>
+              </div>
+              <div className="dp-checkbox-container">
+                <label className="dp-checkbox-label">
+                  <input
+                    type="radio"
+                    name="event_type"
+                    value="other"
+                    checked={newEvent.event_type === 'other'}
+                    onChange={(e) => handleInputChange(e, null, 'event_type')}
+                    className="dp-checkbox"
+                  />
+                  <span>Other</span>
+                </label>
+              </div>
+            </div>
+            {newEvent.event_type === 'other' && (
+              <input
+                type="text"
+                value={newEvent.event_type_other}
+                placeholder="Describe event type"
+                onChange={(e) => handleInputChange(e, null, 'event_type_other')}
+                className="dp-input"
+              />
+            )}
+          </div>
+
+          <div className="dp-form-group">
+            <label className="dp-form-label">
+              Event Instructions
+            </label>
+            <textarea
+              value={newEvent.event_instructions}
+              placeholder="Include any additional notes about the event"
+              onChange={(e) => handleInputChange(e, null, 'event_instructions')}
+              className="dp-textarea"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div className="dp-form-group">
+            <label className="dp-form-label">
+              Off-Premise Event
+            </label>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.off_prem}
+                  onChange={(e) => handleInputChange(e, null, 'off_prem')}
+                  className="dp-checkbox"
+                />
+                <span>Event is held off-premise</span>
+              </label>
+            </div>
+          </div>
+
+          <h4 className="dp-subsection-title">Supplies Needed</h4>
+          <div className="dp-form-row">
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.table_needed}
+                  onChange={(e) => handleSupplyChange(e, null, 'table_needed')}
+                  className="dp-checkbox"
+                />
+                <span>Table</span>
+              </label>
+            </div>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.beer_buckets}
+                  onChange={(e) => handleSupplyChange(e, null, 'beer_buckets')}
+                  className="dp-checkbox"
+                />
+                <span>Beer buckets</span>
+              </label>
+            </div>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.table_cloth}
+                  onChange={(e) => handleSupplyChange(e, null, 'table_cloth')}
+                  className="dp-checkbox"
+                />
+                <span>Table Cloth</span>
+              </label>
+            </div>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.tent_weights}
+                  onChange={(e) => handleSupplyChange(e, null, 'tent_weights')}
+                  className="dp-checkbox"
+                />
+                <span>Tent/Weights</span>
+              </label>
+            </div>
+          </div>
+          <div className="dp-form-row">
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.signage}
+                  onChange={(e) => handleSupplyChange(e, null, 'signage')}
+                  className="dp-checkbox"
+                />
+                <span>Signage</span>
+              </label>
+            </div>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.ice}
+                  onChange={(e) => handleSupplyChange(e, null, 'ice')}
+                  className="dp-checkbox"
+                />
+                <span>Ice</span>
+              </label>
+            </div>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.jockey_box}
+                  onChange={(e) => handleSupplyChange(e, null, 'jockey_box')}
+                  className="dp-checkbox"
+                />
+                <span>Jockey box</span>
+              </label>
+            </div>
+            <div className="dp-checkbox-container">
+              <label className="dp-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newEvent.supplies.cups}
+                  onChange={(e) => handleSupplyChange(e, null, 'cups')}
+                  className="dp-checkbox"
+                />
+                <span>Cups</span>
+              </label>
+            </div>
+          </div>
+          <div className="dp-form-group">
+            <label className="dp-form-label">
+              Additional Supplies
+            </label>
             <input
-              type="radio"
-              name="event_type"
-              value="tasting"
-              checked={newEvent.event_type === 'tasting'}
-              onChange={(e) => handleInputChange(e, null, 'event_type')}
-              className="dp-checkbox"
+              type="text"
+              value={newEvent.supplies.additional_supplies}
+              placeholder="e.g. Stickers, Matchbooks"
+              onChange={(e) => handleSupplyChange(e, null, 'additional_supplies')}
+              className="dp-input"
             />
-            <span>Tasting</span>
-<label>
-          </label>
-<div>
-        </div>
-        <div className="dp-checkbox-container">
-          <label className="dp-checkbox-label">
-            <input
-              type="radio"
-              name="event_type"
-              value="pint_night"
-              checked={newEvent.event_type === 'pint_night'}
-              onChange={(e) => handleInputChange(e, null, 'event_type')}
-              className="dp-checkbox"
-            />
-            <span>Pint Night</span>
-<label>
-          </label>
-<div>
-        </div>
-        <div className="dp-checkbox-container">
-          <label className="dp-checkbox-label">
-            <input
-              type="radio"
-              name="event_type"
-              value="beer_fest"
-              checked={newEvent.event_type === 'beer_fest'}
-              onChange={(e) => handleInputChange(e, null, 'event_type')}
-              className="dp-checkbox"
-            />
-            <span>Beer Fest</span>
-<label>
-          </label>
-<div>
-        </div>
-        <div className="dp-checkbox-container">
-          <label className="dp-checkbox-label">
-            <input
-              type="radio"
-              name="event_type"
-              value="other"
-              checked={newEvent.event_type === 'other'}
-              onChange={(e) => handleInputChange(e, null, 'event_type')}
-              className="dp-checkbox"
-            />
-            <span>Other</span>
-<label>
-          </label>
-<div>
-        </div>
-<div>
-      </div>
-      {newEvent.event_type === 'other' && (
-        <input
-          type="text"
-          value={newEvent.event_type_other}
-          placeholder="Describe event type"
-          onChange={(e) => handleInputChange(e, null, 'event_type_other')}
-          className="dp-input"
-        />
-      )}
-<div>
-    </div>
+          </div>
 
-    <div className="dp-form-group">
-      <label className="dp-form-label">
-        Event Instructions
-      </label>
-      <textarea
-        value={newEvent.event_instructions}
-        placeholder="Include any additional notes about the event"
-        onChange={(e) => handleInputChange(e, null, 'event_instructions')}
-        className="dp-textarea"
-        rows="3"
-      ></textarea>
-<div>
-    </div>
-
-    <div className="dp-form-group">
-      <label className="dp-form-label">
-        Off-Premise Event
-      </label>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.off_prem}
-            onChange={(e) => handleInputChange(e, null, 'off_prem')}
-            className="dp-checkbox"
-          />
-          <span>Event is held off-premise</span>
-<label>
-        </label>
-<div>
-      </div>
-<div>
-    </div>
-
-    <h4 className="dp-subsection-title">Supplies Needed</h4>
-    <div className="dp-form-row">
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.table_needed}
-            onChange={(e) => handleSupplyChange(e, null, 'table_needed')}
-            className="dp-checkbox"
-          />
-          <span>Table</span>
-<label>
-        </label>
-<div>
-      </div>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.beer_buckets}
-            onChange={(e) => handleSupplyChange(e, null, 'beer_buckets')}
-            className="dp-checkbox"
-          />
-          <span>Beer buckets</span>
-<label>
-        </label>
-<div>
-      </div>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.table_cloth}
-            onChange={(e) => handleSupplyChange(e, null, 'table_cloth')}
-            className="dp-checkbox"
-          />
-          <span>Table Cloth</span>
-<label>
-        </label>
-<div>
-      </div>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.tent_weights}
-            onChange={(e) => handleSupplyChange(e, null, 'tent_weights')}
-            className="dp-checkbox"
-          />
-          <span>Tent/Weights</span>
-<label>
-        </label>
-<div>
-      </div>
-<div>
-    </div>
-    <div className="dp-form-row">
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.signage}
-            onChange={(e) => handleSupplyChange(e, null, 'signage')}
-            className="dp-checkbox"
-          />
-          <span>Signage</span>
-<label>
-        </label>
-<div>
-      </div>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.ice}
-            onChange={(e) => handleSupplyChange(e, null, 'ice')}
-            className="dp-checkbox"
-          />
-          <span>Ice</span>
-<label>
-        </label>
-<div>
-      </div>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.jockey_box}
-            onChange={(e) => handleSupplyChange(e, null, 'jockey_box')}
-            className="dp-checkbox"
-          />
-          <span>Jockey box</span>
-<label>
-        </label>
-<div>
-      </div>
-      <div className="dp-checkbox-container">
-        <label className="dp-checkbox-label">
-          <input
-            type="checkbox"
-            checked={newEvent.supplies.cups}
-            onChange={(e) => handleSupplyChange(e, null, 'cups')}
-            className="dp-checkbox"
-          />
-          <span>Cups</span>
-<label>
-        </label>
-<div>
-      </div>
-<div>
-    </div>
-    <div className="dp-form-group">
-      <label className="dp-form-label">
-        Additional Supplies
-      </label>
-      <input
-        type="text"
-        value={newEvent.supplies.additional_supplies}
-        placeholder="e.g. Stickers, Matchbooks"
-        onChange={(e) => handleSupplyChange(e, null, 'additional_supplies')}
-        className="dp-input"
-      />
-    </div>
-
-    <h4 className="dp-subsection-title">Beer Products</h4>
-    {newEvent.beers.map((beer, index) => (
-      <div key={index} className="dp-form-row">
-        <div className="dp-form-group">
-          <label className="dp-form-label">
-            Beer Style
-          </label>
-          <input
-            type="text"
-            
-<select
-  value={beer.beer_style}
-  onChange={(e) => handleBeerChange(e, null, index, 'beer_style')}
-  className="dp-input"
-<div>
-</div>
-  <option value="">Select Beer Style</option>
-  {[
-    "Blanket Bay Lager", "Charlene’s Dream Altbier", "Chiselbraü Golden Ale",
-    "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
-    "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
-    "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
-    "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
-    "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
-    "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
-    "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
-    "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
-  ].map((style, idx) => (
-    <option key={idx} value={style}>{style}</option>
-  ))}
-</select>
-
-<select
-  value={beer.packaging}
-  onChange={(e) => handleBeerChange(e, null, index, 'packaging')}
-  className="dp-input"
-<div>
-</div>
-  <option value="">Select Package Style</option>
-  {[
-    "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
-    "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
-  ].map((pack, idx) => (
-    <option key={idx} value={pack}>{pack}</option>
-  ))}
-</select>
-
-<input
-  type="number"
-  value={beer.quantity}
-  onChange={(e) => handleBeerChange(e, null, index, 'quantity')}
-  className="dp-input"
-  placeholder="e.g. 2"
-/>
-<div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <h4 className="dp-subsection-title">Beer Products</h4>
+          {newEvent.beers.map((beer, index) => (
+            <div key={index} className="dp-form-row">
+              <div className="dp-form-group">
+                <label className="dp-form-label">
+                  Beer Style
+                </label>
+                <select
+                  value={beer.beer_style}
+                  onChange={(e) => handleBeerChange(e, null, index, 'beer_style')}
+                  className="dp-input"
+                >
+                  <option value="">Select Beer Style</option>
+                  {[
+                    "Blanket Bay Lager", "Charlene's Dream Altbier", "Chiselbraü Golden Ale",
+                    "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
+                    "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
+                    "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
+                    "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
+                    "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
+                    "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
+                    "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
+                    "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
+                  ].map((style, idx) => (
+                    <option key={idx} value={style}>{style}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="dp-form-group">
+                <label className="dp-form-label">
+                  Packaging
+                </label>
+                <select
+                  value={beer.packaging}
+                  onChange={(e) => handleBeerChange(e, null, index, 'packaging')}
+                  className="dp-input"
+                >
+                  <option value="">Select Package Style</option>
+                  {[
+                    "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
+                    "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
+                  ].map((pack, idx) => (
+                    <option key={idx} value={pack}>{pack}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="dp-form-group">
+                <label className="dp-form-label">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  value={beer.quantity}
+                  onChange={(e) => handleBeerChange(e, null, index, 'quantity')}
+                  className="dp-input"
+                  placeholder="e.g. 2"
+                />
+              </div>
+              <div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => removeBeer(null, index)}
+                  className="dp-button dp-button-danger dp-button-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
           <button
             type="button"
-            onClick={() => removeBeer(null, index)}
-            className="dp-button dp-button-danger dp-button-sm"
-<div>
-</div>
-            Remove
+            onClick={() => addBeer(null)}
+            className="dp-button dp-button-secondary dp-button-sm mb-4"
+          >
+            Add Beer
           </button>
-        </div>
+          
+          <div className="dp-form-actions">
+            <button
+              type="submit"
+              className="dp-button dp-button-primary"
+            >
+              Add Event
+            </button>
+          </div>
+        </form>
       </div>
-      </div>
-    ))}
-    <button
-      type="button"
-      onClick={() => addBeer(null)}
-      className="dp-button dp-button-secondary dp-button-sm mb-4"
-<div>
-</div>
-      Add Beer
-    </button>
-    
-    <div className="dp-form-actions">
-      <button
-        type="submit"
-        className="dp-button dp-button-primary"
-<div>
-</div>
-        Add Event
-      </button>
-    </div>
-<form>
-  </form>
-<div>
-</div>
 
-<div className="dp-section">
-  <h3 className="dp-subsection-title">Event List</h3>
-  <div className="dp-table-container">
-    <table className="dp-table">
-      <thead>
-        <tr>
-          <th>Event Name</th>
-          <th>Date</th>
-          <th>Duration</th>
-          <th>Staff</th>
-          <th>Location</th>
-          <th>Type</th>
-          <th className="dp-text-center">Actions</th>
-<tr>
-        </tr>
-<thead>
-      </thead>
-      <tbody>
-        {events.length === 0 ? (
-          <tr>
-            <td colSpan="7" className="dp-empty-table">
-              No events found.
-            </td>
-          </tr>
-        ) : (
-          events.map((event) => (
-            <React.Fragment key={event.id}>
-              <tr className="dp-table-row">
-                <td>
-                  <span className="dp-event-title">{event.title}</span>
-<td>
-                </td>
-                <td>
-                  {formatDate(event.date)}
-                </td>
-                <td>
-                  {event.duration || event.time || "Time TBD"}
-                </td>
-                <td>
-                  {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
-                    employees.find(e => e.id === eventAssignments[event.id][0])?.name + 
-                    (eventAssignments[event.id].length > 1 ? ` +${eventAssignments[event.id].length - 1} more` : '')
-                    : "Not assigned"
-                  }
-                </td>
-                <td>
-                  <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>
-                    {event.off_prem ? "Off-premise" : "On-premise"}
-                  </span>
-                </td>
-                <td>
-                  {event.event_type === 'other' ? event.event_type_other : 
-                   event.event_type === 'tasting' ? 'Tasting' :
-                   event.event_type === 'pint_night' ? 'Pint Night' :
-                   event.event_type === 'beer_fest' ? 'Beer Fest' : 'Other'}
-                </td>
-                <td className="dp-text-center">
-                  <div className="dp-button-group">
-                    <button
-                      onClick={() => setOpenEventId(openEventId === event.id ? null : event.id)}
-                      className="dp-button dp-button-secondary dp-button-sm"
-<div>
-</div>
-                      {openEventId === event.id ? "Hide" : "Details"}
-                    </button>
-                    <button
-                      onClick={() => setEditMode(event.id)}
-                      className="dp-button dp-button-primary dp-button-sm"
-<div>
-</div>
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteEvent(event.id)}
-                      className="dp-button dp-button-danger dp-button-sm"
-<div>
-</div>
-                      Delete
-                    </button>
-                  </div>
-                </td>
-<tr>
+      <div className="dp-section">
+        <h3 className="dp-subsection-title">Event List</h3>
+        <div className="dp-table-container">
+          <table className="dp-table">
+            <thead>
+              <tr>
+                <th>Event Name</th>
+                <th>Date</th>
+                <th>Duration</th>
+                <th>Staff</th>
+                <th>Location</th>
+                <th>Type</th>
+                <th className="dp-text-center">Actions</th>
               </tr>
-              
-              {/* Expanded row for event details */}
-              {openEventId === event.id && (
-                <tr className="dp-table-row dp-event-details-row">
-                  <td colSpan="7">
-                    <div className="dp-event-details">
-                      <div className="dp-event-details-section">
-                        <h4>Event Information</h4>
-                        <div className="dp-event-details-grid">
-                          <div>
-                            <strong>Date:</strong> {formatDate(event.date)}
-<div>
-                          </div>
-                          <div>
-                            <strong>Setup Time:</strong> {event.setup_time || "Not specified"}
-<div>
-                          </div>
-                          <div>
-                            <strong>Duration:</strong> {event.duration || event.time || "Not specified"}
-<div>
-                          </div>
-                          <div>
-                            <strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}
-<div>
-                          </div>
-                          <div>
-                            <strong>Staff Attending:</strong> 
-                            {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
-                              eventAssignments[event.id].map(empId => 
-                                employees.find(e => e.id === empId)?.name).filter(Boolean).join(', ')
-                              : "Not assigned"
-                            }
-<div>
-                          </div>
-                          <div>
-                            <strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}
-<div>
-                          </div>
-<div>
-                        </div>
-                        {event.event_instructions && (
-                          <div className="dp-event-details-instructions">
-                            <strong>Instructions:</strong>
-                            <p>{event.event_instructions}</p>
-<div>
-                          </div>
-                        )}
-<div>
-                      </div>
-                      
-                      <div className="dp-event-details-columns">
-                        <div className="dp-event-details-section">
-                          <h4>Supplies</h4>
-                          {event.supplies && Object.keys(event.supplies).length > 0 ? (
-                            <ul className="dp-event-supplies-list">
-                              {event.supplies.table_needed && <li>Table</li>}
-                              {event.supplies.beer_buckets && <li>Beer buckets</li>}
-                              {event.supplies.table_cloth && <li>Table cloth</li>}
-                              {event.supplies.tent_weights && <li>Tent/weights</li>}
-                              {event.supplies.signage && <li>Signage</li>}
-                              {event.supplies.ice && <li>Ice</li>}
-                              {event.supplies.jockey_box && <li>Jockey box</li>}
-                              {event.supplies.cups && <li>Cups</li>}
-                              {event.supplies.additional_supplies && (
-                                <li>Additional: {event.supplies.additional_supplies}</li>
-                              )}
-<ul>
-                            </ul>
-                          ) : (
-                            <p>No supplies specified</p>
-                          )}
-<div>
-                        </div>
-                        
-                        <div className="dp-event-details-section">
-                          <h4>Beer Products</h4>
-                          {event.beers && event.beers.length > 0 ? (
-                            <table className="dp-event-beers-table">
-                              <thead>
-                                <tr>
-                                  <th>Beer Style</th>
-                                  <th>Packaging</th>
-                                  <th>Qty</th>
-<tr>
-                                </tr>
-<thead>
-                              </thead>
-                              <tbody>
-                                {event.beers.map((beer, index) => (
-                                  <tr key={index}>
-                                    <td>{beer.beer_style}</td>
-                                    <td>{beer.packaging}</td>
-                                    <td>{beer.quantity}</td>
-<tr>
-                                  </tr>
-<div>
-      </div>
-    ))}
-<tbody>
-                              </tbody>
-<table>
-                            </table>
-                          ) : (
-                            <p>No beer products specified</p>
-                          )}
-<div>
-                        </div>
-                        
-                        <div className="dp-event-details-section">
-                          <h4>Assigned Employees</h4>
-                          <div className="dp-employee-list">
-                            {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
-                              <ul>
-                                {(eventAssignments[event.id] || []).map(empId => {
-                                  const emp = employees.find(e => e.id === empId);
-                                  return emp ? (
-                                    <li key={empId} className="dp-employee-item">{emp.name}</li>
-                                  ) : null;
-                                })}
-<ul>
-                              </ul>
-                            ) : (
-                              <span className="dp-no-employees">No employees assigned</span>
-                            )}
-<div>
-                          </div>
-<div>
-                        </div>
-<div>
-                      </div>
-                      
-                      <div className="dp-event-actions">
-                        <button
-                          onClick={() => printEventForm(event)}
-                          className="dp-button dp-button-secondary"
-<div>
-</div>
-                        </button>
-                        <button
-                          onClick={() => viewPostEventNotes(event)}
-                          className="dp-button dp-button-secondary"
-<div>
-</div>
-                      <button
-                        onClick={() => generatePDF(event, employees, eventAssignments)}
-                        className="dp-button dp-button-secondary dp-button-sm"
-<div>
-</div>
-                        Download PDF
-                      </button>
-                          Post-Event Notes
-                        </button>
-                      </div>
-<div>
-                    </div>
-<td>
+            </thead>
+            <tbody>
+              {events.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="dp-empty-table">
+                    No events found.
                   </td>
-<tr>
                 </tr>
-              )}
-              
-              {/* Edit form row */}
-              {editMode === event.id && (
-                <tr className="dp-table-row dp-event-edit-row">
-                  <td colSpan="7">
-                    <div className="dp-event-edit-form">
-                      <h4>Edit Event</h4>
-                      <div className="dp-form-row">
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Event Name</label>
-                          <input
-                            type="text"
-                            value={event.title || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'title')}
-                            className="dp-input"
-                          />
-<div>
+              ) : (
+                events.map((event) => (
+                  <React.Fragment key={event.id}>
+                    <tr className="dp-table-row">
+                      <td>
+                        <span className="dp-event-title">{event.title}</span>
+                      </td>
+                      <td>
+                        {formatDate(event.date)}
+                      </td>
+                      <td>
+                        {event.duration || event.time || "Time TBD"}
+                      </td>
+                      <td>
+                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
+                          employees.find(e => e.id === eventAssignments[event.id][0])?.name + 
+                          (eventAssignments[event.id].length > 1 ? ` +${eventAssignments[event.id].length - 1} more` : '')
+                          : "Not assigned"
+                        }
+                      </td>
+                      <td>
+                        <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>
+                          {event.off_prem ? "Off-premise" : "On-premise"}
+                        </span>
+                      </td>
+                      <td>
+                        {event.event_type === 'other' ? event.event_type_other : 
+                        event.event_type === 'tasting' ? 'Tasting' :
+                        event.event_type === 'pint_night' ? 'Pint Night' :
+                        event.event_type === 'beer_fest' ? 'Beer Fest' : 'Other'}
+                      </td>
+                      <td className="dp-text-center">
+                        <div className="dp-button-group">
+                          <button
+                            onClick={() => setOpenEventId(openEventId === event.id ? null : event.id)}
+                            className="dp-button dp-button-secondary dp-button-sm"
+                          >
+                            {openEventId === event.id ? "Hide" : "Details"}
+                          </button>
+                          <button
+                            onClick={() => setEditMode(event.id)}
+                            className="dp-button dp-button-primary dp-button-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteEvent(event.id)}
+                            className="dp-button dp-button-danger dp-button-sm"
+                          >
+                            Delete
+                          </button>
                         </div>
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Date</label>
-                          <input
-                            type="date"
-                            value={event.date || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'date')}
-                            className="dp-input"
-                          />
-<div>
-                        </div>
-<div>
-                      </div>
-
-                      <div className="dp-form-row">
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Setup Time</label>
-                          <input
-                            type="time"
-                            value={event.setup_time || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'setup_time')}
-                            className="dp-input"
-                          />
-<div>
-                        </div>
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Duration</label>
-                          <input
-                            type="text"
-                            value={event.duration || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'duration')}
-                            className="dp-input"
-                          />
-<div>
-                        </div>
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Staff Attending</label>
-                          <select
-                            multiple
-                            className="dp-select"
-                            onChange={(e) => handleEmployeeSelection(e, event.id)}
-                            value={eventAssignments[event.id] || []}
-<div>
-</div>
-                            {employees.map(emp => (
-                              <option key={emp.id} value={emp.id}>
-                                {emp.name}
-                              </option>
-<div>
-      </div>
-    ))}
-                          </select>
-                          <div className="dp-form-help">
-                            Hold Ctrl/Cmd to select multiple employees
+                      </td>
+                    </tr>
+                    
+                    {/* Expanded row for event details */}
+                    {openEventId === event.id && (
+                      <tr className="dp-table-row dp-event-details-row">
+                        <td colSpan="7">
+                          <div className="dp-event-details">
+                            <div className="dp-event-details-section">
+                              <h4>Event Information</h4>
+                              <div className="dp-event-details-grid">
+                                <div>
+                                  <strong>Date:</strong> {formatDate(event.date)}
+                                </div>
+                                <div>
+                                  <strong>Setup Time:</strong> {event.setup_time || "Not specified"}
+                                </div>
+                                <div>
+                                  <strong>Duration:</strong> {event.duration || event.time || "Not specified"}
+                                </div>
+                                <div>
+                                  <strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}
+                                </div>
+                                <div>
+                                  <strong>Staff Attending:</strong> 
+                                  {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
+                                    eventAssignments[event.id].map(empId => 
+                                      employees.find(e => e.id === empId)?.name).filter(Boolean).join(', ')
+                                    : "Not assigned"
+                                  }
+                                </div>
+                                <div>
+                                  <strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}
+                                </div>
+                              </div>
+                              {event.event_instructions && (
+                                <div className="dp-event-details-instructions">
+                                  <strong>Instructions:</strong>
+                                  <p>{event.event_instructions}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="dp-event-details-columns">
+                              <div className="dp-event-details-section">
+                                <h4>Supplies</h4>
+                                {event.supplies && Object.keys(event.supplies).length > 0 ? (
+                                  <ul className="dp-event-supplies-list">
+                                    {event.supplies.table_needed && <li>Table</li>}
+                                    {event.supplies.beer_buckets && <li>Beer buckets</li>}
+                                    {event.supplies.table_cloth && <li>Table cloth</li>}
+                                    {event.supplies.tent_weights && <li>Tent/weights</li>}
+                                    {event.supplies.signage && <li>Signage</li>}
+                                    {event.supplies.ice && <li>Ice</li>}
+                                    {event.supplies.jockey_box && <li>Jockey box</li>}
+                                    {event.supplies.cups && <li>Cups</li>}
+                                    {event.supplies.additional_supplies && (
+                                      <li>Additional: {event.supplies.additional_supplies}</li>
+                                    )}
+                                  </ul>
+                                ) : (
+                                  <p>No supplies specified</p>
+                                )}
+                              </div>
+                              
+                              <div className="dp-event-details-section">
+                                <h4>Beer Products</h4>
+                                {event.beers && event.beers.length > 0 ? (
+                                  <table className="dp-event-beers-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Beer Style</th>
+                                        <th>Packaging</th>
+                                        <th>Qty</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {event.beers.map((beer, index) => (
+                                        <tr key={index}>
+                                          <td>{beer.beer_style}</td>
+                                          <td>{beer.packaging}</td>
+                                          <td>{beer.quantity}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                ) : (
+                                  <p>No beer products specified</p>
+                                )}
+                              </div>
+                              
+                              <div className="dp-event-details-section">
+                                <h4>Assigned Employees</h4>
+                                <div className="dp-employee-list">
+                                  {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
+                                    <ul>
+                                      {(eventAssignments[event.id] || []).map(empId => {
+                                        const emp = employees.find(e => e.id === empId);
+                                        return emp ? (
+                                          <li key={empId} className="dp-employee-item">{emp.name}</li>
+                                        ) : null;
+                                      })}
+                                    </ul>
+                                  ) : (
+                                    <span className="dp-no-employees">No employees assigned</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="dp-event-actions">
+                              <button
+                                onClick={() => printEventForm(event)}
+                                className="dp-button dp-button-secondary"
+                              >
+                                Print Event Form
+                              </button>
+                              <button
+                                onClick={() => generatePDF(event, employees, eventAssignments)}
+                                className="dp-button dp-button-secondary"
+                              >
+                                Download PDF
+                              </button>
+                              <button
+                                onClick={() => viewPostEventNotes(event)}
+                                className="dp-button dp-button-secondary"
+                              >
+                                Post-Event Notes
+                              </button>
+                            </div>
                           </div>
-<div>
-                        </div>
-<div>
-                      </div>
+                        </td>
+                      </tr>
+                    )}
+                    
+                    {/* Edit form row */}
+                    {editMode === event.id && (
+                      <tr className="dp-table-row dp-event-edit-row">
+                        <td colSpan="7">
+                          <div className="dp-event-edit-form">
+                            <h4>Edit Event</h4>
+                            <div className="dp-form-row">
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Event Name</label>
+                                <input
+                                  type="text"
+                                  value={event.title || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'title')}
+                                  className="dp-input"
+                                />
+                              </div>
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Date</label>
+                                <input
+                                  type="date"
+                                  value={event.date || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'date')}
+                                  className="dp-input"
+                                />
+                              </div>
+                            </div>
 
-                      <div className="dp-form-row">
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Contact Name</label>
-                          <input
-                            type="text"
-                            value={event.contact_name || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'contact_name')}
-                            className="dp-input"
-                          />
-<div>
-                        </div>
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Contact Phone</label>
-                          <input
-                            type="text"
-                            value={event.contact_phone || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'contact_phone')}
-                            className="dp-input"
-                          />
-<div>
-                        </div>
-                        <div className="dp-form-group">
-                          <label className="dp-form-label">Expected Attendees</label>
-                          <input
-                            type="number"
-                            value={event.expected_attendees || ''}
-                            onChange={(e) => handleInputChange(e, event.id, 'expected_attendees')}
-                            className="dp-input"
-                          />
-<div>
-                        </div>
-<div>
-                      </div>
+                            <div className="dp-form-row">
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Setup Time</label>
+                                <input
+                                  type="time"
+                                  value={event.setup_time || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'setup_time')}
+                                  className="dp-input"
+                                />
+                              </div>
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Duration</label>
+                                <input
+                                  type="text"
+                                  value={event.duration || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'duration')}
+                                  className="dp-input"
+                                />
+                              </div>
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Staff Attending</label>
+                                <select
+                                  multiple
+                                  className="dp-select"
+                                  onChange={(e) => handleEmployeeSelection(e, event.id)}
+                                  value={eventAssignments[event.id] || []}
+                                >
+                                  {employees.map(emp => (
+                                    <option key={emp.id} value={emp.id}>
+                                      {emp.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="dp-form-help">
+                                  Hold Ctrl/Cmd to select multiple employees
+                                </div>
+                              </div>
+                            </div>
 
-                      <div className="dp-form-group">
-                        <label className="dp-form-label">Type of Event</label>
-                        <div className="dp-form-row" style={{ marginBottom: "0.5rem" }}>
-                          <div className="dp-checkbox-container">
-                            <label className="dp-checkbox-label">
+                            <div className="dp-form-row">
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Contact Name</label>
+                                <input
+                                  type="text"
+                                  value={event.contact_name || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'contact_name')}
+                                  className="dp-input"
+                                />
+                              </div>
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Contact Phone</label>
+                                <input
+                                  type="text"
+                                  value={event.contact_phone || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'contact_phone')}
+                                  className="dp-input"
+                                />
+                              </div>
+                              <div className="dp-form-group">
+                                <label className="dp-form-label">Expected Attendees</label>
+                                <input
+                                  type="number"
+                                  value={event.expected_attendees || ''}
+                                  onChange={(e) => handleInputChange(e, event.id, 'expected_attendees')}
+                                  className="dp-input"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="dp-form-group">
+                              <label className="dp-form-label">Type of Event</label>
+                              <div className="dp-form-row" style={{ marginBottom: "0.5rem" }}>
+                                <div className="dp-checkbox-container">
+                                  <label className="dp-checkbox-label">
+                                    <input
+                                      type="radio"
+                                      name={`event_type_${event.id}`}
+                                      value="tasting"
+                                      checked={event.event_type === 'tasting'}
+                                      onChange={(e) => handleInputChange(e, event.id, 'event_type')}
+                                      className="dp-checkbox"
+                                    />
+                                    <span>Tasting</span>
+                                  </label>
+                                </div>
+                                <div className="dp-checkbox-container">
+                                  <label className="dp-checkbox-label">
+                                    <input
+                                      type="radio"
+                                      name={`event_type_${event.id}`}
+                                      value="pint_night"
+                                      checked={event.event_type === 'pint_night'}
+                                      onChange={(e) => handleInputChange(e, event.id, 'event_type')}
+                                      className="dp-checkbox"
+                                    />
+                                    <span>Pint Night</span>
+                                  </label>
+                                </div>
+                                <div className="dp-checkbox-container">
+                                  <label className="dp-checkbox-label">
+                                    <input
+                                      type="radio"
+                                      name={`event_type_${event.id}`}
+                                      value="beer_fest"
+                                      checked={event.event_type === 'beer_fest'}
+                                      onChange={(e) => handleInputChange(e, event.id, 'event_type')}
+                                      className="dp-checkbox"
+                                    />
+                                    <span>Beer Fest</span>
+                                  </label>
+                                </div>
+                                <div className="dp-checkbox-container">
+                                  <label className="dp-checkbox-label">
+                                    <input
+                                      type="radio"
+                                      name={`event_type_${event.id}`}
+                                      value="other"
+                                      checked={event.event_type === 'other'}
+                                      onChange={(e) => handleInputChange(e, event.id, 'event_type')}
+                                      className="dp-checkbox"
+                                    />
+                                    <span>Other</span>
+                                  </label>
+                                </div>
+                              </div>
+                              {event.event_type === 'other' && (
+                                <input
+                                  type="text"
+                                  value={event.event_type_other || ''}
+                                  placeholder="Describe event type"
+                                  onChange={(e) => handleInputChange(e, event.id, 'event_type_other')}
+                                  className="dp-input"
+                                />
+                              )}
+                            </div>
+
+                            <div className="dp-form-group">
+                              <label className="dp-form-label">Event Instructions</label>
+                              <textarea
+                                value={event.event_instructions || event.info || ''}
+                                onChange={(e) => handleInputChange(e, event.id, 'event_instructions')}
+                                className="dp-textarea"
+                                rows="3"
+                              ></textarea>
+                            </div>
+
+                            <div className="dp-form-group">
+                              <label className="dp-form-label">Off-Premise Event</label>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.off_prem || false}
+                                    onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Event is held off-premise</span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <h4>Supplies Needed</h4>
+                            <div className="dp-form-row">
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.table_needed || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'table_needed')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Table</span>
+                                </label>
+                              </div>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.beer_buckets || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'beer_buckets')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Beer buckets</span>
+                                </label>
+                              </div>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.table_cloth || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'table_cloth')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Table Cloth</span>
+                                </label>
+                              </div>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.tent_weights || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'tent_weights')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Tent/Weights</span>
+                                </label>
+                              </div>
+                            </div>
+                            <div className="dp-form-row">
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.signage || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'signage')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Signage</span>
+                                </label>
+                              </div>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.ice || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'ice')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Ice</span>
+                                </label>
+                              </div>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.jockey_box || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'jockey_box')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Jockey box</span>
+                                </label>
+                              </div>
+                              <div className="dp-checkbox-container">
+                                <label className="dp-checkbox-label">
+                                  <input
+                                    type="checkbox"
+                                    checked={event.supplies?.cups || false}
+                                    onChange={(e) => handleSupplyChange(e, event.id, 'cups')}
+                                    className="dp-checkbox"
+                                  />
+                                  <span>Cups</span>
+                                </label>
+                              </div>
+                            </div>
+                            <div className="dp-form-group">
+                              <label className="dp-form-label">Additional Supplies</label>
                               <input
-                                type="radio"
-                                name={`event_type_${event.id}`}
-                                value="tasting"
-                                checked={event.event_type === 'tasting'}
-                                onChange={(e) => handleInputChange(e, event.id, 'event_type')}
-                                className="dp-checkbox"
+                                type="text"
+                                value={event.supplies?.additional_supplies || ''}
+                                onChange={(e) => handleSupplyChange(e, event.id, 'additional_supplies')}
+                                className="dp-input"
                               />
-                              <span>Tasting</span>
-<label>
-                            </label>
-<div>
-                          </div>
-                          <div className="dp-checkbox-container">
-                            <label className="dp-checkbox-label">
-                              <input
-                                type="radio"
-                                name={`event_type_${event.id}`}
-                                value="pint_night"
-                                checked={event.event_type === 'pint_night'}
-                                onChange={(e) => handleInputChange(e, event.id, 'event_type')}
-                                className="dp-checkbox"
-                              />
-                              <span>Pint Night</span>
-<label>
-                            </label>
-<div>
-                          </div>
-                          <div className="dp-checkbox-container">
-                            <label className="dp-checkbox-label">
-                              <input
-                                type="radio"
-                                name={`event_type_${event.id}`}
-                                value="beer_fest"
-                                checked={event.event_type === 'beer_fest'}
-                                onChange={(e) => handleInputChange(e, event.id, 'event_type')}
-                                className="dp-checkbox"
-                              />
-                              <span>Beer Fest</span>
-<label>
-                            </label>
-<div>
-                          </div>
-                          <div className="dp-checkbox-container">
-                            <label className="dp-checkbox-label">
-                              <input
-                                type="radio"
-                                name={`event_type_${event.id}`}
-                                value="other"
-                                checked={event.event_type === 'other'}
-                                onChange={(e) => handleInputChange(e, event.id, 'event_type')}
-                                className="dp-checkbox"
-                              />
-                              <span>Other</span>
-<label>
-                            </label>
-<div>
-                          </div>
-<div>
-                        </div>
-                        {event.event_type === 'other' && (
-                          <input
-                            type="text"
-                            value={event.event_type_other || ''}
-                            placeholder="Describe event type"
-                            onChange={(e) => handleInputChange(e, event.id, 'event_type_other')}
-                            className="dp-input"
-                          />
-                        )}
-<div>
-                      </div>
+                            </div>
 
-                      <div className="dp-form-group">
-                        <label className="dp-form-label">Event Instructions</label>
-                        <textarea
-                          value={event.event_instructions || event.info || ''}
-                          onChange={(e) => handleInputChange(e, event.id, 'event_instructions')}
-                          className="dp-textarea"
-                          rows="3"
-                        ></textarea>
-<div>
-                      </div>
-
-                      <div className="dp-form-group">
-                        <label className="dp-form-label">Off-Premise Event</label>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.off_prem || false}
-                              onChange={(e) => handleInputChange(e, event.id, 'off_prem')}
-                              className="dp-checkbox"
-                            />
-                            <span>Event is held off-premise</span>
-<label>
-                          </label>
-<div>
-                        </div>
-<div>
-                      </div>
-
-                      <h4>Supplies Needed</h4>
-                      <div className="dp-form-row">
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.table_needed || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'table_needed')}
-                              className="dp-checkbox"
-                            />
-                            <span>Table</span>
-<label>
-                          </label>
-<div>
-                        </div>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.beer_buckets || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'beer_buckets')}
-                              className="dp-checkbox"
-                            />
-                            <span>Beer buckets</span>
-<label>
-                          </label>
-<div>
-                        </div>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.table_cloth || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'table_cloth')}
-                              className="dp-checkbox"
-                            />
-                            <span>Table Cloth</span>
-<label>
-                          </label>
-<div>
-                        </div>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.tent_weights || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'tent_weights')}
-                              className="dp-checkbox"
-                            />
-                            <span>Tent/Weights</span>
-<label>
-                          </label>
-<div>
-                        </div>
-<div>
-                      </div>
-                      <div className="dp-form-row">
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.signage || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'signage')}
-                              className="dp-checkbox"
-                            />
-                            <span>Signage</span>
-<label>
-                          </label>
-<div>
-                        </div>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.ice || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'ice')}
-                              className="dp-checkbox"
-                            />
-                            <span>Ice</span>
-<label>
-                          </label>
-<div>
-                        </div>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.jockey_box || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'jockey_box')}
-                              className="dp-checkbox"
-                            />
-                            <span>Jockey box</span>
-<label>
-                          </label>
-<div>
-                        </div>
-                        <div className="dp-checkbox-container">
-                          <label className="dp-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={event.supplies?.cups || false}
-                              onChange={(e) => handleSupplyChange(e, event.id, 'cups')}
-                              className="dp-checkbox"
-                            />
-                            <span>Cups</span>
-<label>
-                          </label>
-<div>
-                        </div>
-<div>
-                      </div>
-                      <div className="dp-form-group">
-                        <label className="dp-form-label">Additional Supplies</label>
-                        <input
-                          type="text"
-                          value={event.supplies?.additional_supplies || ''}
-                          onChange={(e) => handleSupplyChange(e, event.id, 'additional_supplies')}
-                          className="dp-input"
-                        />
-<div>
-                      </div>
-
-                      <h4>Beer Products</h4>
-                      {event.beers && event.beers.map((beer, index) => (
-                        <div key={index} className="dp-form-row">
-                          <div className="dp-form-group">
-                            <label className="dp-form-label">Beer Style</label>
-                            <input
-                              type="text"
-                              value={beer.beer_style || ''}
-                              onChange={(e) => handleBeerChange(e, event.id, index, 'beer_style')}
-                              className="dp-input"
-                            />
-<div>
-                          </div>
-                          <div className="dp-form-group">
-                            <label className="dp-form-label">Packaging</label>
-                            <input
-                              type="text"
-                              value={beer.packaging || ''}
-                              onChange={(e) => handleBeerChange(e, event.id, index, 'packaging')}
-                              className="dp-input"
-                            />
-<div>
-                          </div>
-                          <div className="dp-form-group">
-                            <label className="dp-form-label">Quantity</label>
-                            <input
-                              type="number"
-                              value={beer.quantity || 1}
-                              onChange={(e) => handleBeerChange(e, event.id, index, 'quantity')}
-                              className="dp-input"
-                              min="1"
-                            />
-<div>
-                          </div>
-<div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                            <h4>Beer Products</h4>
+                            {event.beers && event.beers.map((beer, index) => (
+                              <div key={index} className="dp-form-row">
+                                <div className="dp-form-group">
+                                  <label className="dp-form-label">Beer Style</label>
+                                  <input
+                                    type="text"
+                                    value={beer.beer_style || ''}
+                                    onChange={(e) => handleBeerChange(e, event.id, index, 'beer_style')}
+                                    className="dp-input"
+                                  />
+                                </div>
+                                <div className="dp-form-group">
+                                  <label className="dp-form-label">Packaging</label>
+                                  <input
+                                    type="text"
+                                    value={beer.packaging || ''}
+                                    onChange={(e) => handleBeerChange(e, event.id, index, 'packaging')}
+                                    className="dp-input"
+                                  />
+                                </div>
+                                <div className="dp-form-group">
+                                  <label className="dp-form-label">Quantity</label>
+                                  <input
+                                    type="number"
+                                    value={beer.quantity || 1}
+                                    onChange={(e) => handleBeerChange(e, event.id, index, 'quantity')}
+                                    className="dp-input"
+                                    min="1"
+                                  />
+                                </div>
+                                <div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeBeer(event.id, index)}
+                                    className="dp-button dp-button-danger dp-button-sm"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                             <button
                               type="button"
-                              onClick={() => removeBeer(event.id, index)}
-                              className="dp-button dp-button-danger dp-button-sm"
-<div>
-</div>
-                              Remove
+                              onClick={() => addBeer(event.id)}
+                              className="dp-button dp-button-secondary dp-button-sm mb-4"
+                            >
+                              Add Beer
                             </button>
+
+                            <div className="dp-button-group">
+                              <button
+                                onClick={() => saveEventChanges(event.id)}
+                                className="dp-button dp-button-success"
+                              >
+                                Save Changes
+                              </button>
+                              <button
+                                onClick={() => setEditMode(null)}
+                                className="dp-button dp-button-secondary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-<div>
-                        </div>
-<div>
-      </div>
-    ))}
-                      <button
-                        type="button"
-                        onClick={() => addBeer(event.id)}
-                        className="dp-button dp-button-secondary dp-button-sm mb-4"
-<div>
-</div>
-                        Add Beer
-                      </button>
-
-                      <div className="dp-button-group">
-                        <button
-                          onClick={() => saveEventChanges(event.id)}
-                          className="dp-button dp-button-success"
-<div>
-</div>
-                          Save Changes
-                        </button>
-                        <button
-                          onClick={() => setEditMode(null)}
-                          className="dp-button dp-button-secondary"
-<div>
-</div>
-                          Cancel
-                        </button>
-                      </div>
-<div>
-                    </div>
-<td>
-                  </td>
-<tr>
-                </tr>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))
               )}
-<React>
-            </React.Fragment>
-          ))
-        )}
-<tbody>
-      </tbody>
-<table>
-    </table>
-<div>
-  </div>
-<div>
-</div>
-{showPrintForm && selectedEvent && (
-  <div className="modal-backdrop">
-    <div className="modal">
-      <PrintableEventForm
-        event={selectedEvent}
-        employees={employees}
-        eventAssignments={eventAssignments}
-        onClose={() => setShowPrintForm(false)}
-      />
-<div>
-    </div>
-<div>
-  </div>
-)}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-{showPostNotes && selectedEvent && (
-  <div className="modal-backdrop">
-    <div className="modal">
-      <PostEventNotesModal
-        event={selectedEvent}
-        onClose={() => setShowPostNotes(false)}
-        onSave={savePostEventNotes}
-      />
-<div>
-    </div>
-<div>
-  </div>
-)}
-<div>
+      {showPrintForm && selectedEvent && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <PrintableEventForm
+              event={selectedEvent}
+              employees={employees}
+              eventAssignments={eventAssignments}
+              onClose={() => setShowPrintForm(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {showPostNotes && selectedEvent && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <PostEventNotesModal
+              event={selectedEvent}
+              onClose={() => setShowPostNotes(false)}
+              onSave={savePostEventNotes}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1870,359 +1727,22 @@ const AdminEvents = () => {
 const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => {
   if (!event) return null;
 
-  const generateBlankTemplate = async () => {
-    try {
-      console.log("Generating blank DPBC EVENT FORM template...");
-      
-      // Load jsPDF
-      const { default: jsPDF } = await import('jspdf');
-      
-      // Create the PDF document with letter size
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'letter'
-      });
-      
-      // Page dimensions
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      
-      // Add logo
-      try {
-        // Base64 encoded logo (Devil's Purse logo)
-        // This ensures the logo is embedded in the PDF without external dependencies
-        const logo = new Image();
-        logo.src = '/logo.png';
-        
-        logo.onload = () => {
-          try {
-            // Logo dimensions and positioning
-            const logoWidth = 80;
-            const logoHeight = 90;
-            const logoX = (pageWidth - logoWidth) / 2;
-            const logoY = 50;
-            
-            // Add logo to PDF
-            doc.addImage(logo, 'PNG', logoX, logoY, logoWidth, logoHeight);
-            
-            // Continue with the rest of the form after logo loads
-            createForm(doc, pageWidth, pageHeight);
-            
-            // Save the PDF
-            doc.save('DPBC_EVENT_FORM_Template.pdf');
-            console.log("Blank template generated successfully!");
-          } catch (error) {
-            console.error("Error adding logo:", error);
-            
-            // If logo fails, still create the form
-            createForm(doc, pageWidth, pageHeight);
-            doc.save('DPBC_EVENT_FORM_Template.pdf');
-          }
-        };
-        
-        logo.onerror = () => {
-          console.error("Error loading logo - proceeding without it");
-          createForm(doc, pageWidth, pageHeight);
-          doc.save('DPBC_EVENT_FORM_Template.pdf');
-        };
-      } catch (error) {
-        console.error("Error with logo:", error);
-        createForm(doc, pageWidth, pageHeight);
-        doc.save('DPBC_EVENT_FORM_Template.pdf');
-      }
-      
-      // Function to create the form (separate from logo loading)
-      function createForm(doc, pageWidth, pageHeight) {
-        // Set initial y position (after logo)
-        let y = 160;
-        
-        // Add title bar
-        doc.setFillColor(192, 192, 192);
-        doc.rect(0, y, pageWidth, 25, 'F');
-        
-        // Add title text
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DPBC TASTING + EVENT FORM', pageWidth / 2, y + 17, { align: 'center' });
-        
-        y += 40;
-        
-        // Basic information section
-        const labelWidth = 120;
-        const fieldX = 140;
-        const fieldWidth = 400;
-        const fieldHeight = 25;
-        const rowSpacing = 30;
-        
-        // Event Name
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text('Event Name :', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // Event Date
-        doc.text('Event Date:', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // Event Set Up Time
-        doc.text('Event Set Up Time:', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // Event Duration
-        doc.text('Event Duration:', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // DP Staff Attending
-        doc.text('DP Staff Attending:', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // Event Contact(Name, Phone)
-        doc.text('Event Contact(Name, Phone):', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // Expected # of Attendees
-        doc.text('Expected # of Attendees:', fieldX - 5, y, { align: 'right' });
-        doc.rect(fieldX, y - 15, fieldWidth, fieldHeight, 'S');
-        
-        y += rowSpacing;
-        
-        // Type of Event header
-        doc.text('Type of Event', 80, y + 15);
-        
-        y += 30;
-        
-        // Event type checkboxes
-        const checkSize = 12;
-        const colWidth = 150;
-        
-        // First row
-        doc.rect(100, y, checkSize, checkSize, 'S'); // Tasting checkbox
-        doc.text('Tasting:', 120, y + 10);
-        
-        doc.rect(250, y, checkSize, checkSize, 'S'); // Pint Night checkbox
-        doc.text('Pint Night:', 270, y + 10);
-        
-        y += 25;
-        
-        // Second row
-        doc.rect(100, y, checkSize, checkSize, 'S'); // Beer Fest checkbox
-        doc.text('Beer Fest :', 120, y + 10);
-        
-        doc.rect(250, y, checkSize, checkSize, 'S'); // Other checkbox
-        doc.text('Other :', 270, y + 10);
-        
-        // Line for Other description
-        doc.rect(320, y + 5, 220, 1, 'F');
-        
-        y += 35;
-        
-        // SUPPLIES NEEDED section
-        doc.setFillColor(192, 192, 192);
-        doc.rect(0, y, pageWidth, 25, 'F');
-        
-        doc.setFont('helvetica', 'bold');
-        doc.text('SUPPLIES NEEDED', pageWidth / 2, y + 17, { align: 'center' });
-        
-        y += 40;
-        
-        // Beer and supplies table
-        // Table settings
-        const tableX = 80;
-        const tableWidth = 480;
-        const colWidths = [180, 80, 60, 160];
-        
-        // Draw table header
-        doc.rect(tableX, y, colWidths[0] + colWidths[1] + colWidths[2], 25, 'S');
-        doc.rect(tableX + colWidths[0] + colWidths[1] + colWidths[2], y, colWidths[3], 25, 'S');
-        
-        // Draw header vertical lines
-        doc.line(tableX + colWidths[0], y, tableX + colWidths[0], y + 25);
-        doc.line(tableX + colWidths[0] + colWidths[1], y, tableX + colWidths[0] + colWidths[1], y + 25);
-        
-        // Header text
-        doc.text('Beer Style', tableX + 10, y + 17);
-        doc.text('Pkg', tableX + colWidths[0] + 10, y + 17);
-        doc.text('Qty', tableX + colWidths[0] + colWidths[1] + 10, y + 17);
-        
-        // Supply checkboxes in header
-        const checkX = tableX + colWidths[0] + colWidths[1] + colWidths[2] + 10;
-        
-        doc.text('Table:', checkX, y + 10);
-        doc.rect(checkX + 40, y + 2, checkSize, checkSize, 'S');
-        
-        doc.text('Beer buckets:', checkX, y + 20);
-        doc.rect(checkX + 80, y + 12, checkSize, checkSize, 'S');
-        
-        y += 25;
-        
-        // Beer rows - draw 4 empty rows
-        const rowHeight = 30;
-        
-        // Draw beer table body borders
-        doc.rect(tableX, y, colWidths[0] + colWidths[1] + colWidths[2], rowHeight * 4, 'S');
-        
-        // Draw vertical lines
-        doc.line(tableX + colWidths[0], y, tableX + colWidths[0], y + rowHeight * 4);
-        doc.line(tableX + colWidths[0] + colWidths[1], y, tableX + colWidths[0] + colWidths[1], y + rowHeight * 4);
-        
-        // Draw horizontal lines to create rows
-        doc.line(tableX, y + rowHeight, tableX + colWidths[0] + colWidths[1] + colWidths[2], y + rowHeight);
-        doc.line(tableX, y + rowHeight * 2, tableX + colWidths[0] + colWidths[1] + colWidths[2], y + rowHeight * 2);
-        doc.line(tableX, y + rowHeight * 3, tableX + colWidths[0] + colWidths[1] + colWidths[2], y + rowHeight * 3);
-        
-        // Draw supplies column
-        doc.rect(tableX + colWidths[0] + colWidths[1] + colWidths[2], y, colWidths[3], rowHeight * 4, 'S');
-        
-        // Other supplies checkboxes
-        const supY = y + 15;
-        
-        // Left column
-        doc.text('Table Cloth:', checkX, supY);
-        doc.rect(checkX + 70, supY - 8, checkSize, checkSize, 'S');
-        
-        doc.text('Tent/Weights:', checkX, supY + rowHeight);
-        doc.rect(checkX + 70, supY + rowHeight - 8, checkSize, checkSize, 'S');
-        
-        doc.text('Signage:', checkX, supY + rowHeight * 2);
-        doc.rect(checkX + 70, supY + rowHeight * 2 - 8, checkSize, checkSize, 'S');
-        
-        doc.text('Ice:', checkX, supY + rowHeight * 3);
-        doc.rect(checkX + 70, supY + rowHeight * 3 - 8, checkSize, checkSize, 'S');
-        
-        // Right column
-        const checkX2 = checkX + 150;
-        
-        doc.text('Jockey box:', checkX2, supY);
-        doc.rect(checkX2 + 65, supY - 8, checkSize, checkSize, 'S');
-        
-        // Jockey box note
-        doc.setFontSize(7);
-        doc.text('(jockey box supplies include CO2, purge bucket, water keg, ice, toolkit)', checkX, supY + 15);
-        
-        doc.setFontSize(10);
-        doc.text('Cups:', checkX2, supY + rowHeight);
-        doc.rect(checkX2 + 65, supY + rowHeight - 8, checkSize, checkSize, 'S');
-        
-        // Update y position
-        y += rowHeight * 4 + 20;
-        
-        // Additional Supplies
-        doc.setFont('helvetica', 'bold');
-        doc.text('Additional Supplies:', 80, y);
-        doc.setFont('helvetica', 'normal');
-        
-        // Draw box for additional supplies
-        doc.rect(tableX, y - 15, tableWidth, 40, 'S');
-        
-        // Small note text
-        doc.setFontSize(7);
-        doc.text('(Stickers, Koozies, Hats, Dog toy)', 80, y + 10);
-        
-        y += 40;
-        
-        // Event Instructions
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Event Instructions:', 80, y);
-        
-        // Draw box for instructions
-        doc.rect(tableX, y - 15, tableWidth, 60, 'S');
-        
-        // Small note text
-        doc.setFontSize(7);
-        doc.text('(include additional notes here)', 80, y + 20);
-        
-        y += 60;
-        
-        // POST EVENT NOTES section
-        doc.setFontSize(10);
-        doc.setFillColor(192, 192, 192);
-        doc.rect(0, y, pageWidth, 25, 'F');
-        
-        doc.setFont('helvetica', 'bold');
-        doc.text('POST EVENT NOTES', pageWidth / 2, y + 17, { align: 'center' });
-        
-        y += 40;
-        
-        // Post event notes fields
-        const noteFields = [
-          'Estimated attendees:',
-          'Was there a favorite style of beer offered?',
-          'Did you have enough product?',
-          'Were you adequately staffed for the event/tasting?',
-          'Should we continue to participate in this event?',
-          'Any critiques?'
-        ];
-        
-        const fieldY = y;
-        const lineSpacing = 25;
-        
-        noteFields.forEach((field, index) => {
-          const currentY = fieldY + (index * lineSpacing);
-          
-          // Field label
-          doc.setFont('helvetica', 'bold');
-          doc.text(field, 80, currentY);
-          
-          // Empty answer field with underline
-          const underlineX = 350;
-          const underlineWidth = 210;
-          doc.setDrawColor(120, 120, 120);
-          
-          // For Any critiques field, draw a box instead of a line
-          if (index === noteFields.length - 1) {
-            doc.rect(underlineX, currentY - 60, underlineWidth, 70, 'S');
-          } else {
-            doc.line(underlineX, currentY + 5, underlineX + underlineWidth, currentY + 5);
-          }
-        });
-        
-        // Update y position to after the notes
-        y += 25 * (noteFields.length - 1) + 60;
-        
-        // REMINDER section
-        doc.setFillColor(240, 240, 240);
-        doc.rect(80, y, tableWidth, 20, 'F');
-        
-        doc.setTextColor(255, 0, 0); // Red text
-        doc.setFont('helvetica', 'bold');
-        doc.text('REMINDER: RETURN SUPPLIES TO THE BREWERY IN THEIR DESIGNATED AREAS', pageWidth / 2, y + 13, { align: 'center' });
-        
-        y += 30;
-        
-        // Return equipment by
-        doc.setTextColor(0, 0, 0); // Black text
-        doc.text('RETURN EQUIPMENT BY:', 80, y);
-        
-        // Underline for date
-        doc.line(250, y + 5, 450, y + 5);
-      }
-    } catch (error) {
-      console.error("Error generating blank template:", error);
-    }
-  };
+  // Get assigned employees
+  const assignedEmployees = (eventAssignments[event.id] || []).map(empId => {
+    return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
+  });
 
   return (
     <div className="dp-section">
       <h3 className="dp-subsection-title">Event Form PDF</h3>
-      <p>Click the button below to download a blank DPBC Event Form template:</p>
+      <p>Click the button below to download a PDF version of this event form:</p>
       
       <div className="dp-button-group">
-        <button onClick={generateBlankTemplate} className="dp-button dp-button-primary">
+        <button 
+          onClick={() => generatePDF(event, employees, eventAssignments)} 
+          className="dp-button dp-button-primary"
+        >
+          Download PDF Form
         </button>
         <button onClick={onClose} className="dp-button dp-button-secondary">
           Close
@@ -2231,10 +1751,9 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
       
       <div className="dp-form-group">
         <p className="dp-note">
-          Note: This will generate a blank form that exactly matches the approved DPBC Event Form template.
+          Note: This will generate a PDF that matches the approved DPBC Event Form template.
         </p>
       </div>
-<div>
     </div>
   );
 };
@@ -2266,13 +1785,6 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
 
   return (
     <div className="dp-post-notes-modal">
-                      <button
-                        onClick={() => generatePDF(event, employees, eventAssignments)}
-                        className="dp-button dp-button-secondary dp-button-sm"
-<div>
-</div>
-                        Download PDF
-                      </button>
       <h2>Post-Event Notes: {event.title}</h2>
       <form onSubmit={handleSubmit}>
         <div className="dp-form-group">
@@ -2284,7 +1796,6 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             onChange={handleInputChange}
             className="dp-input"
           />
-<div>
         </div>
         
         <div className="dp-form-group">
@@ -2296,7 +1807,6 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             onChange={handleInputChange}
             className="dp-input"
           />
-<div>
         </div>
         
         <div className="dp-form-group">
@@ -2309,9 +1819,7 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
               className="dp-checkbox"
             />
             <span>Had Enough Product</span>
-<label>
           </label>
-<div>
         </div>
         
         <div className="dp-form-group">
@@ -2324,9 +1832,7 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
               className="dp-checkbox"
             />
             <span>Adequately Staffed</span>
-<label>
           </label>
-<div>
         </div>
         
         <div className="dp-form-group">
@@ -2339,9 +1845,7 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
               className="dp-checkbox"
             />
             <span>Continue Participation in Future</span>
-<label>
           </label>
-<div>
         </div>
         
         <div className="dp-form-group">
@@ -2353,7 +1857,6 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             className="dp-textarea"
             rows="3"
           ></textarea>
-<div>
         </div>
         
         <div className="dp-form-group">
@@ -2365,263 +1868,15 @@ const PostEventNotesModal = ({ event, onClose, onSave }) => {
             onChange={handleInputChange}
             className="dp-input"
           />
-<div>
         </div>
         
         <div className="dp-button-group">
           <button type="submit" className="dp-button dp-button-success">Save Notes</button>
           <button type="button" onClick={onClose} className="dp-button dp-button-secondary">Cancel</button>
-<div>
         </div>
-<form>
       </form>
-<div>
     </div>
   );
 };
 
-<div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
-          <button
-            type="button"
-            className="dp-button"
-            onClick={() => generateFDF(newEvent)}
-<div>
-</div>
-            Download PDF
-          </button>
-        </div>
-
-export default AdminEvents;</button>
-</button>
-</div>
-</label>
-</div>
-</textarea>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</label>
-</div>
-</label>
-</div>
-</form>
-</h2>
-</div>
-</p>
-</h3>
-</div>
-</PostEventNotesModal>
-</div>
-</div>
-</PrintableEventForm>
-</div>
-</div>
-</label>
-</div>
-</label>
-</div>
-</label>
-</div>
-</div>
-</h4>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</div>
-</h4>
-</span>
-</label>
-</div>
-</label>
-</div>
-</textarea>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</div>
-</label>
-</div>
-</label>
-</div>
-</label>
-</div>
-</label>
-</div>
-</div>
-</label>
-</div>
-</label>
-</div>
-</label>
-</div>
-</div>
-</label>
-</div>
-</label>
-</div>
-</div>
-</h4>
-</div>
-</td>
-</tr>
-</span>
-</li>
-</ul>
-</div>
-</h4>
-</div>
-</p>
-</td>
-</td>
-</td>
-</tr>
-</tbody>
-</th>
-</th>
-</th>
-</tr>
-</thead>
-</table>
-</h4>
-</div>
-</p>
-</li>
-</ul>
-</h4>
-</div>
-</div>
-</p>
-</strong>
-</div>
-</strong>
-</div>
-</strong>
-</div>
-</strong>
-</div>
-</strong>
-</div>
-</strong>
-</div>
-</strong>
-</div>
-</div>
-</h4>
-</div>
-</div>
-</td>
-</tr>
-</span>
-</td>
-</tr>
-</React>
-</tbody>
-</th>
-</th>
-</th>
-</th>
-</th>
-</th>
-</th>
-</tr>
-</thead>
-</table>
-</div>
-</h3>
-</div>
-</h4>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</div>
-</h4>
-</span>
-</label>
-</div>
-</div>
-</textarea>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</span>
-</label>
-</div>
-</div>
-</div>
-</form>
-</h3>
-</div>
-</h2>
-</div>
+export default AdminEvents;
