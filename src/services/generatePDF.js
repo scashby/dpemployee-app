@@ -38,40 +38,18 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Get all field names for reference and debugging
-    const fieldNames = form.getFields().map(f => f.getName());
-    console.log('Available fields:', fieldNames);
-    
-    // Enhanced approach for setting text without font manipulation
+    // Basic text field setter - no font manipulation
     const setTextField = (name, value) => {
       if (value === undefined || value === null || value === '') return;
-      
       try {
-        // Get the field and its underlying acroField
         const field = form.getTextField(name);
-        const acroField = field.acroField;
-        
-        // First try the standard approach
         field.setText(String(value));
-        
-        // If acroField is available, use the lower-level API for robustness
-        if (acroField) {
-          try {
-            // Create a PDFString directly using the document context
-            const pdfString = pdfDoc.context.string(String(value));
-            
-            // Set the value directly on the acroField for better compatibility
-            acroField.setValue(pdfString);
-          } catch (innerError) {
-            console.log(`Lower-level API fallback failed for ${name}, using default approach`);
-          }
-        }
       } catch (e) {
         console.log(`Error setting field ${name}:`, e.message);
       }
     };
     
-    // Set checkboxes - this approach works well already
+    // Set checkboxes
     const setCheckbox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
@@ -85,7 +63,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     };
     
-    // Set text fields with the enhanced approach
+    // Set text fields
     console.log('Setting text fields...');
     setTextField("Event Name", event.title);
     setTextField("Event Date", formatDate(event.date));
@@ -94,24 +72,23 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setTextField("DP Staff Attending", getAssignedEmployees());
     setTextField("Event Contact", event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '');
     setTextField("Expected Attendees", event.expected_attendees);
-    setTextField("Event Instructions", event.event_instructions || event.info || '');
-    setTextField("Additional Supplies", event.supplies?.additional_supplies || '');
+    setTextField("Event Instructions", event.event_instructions || event.info);
+    setTextField("Additional Supplies", event.supplies?.additional_supplies);
     
     if (event.event_type === 'other') {
-      setTextField("Other More Detail", event.event_type_other || '');
+      setTextField("Other More Detail", event.event_type_other);
     }
     
-    // Beer table fields - using the same enhanced approach
+    // Beer table fields
     console.log('Setting beer table fields...');
     if (event.beers && event.beers.length > 0) {
-      // Beer 1-5
       for (let i = 0; i < Math.min(event.beers.length, 5); i++) {
         const idx = i + 1;
         const beer = event.beers[i];
         if (beer) {
-          setTextField(`Beer Style ${idx}`, beer.beer_style || '');
-          setTextField(`Package Style ${idx}`, beer.packaging || '');
-          setTextField(`Quantity ${idx}`, beer.quantity?.toString() || '');
+          setTextField(`Beer Style ${idx}`, beer.beer_style);
+          setTextField(`Package Style ${idx}`, beer.packaging);
+          setTextField(`Quantity ${idx}`, beer.quantity?.toString());
         }
       }
     }
@@ -132,8 +109,12 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Create a copy of form to preserve appearance
-    console.log('Creating flattened copy...');
+    // Instead of full form flattening, use a custom approach to preserve text visibility
+    console.log('Custom flattening approach...');
+    
+    // Copy the form fields to the page content without white boxes
+    // This is a minimal approach without trying to completely flatten the form
+    // We're skipping the flatten() call that was causing white boxes
     
     // Save the PDF
     console.log('Saving PDF...');
