@@ -38,19 +38,12 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Get all form fields and log their names for debugging
+    // Log all field names to help with debugging
     const fields = form.getFields();
     const fieldNames = fields.map(f => f.getName());
     console.log('Available fields:', fieldNames);
     
-    // From the FDF file, we know the exact checkbox field names
-    const knownCheckboxes = [
-      "Beer Buckets", "Beer Fest", "Cups", "Ice", "Jockey Box", 
-      "Other", "Pint Night", "Signage", "Table", "Table Cloth", 
-      "Tasting", "Tent Weights"
-    ];
-    
-    // SET CHECKBOXES - This part works correctly
+    // Step 1: Set the checkboxes (this part works fine)
     console.log('Setting checkboxes...');
     const checkboxMappings = [
       { name: "Tasting", checked: event.event_type === 'tasting' },
@@ -68,7 +61,7 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     ];
     
     checkboxMappings.forEach(mapping => {
-      if (knownCheckboxes.includes(mapping.name)) {
+      if (fieldNames.includes(mapping.name)) {
         try {
           const checkbox = form.getCheckBox(mapping.name);
           if (mapping.checked) {
@@ -82,251 +75,202 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
       }
     });
     
-    // SPECIFICALLY TARGET PROBLEMATIC TEXT FIELDS
+    // Step 2: Map all text fields we want to set
     console.log('Setting text fields...');
     
-    // 1. Event Name - this field seems to work fine
-    const eventNameField = fieldNames.find(name => 
-      name === "Event Name :" || name === "Event Name"
-    );
-    if (eventNameField) {
-      try {
-        form.getTextField(eventNameField).setText(event.title || '');
-        console.log(`Set ${eventNameField} to ${event.title}`);
-      } catch (e) {
-        console.warn(`Could not set Event Name: ${e.message}`);
+    // Map all known text fields to values
+    const textFieldMappings = [
+      { name: "Event Name", value: event.title || '' },
+      { name: "Event Date", value: formatDate(event.date) },
+      { name: "Event Set Up Time", value: formatTime(event.setup_time) },
+      { name: "Event Duration", value: event.duration || '' },
+      { name: "DP Staff Attending", value: getAssignedEmployees() },
+      { name: "Event Contact", value: event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '' },
+      { name: "Expected Attendees", value: event.expected_attendees?.toString() || '' },
+      { name: "Other More Detail", value: event.event_type === 'other' ? event.event_type_other || '' : '' },
+      { name: "Additional Supplies", value: event.supplies?.additional_supplies || '' },
+      { name: "Event Instructions", value: event.event_instructions || event.info || '' }
+    ];
+    
+    // Special handling for beer fields - these are problematic
+    const beerFieldMappings = [];
+    
+    if (event.beers && event.beers.length > 0) {
+      // Beer Style 1
+      beerFieldMappings.push({ 
+        name: "Beer Style 1", 
+        value: event.beers[0]?.beer_style || '' 
+      });
+      
+      // Package Style 1 - problematic
+      beerFieldMappings.push({ 
+        name: "Package Style 1", 
+        value: event.beers[0]?.packaging || '' 
+      });
+      
+      // Quantity 1
+      beerFieldMappings.push({ 
+        name: "Quantity 1", 
+        value: event.beers[0]?.quantity?.toString() || '' 
+      });
+      
+      if (event.beers.length > 1) {
+        // Beer Style 2 - problematic
+        beerFieldMappings.push({ 
+          name: "Beer Style 2", 
+          value: event.beers[1]?.beer_style || '' 
+        });
+        
+        // Package Style 2 - problematic
+        beerFieldMappings.push({ 
+          name: "Package Style 2", 
+          value: event.beers[1]?.packaging || '' 
+        });
+        
+        // Quantity 2
+        beerFieldMappings.push({ 
+          name: "Quantity 2", 
+          value: event.beers[1]?.quantity?.toString() || '' 
+        });
       }
     }
     
-    // 2. Event Date
-    const eventDateField = fieldNames.find(name => 
-      name === "Event Date:" || name === "Event Date"
-    );
-    if (eventDateField) {
+    // Set regular text fields
+    for (const mapping of textFieldMappings) {
       try {
-        form.getTextField(eventDateField).setText(formatDate(event.date));
-        console.log(`Set ${eventDateField} to ${formatDate(event.date)}`);
+        // Try to find the field with exact name or with colon
+        let fieldName = mapping.name;
+        
+        if (!fieldNames.includes(fieldName) && fieldNames.includes(`${fieldName}:`)) {
+          fieldName = `${fieldName}:`;
+        }
+        
+        if (!fieldNames.includes(fieldName)) {
+          // Try to find a field that contains this name
+          fieldName = fieldNames.find(name => 
+            name.toLowerCase().includes(mapping.name.toLowerCase())
+          );
+        }
+        
+        if (fieldName && fieldNames.includes(fieldName)) {
+          const field = form.getTextField(fieldName);
+          field.setText(mapping.value);
+          console.log(`Set ${fieldName} to ${mapping.value}`);
+        }
       } catch (e) {
-        console.warn(`Could not set Event Date: ${e.message}`);
+        console.warn(`Could not set "${mapping.name}":`, e.message);
       }
     }
     
-    // 3. Event Set Up Time
-    const setupTimeField = fieldNames.find(name => 
-      name === "Event Set Up Time:" || name === "Event Set Up Time"
-    );
-    if (setupTimeField) {
-      try {
-        form.getTextField(setupTimeField).setText(formatTime(event.setup_time));
-        console.log(`Set ${setupTimeField} to ${formatTime(event.setup_time)}`);
-      } catch (e) {
-        console.warn(`Could not set Setup Time: ${e.message}`);
-      }
-    }
+    // Special handling for beer fields - let's try a different approach for these
+    console.log('Setting beer fields...');
     
-    // 4. Event Duration
-    const durationField = fieldNames.find(name => 
-      name === "Event Duration:" || name === "Event Duration"
+    // Get all fields related to beer products
+    const beerStyleFields = fieldNames.filter(name => 
+      name.includes('Beer Style') || name.includes('BeerStyle')
     );
-    if (durationField) {
-      try {
-        form.getTextField(durationField).setText(event.duration || '');
-        console.log(`Set ${durationField} to ${event.duration}`);
-      } catch (e) {
-        console.warn(`Could not set Duration: ${e.message}`);
-      }
-    }
     
-    // 5. DP Staff Attending
-    const staffField = fieldNames.find(name => 
-      name === "DP Staff Attending:" || name === "DP Staff Attending"
+    const packageFields = fieldNames.filter(name => 
+      name.includes('Package') || name.includes('Pkg')
     );
-    if (staffField) {
-      try {
-        form.getTextField(staffField).setText(getAssignedEmployees());
-        console.log(`Set ${staffField} to ${getAssignedEmployees()}`);
-      } catch (e) {
-        console.warn(`Could not set Staff Attending: ${e.message}`);
-      }
-    }
     
-    // 6. EXPLICITLY FIX: Event Contact
-    const contactField = fieldNames.find(name => 
-      name === "Event Contact(Name, Phone):" || 
-      name === "Event Contact" ||
-      name.includes("Contact")
+    const quantityFields = fieldNames.filter(name => 
+      name.includes('Quantity') || name.includes('Qty')
     );
-    if (contactField) {
-      try {
-        const contactText = event.contact_name ? 
-          `${event.contact_name} ${event.contact_phone || ''}` : '';
-        form.getTextField(contactField).setText(contactText);
-        console.log(`Set ${contactField} to ${contactText}`);
-      } catch (e) {
-        console.warn(`Could not set Contact: ${e.message}`);
-      }
-    } else {
-      console.warn("Contact field not found in any variation!");
-    }
     
-    // 7. EXPLICITLY FIX: Expected Attendees
-    const attendeesField = fieldNames.find(name => 
-      name === "Expected # of Attendees:" || 
-      name === "Expected # of Attendees" ||
-      name.includes("Expected") ||
-      name.includes("Attendees")
-    );
-    if (attendeesField) {
+    console.log('Found beer style fields:', beerStyleFields);
+    console.log('Found package fields:', packageFields);
+    console.log('Found quantity fields:', quantityFields);
+    
+    // Set beer fields using the actual field names found in the PDF
+    for (const mapping of beerFieldMappings) {
       try {
-        form.getTextField(attendeesField).setText(event.expected_attendees?.toString() || '');
-        console.log(`Set ${attendeesField} to ${event.expected_attendees}`);
-      } catch (e) {
-        console.warn(`Could not set Expected Attendees: ${e.message}`);
-      }
-    } else {
-      // Try all field names as a last resort
-      console.warn("Expected Attendees field not found by name, trying all text fields...");
-      for (const field of fields) {
-        try {
-          if (field.constructor.name === 'PDFTextField' && field.getText() === '') {
-            if (field.getName().toLowerCase().includes('expected') || field.getName().toLowerCase().includes('attend')) {
-              field.setText(event.expected_attendees?.toString() || '');
-              console.log(`Set attendees using field ${field.getName()}`);
-              break;
-            }
+        // For beer style fields
+        if (mapping.name.includes('Beer Style')) {
+          const number = mapping.name.match(/\d+/)[0];
+          const styleField = beerStyleFields.find(name => name.includes(number));
+          
+          if (styleField) {
+            const field = form.getTextField(styleField);
+            field.setText(mapping.value);
+            console.log(`Set ${styleField} to ${mapping.value}`);
           }
-        } catch (e) {
-          // Ignore errors
         }
-      }
-    }
-    
-    // 8. Other Text for event type
-    if (event.event_type === 'other' && event.event_type_other) {
-      const otherTextField = fieldNames.find(name => 
-        name === "Other :" || 
-        (name.includes("Other") && name !== "Other")
-      );
-      if (otherTextField) {
-        try {
-          form.getTextField(otherTextField).setText(event.event_type_other);
-          console.log(`Set ${otherTextField} to ${event.event_type_other}`);
-        } catch (e) {
-          console.warn(`Could not set Other Text: ${e.message}`);
+        
+        // For package fields - PROBLEMATIC
+        else if (mapping.name.includes('Package')) {
+          const number = mapping.name.match(/\d+/)[0];
+          const pkgField = packageFields.find(name => name.includes(number));
+          
+          if (pkgField) {
+            const field = form.getTextField(pkgField);
+            
+            // ATTEMPT #1: Standard approach
+            field.setText(mapping.value);
+            console.log(`Set ${pkgField} to ${mapping.value}`);
+          }
         }
-      }
-    }
-    
-    // 9. Additional Supplies
-    const suppliesField = fieldNames.find(name => 
-      name === "Additional Supplies:" || 
-      name === "Additional Supplies"
-    );
-    if (suppliesField) {
-      try {
-        form.getTextField(suppliesField).setText(event.supplies?.additional_supplies || '');
-        console.log(`Set ${suppliesField} to ${event.supplies?.additional_supplies}`);
+        
+        // For quantity fields
+        else if (mapping.name.includes('Quantity')) {
+          const number = mapping.name.match(/\d+/)[0];
+          const qtyField = quantityFields.find(name => name.includes(number));
+          
+          if (qtyField) {
+            const field = form.getTextField(qtyField);
+            field.setText(mapping.value);
+            console.log(`Set ${qtyField} to ${mapping.value}`);
+          }
+        }
       } catch (e) {
-        console.warn(`Could not set Additional Supplies: ${e.message}`);
+        console.warn(`Could not set "${mapping.name}":`, e.message);
       }
     }
     
-    // 10. Event Instructions
-    const instructionsField = fieldNames.find(name => 
-      name === "Event Instructions:" || 
-      name === "Event Instructions"
-    );
-    if (instructionsField) {
+    // Create a modified version that directly modifies these problematic fields
+    if (event.beers && event.beers.length > 0) {
       try {
-        form.getTextField(instructionsField).setText(event.event_instructions || event.info || '');
-        console.log(`Set ${instructionsField} to ${event.event_instructions || event.info || ''}`);
+        console.log('Attempting emergency direct modification of problematic fields...');
+        
+        // EMERGENCY TECHNIQUE: For each of the problematic fields, try a different approach
+        
+        // 1. Beer Style 2
+        if (event.beers.length > 1 && event.beers[1]?.beer_style) {
+          const styleField2 = beerStyleFields.find(name => name.includes('2'));
+          if (styleField2) {
+            // Try setting the value in multiple passes
+            const field = form.getTextField(styleField2);
+            field.setText('');  // Clear first
+            field.setText(event.beers[1].beer_style);
+            console.log(`Emergency reset of ${styleField2} to ${event.beers[1].beer_style}`);
+          }
+        }
+        
+        // 2. Package Style 1
+        if (event.beers[0]?.packaging) {
+          const pkgField1 = packageFields.find(name => name.includes('1'));
+          if (pkgField1) {
+            // Try setting the value in multiple passes
+            const field = form.getTextField(pkgField1);
+            field.setText('');  // Clear first
+            field.setText(event.beers[0].packaging);
+            console.log(`Emergency reset of ${pkgField1} to ${event.beers[0].packaging}`);
+          }
+        }
+        
+        // 3. Package Style 2
+        if (event.beers.length > 1 && event.beers[1]?.packaging) {
+          const pkgField2 = packageFields.find(name => name.includes('2'));
+          if (pkgField2) {
+            // Try setting the value in multiple passes
+            const field = form.getTextField(pkgField2);
+            field.setText('');  // Clear first
+            field.setText(event.beers[1].packaging);
+            console.log(`Emergency reset of ${pkgField2} to ${event.beers[1].packaging}`);
+          }
+        }
       } catch (e) {
-        console.warn(`Could not set Event Instructions: ${e.message}`);
-      }
-    }
-    
-    // EXPLICITLY FIX: Beer Table Fields
-    console.log('Setting beer table fields...');
-    const beers = event.beers || [];
-    
-    // Define all possible variants of beer table field names
-    const beerFieldVariants = {
-      style: ['Beer Style', 'BeerStyle', 'beerstyle'],
-      pkg: ['Pkg', 'Package', 'pkg', 'package'],
-      qty: ['Qty', 'Quantity', 'qty', 'quantity']
-    };
-    
-    // SPECIAL HANDLING: First find ALL beer-related field names in the PDF
-    const allStyleFields = fieldNames.filter(name => 
-      beerFieldVariants.style.some(variant => name.includes(variant))
-    );
-    const allPkgFields = fieldNames.filter(name => 
-      beerFieldVariants.pkg.some(variant => name.includes(variant))
-    );
-    const allQtyFields = fieldNames.filter(name => 
-      beerFieldVariants.qty.some(variant => name.includes(variant))
-    );
-    
-    console.log('Found beer style fields:', allStyleFields);
-    console.log('Found package fields:', allPkgFields);
-    console.log('Found quantity fields:', allQtyFields);
-    
-    // For each beer in our data, find the matching fields and set values
-    for (let i = 0; i < Math.min(beers.length, 5); i++) {
-      const beer = beers[i];
-      if (!beer) continue;
-      
-      const rowNum = i + 1;
-      const numStr = rowNum.toString();
-      
-      // 11. EXPLICITLY FIX: Beer Style
-      const styleField = allStyleFields.find(name => name.includes(numStr));
-      if (styleField && beer.beer_style) {
-        try {
-          // Force direct raw text setting for style field
-          const field = form.getTextField(styleField);
-          
-          // Clear any existing content first
-          field.setText('');
-          
-          // Now set the actual value
-          field.setText(beer.beer_style);
-          console.log(`Set beer style ${rowNum} to "${beer.beer_style}" using field "${styleField}"`);
-        } catch (e) {
-          console.warn(`Could not set beer style ${rowNum}: ${e.message}`);
-        }
-      } else {
-        console.warn(`Beer style field ${rowNum} not found!`);
-      }
-      
-      // 12. EXPLICITLY FIX: Package Style
-      const pkgField = allPkgFields.find(name => name.includes(numStr));
-      if (pkgField && beer.packaging) {
-        try {
-          // Force direct raw text setting for package field
-          const field = form.getTextField(pkgField);
-          
-          // Try a different approach for this problematic field
-          field.setText('');
-          field.setText(beer.packaging);
-          console.log(`Set package ${rowNum} to "${beer.packaging}" using field "${pkgField}"`);
-        } catch (e) {
-          console.warn(`Could not set package ${rowNum}: ${e.message}`);
-        }
-      } else {
-        console.warn(`Package field ${rowNum} not found!`);
-      }
-      
-      // 13. Quantity
-      const qtyField = allQtyFields.find(name => name.includes(numStr));
-      if (qtyField && beer.quantity) {
-        try {
-          const field = form.getTextField(qtyField);
-          field.setText(beer.quantity.toString());
-          console.log(`Set quantity ${rowNum} to "${beer.quantity}" using field "${qtyField}"`);
-        } catch (e) {
-          console.warn(`Could not set quantity ${rowNum}: ${e.message}`);
-        }
+        console.warn('Emergency field modification failed:', e);
       }
     }
     
