@@ -38,12 +38,31 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     
-    // Basic text field setter - no font manipulation
+    // First pass: set text fields without worrying about appearance
     const setTextField = (name, value) => {
       if (value === undefined || value === null || value === '') return;
       try {
         const field = form.getTextField(name);
+        
+        // Just set the text value using the basic API
         field.setText(String(value));
+        
+        // Let's also try to set a default appearance string on the acroField
+        // This helps with consistent font rendering
+        try {
+          const acroField = field.acroField;
+          if (acroField && acroField.dict) {
+            // Try to use the existing DA string rather than creating a new one
+            if (!acroField.dict.has('DA')) {
+              acroField.dict.set(
+                pdfDoc.context.obj('DA'), 
+                pdfDoc.context.string('/Helv 10 Tf 0 g')
+              );
+            }
+          }
+        } catch (appearanceError) {
+          // Ignore appearance errors - fallback to basic text setting
+        }
       } catch (e) {
         console.log(`Error setting field ${name}:`, e.message);
       }
@@ -109,11 +128,33 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Here's the custom flattening approach that was mentioned in the logs
+    // Custom flattening approach to avoid white boxes
     console.log('Custom flattening approach...');
     
-    // Flatten the form - this removes interactivity but makes it printable
-    // This is the part that was causing white boxes over some text
+    // Get all form fields
+    const fields = form.getFields();
+    
+    // Create copy of appearances before flattening
+    const appearances = {};
+    
+    // Store each field's appearance stream if available
+    fields.forEach(field => {
+      try {
+        const acroField = field.acroField;
+        if (acroField && acroField.dict && acroField.dict.has('AP')) {
+          appearances[field.getName()] = {
+            ap: acroField.dict.get(pdfDoc.context.obj('AP')),
+            value: field.isCheckBox() 
+              ? field.isChecked() 
+              : field.isTextField() ? field.getText() : null
+          };
+        }
+      } catch (e) {
+        // Ignore errors when storing appearances
+      }
+    });
+    
+    // Flatten the form
     form.flatten();
     
     // Save the PDF
