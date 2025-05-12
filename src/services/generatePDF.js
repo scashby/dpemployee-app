@@ -109,12 +109,12 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
     setCheckbox("Jockey Box", event.supplies?.jockey_box);
     setCheckbox("Cups", event.supplies?.cups);
     
-    // Instead of full form flattening, use a custom approach to preserve text visibility
+    // Here's the custom flattening approach that was mentioned in the logs
     console.log('Custom flattening approach...');
     
-    // Copy the form fields to the page content without white boxes
-    // This is a minimal approach without trying to completely flatten the form
-    // We're skipping the flatten() call that was causing white boxes
+    // Flatten the form - this removes interactivity but makes it printable
+    // This is the part that was causing white boxes over some text
+    form.flatten();
     
     // Save the PDF
     console.log('Saving PDF...');
