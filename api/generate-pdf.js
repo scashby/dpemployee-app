@@ -1,4 +1,4 @@
-// api/generate-pdf.js
+ // api/generate-pdf.js
 import { PDFDocument } from 'pdf-lib';
 import fs from 'fs';
 import path from 'path';
@@ -7,58 +7,28 @@ export default async function handler(req, res) {
   try {
     const data = req.body;
     
-    // Helper functions...
-    
+    // Helper functions
+    const getAssignedEmployees = () => {
+      return data.staffAttending || '';
+    };
+
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      return dateString;
+    };
+
     // Load the template PDF
     console.log('Loading PDF template...');
     const templatePath = path.join(process.cwd(), 'public', 'DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf');
     const templateBytes = fs.readFileSync(templatePath);
     
-    // Step 1: Fill the form without flattening
-    console.log('Step 1: Filling form fields without flattening...');
+    // Load the PDF
     const pdfDoc = await PDFDocument.load(templateBytes);
     const form = pdfDoc.getForm();
     
-    // Get all fields to normalize their appearance before filling
-    const fields = form.getFields();
-    
-    // First pass: Standardize the default appearance for ALL text fields
-    console.log('Normalizing font sizes to 10pt...');
-    for (const field of fields) {
-      try {
-        // Only process text fields
-        if (field.constructor.name !== 'PDFTextField') continue;
-        
-        // Get the acroField
-        const acroField = field.acroField;
-        if (!acroField || !acroField.dict) continue;
-        
-        // Directly set the default appearance string to use 10pt Helvetica
-        // The format is "/FontName size Tf R G B rg"
-        const da = '/Helv 10 Tf 0 g';
-        
-        // Check if the field has a DA entry and replace it
-        if (acroField.dict.has('DA')) {
-          // Get the existing DA value as a string
-          const existingDA = acroField.dict.get(pdfDoc.context.obj('DA'));
-          
-          // Replace it with our standard font size
-          // This is a safer approach than trying to create new PDFString objects
-          if (existingDA) {
-            // Replace any font size in the existing appearance string with 10
-            const newDA = existingDA.toString().replace(/\/[A-Za-z]+ \d+ Tf/, '/Helv 10 Tf');
-            acroField.dict.set(pdfDoc.context.obj('DA'), pdfDoc.context.obj(newDA));
-          }
-        }
-      } catch (e) {
-        console.log(`Error standardizing field appearance:`, e.message);
-      }
-    }
-    
-    // Now fill in the fields with our normal field setter
-    // This won't modify the appearance strings we just set
+    // Ultra-simple field setter - absolute minimum code to fill fields
     const setTextField = (name, value) => {
-      if (value === undefined || value === null || value === '') return;
+      if (!value) return;
       try {
         const field = form.getTextField(name);
         field.setText(String(value));
@@ -67,7 +37,7 @@ export default async function handler(req, res) {
       }
     };
     
-    // Set checkboxes (unchanged)
+    // Set checkboxes
     const setCheckbox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
@@ -81,30 +51,61 @@ export default async function handler(req, res) {
       }
     };
     
-    // Fill in all form fields...
-    // [SAME FIELD FILLING CODE AS BEFORE]
+    // Set text fields
+    console.log('Setting text fields...');
+    setTextField("Event Name", data.title);
+    setTextField("Event Date", formatDate(data.date));
+    setTextField("Event Set Up Time", data.setup_time);
+    setTextField("Event Duration", data.duration);
+    setTextField("DP Staff Attending", getAssignedEmployees());
+    setTextField("Event Contact", data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '');
+    setTextField("Expected Attendees", data.expected_attendees);
+    setTextField("Event Instructions", data.event_instructions || data.info || '');
+    setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
     
-    // Save the filled (but unflattened) PDF
-    console.log('Saving intermediate filled PDF...');
-    const filledBytes = await pdfDoc.save();
+    if (data.event_type === 'other') {
+      setTextField("Other More Detail", data.event_type_other || '');
+    }
     
-    // Step 2: Load and flatten
-    console.log('Step 2: Loading filled PDF and flattening...');
-    const flattenDoc = await PDFDocument.load(filledBytes);
-    const flattenForm = flattenDoc.getForm();
+    // Beer table fields
+    console.log('Setting beer table fields...');
+    if (data.beers && data.beers.length > 0) {
+      for (let i = 0; i < Math.min(data.beers.length, 5); i++) {
+        const idx = i + 1;
+        const beer = data.beers[i];
+        if (beer) {
+          setTextField(`Beer Style ${idx}`, beer.beer_style || '');
+          setTextField(`Package Style ${idx}`, beer.packaging || '');
+          setTextField(`Quantity ${idx}`, beer.quantity?.toString() || '');
+        }
+      }
+    }
     
-    // Flatten the form
-    console.log('Flattening form...');
-    flattenForm.flatten();
+    // Set checkboxes
+    console.log('Setting checkboxes...');
+    setCheckbox("Tasting", data.event_type === 'tasting');
+    setCheckbox("Pint Night", data.event_type === 'pint_night');
+    setCheckbox("Beer Fest", data.event_type === 'beer_fest');
+    setCheckbox("Other", data.event_type === 'other');
     
-    // Save the flattened PDF
-    console.log('Saving flattened PDF...');
-    const flattenedBytes = await flattenDoc.save();
+    setCheckbox("Table", data.supplies?.table_needed);
+    setCheckbox("Beer Buckets", data.supplies?.beer_buckets);
+    setCheckbox("Table Cloth", data.supplies?.table_cloth);
+    setCheckbox("Tent Weights", data.supplies?.tent_weights);
+    setCheckbox("Signage", data.supplies?.signage);
+    setCheckbox("Ice", data.supplies?.ice);
+    setCheckbox("Jockey Box", data.supplies?.jockey_box);
+    setCheckbox("Cups", data.supplies?.cups);
+    
+    // Don't try to flatten - just save the interactive form
+    // This way at least the data will be there
+    console.log('Saving PDF...');
+    const pdfBytes = await pdfDoc.save();
     
     // Send the response
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${data.title || 'Event'}_Form.pdf"`);
-    res.send(Buffer.from(flattenedBytes));
+    res.send(Buffer.from(pdfBytes));
     
     console.log('PDF generated and sent successfully.');
   } catch (error) {
