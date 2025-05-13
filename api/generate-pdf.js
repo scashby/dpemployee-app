@@ -1,56 +1,47 @@
+// api/generate-pdf.js
 import { PDFDocument } from 'pdf-lib';
+import fs from 'fs';
+import path from 'path';
 
-export async function generatePDF(event, employees = [], eventAssignments = {}) {
+export default async function handler(req, res) {
   try {
-    // Helper functions
-    const getAssignedEmployees = () => {
-      return (eventAssignments[event.id] || [])
-        .map(empId => employees.find(e => e.id === empId)?.name || '')
-        .filter(Boolean)
-        .join(', ');
-    };
+    // Only accept POST requests
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      const [year, month, day] = dateString.split('-');
-      const date = new Date(year, month - 1, day);
-      return date.toLocaleDateString();
-    };
+    // Get data from request body
+    const data = req.body;
+    console.log('Received data:', JSON.stringify(data).substring(0, 100) + '...');
 
-    const formatTime = (timeString) => {
-      if (!timeString) return '';
-      try {
-        const [hours, minutes] = timeString.split(':').map(Number);
-        const period = hours >= 12 ? 'PM' : 'AM';
-        const hour12 = hours % 12 || 12;
-        return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
-      } catch (e) {
-        return timeString;
-      }
-    };
-
-    // Load the template PDF
+    // Load the PDF template
     console.log('Loading PDF template...');
-    const pdfBytes = await fetch('/DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf').then(res => 
-      res.arrayBuffer()
-    );
+    const templatePath = path.join(process.cwd(), 'public', 'DPBC EVENT FORM WIP - EVENT NAME - TEMPLATE.pdf');
     
-    // Step 1: Create a PDF document for filling in fields
-    const pdfDoc = await PDFDocument.load(pdfBytes);
+    // Make sure the file exists
+    if (!fs.existsSync(templatePath)) {
+      console.error('Template file not found at:', templatePath);
+      return res.status(500).json({ error: 'PDF template file not found' });
+    }
+    
+    const templateBytes = fs.readFileSync(templatePath);
+    
+    // Load the PDF document
+    console.log('Parsing PDF document...');
+    const pdfDoc = await PDFDocument.load(templateBytes);
     const form = pdfDoc.getForm();
     
-    // Basic text field setter with minimal approach
+    // Simple field setters with error handling
     const setTextField = (name, value) => {
       if (!value) return;
       try {
         const field = form.getTextField(name);
         field.setText(String(value));
       } catch (e) {
-        // Silent error handling for robustness
+        console.log(`Warning: Could not set field ${name}: ${e.message}`);
       }
     };
     
-    // Set checkboxes
     const setCheckbox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
@@ -60,80 +51,67 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
           checkbox.uncheck();
         }
       } catch (e) {
-        // Silent error handling
+        console.log(`Warning: Could not set checkbox ${name}: ${e.message}`);
       }
     };
-
-    // Set basic event information
-    setTextField("Event Name", event.title);
-    setTextField("Event Date", formatDate(event.date));
-    setTextField("Event Set Up Time", formatTime(event.setup_time));
-    setTextField("Event Duration", event.duration);
-    setTextField("DP Staff Attending", getAssignedEmployees());
-    setTextField("Event Contact", event.contact_name ? `${event.contact_name} ${event.contact_phone || ''}` : '');
-    setTextField("Expected Attendees", event.expected_attendees);
-    setTextField("Event Instructions", event.event_instructions || event.info || '');
-    setTextField("Additional Supplies", event.supplies?.additional_supplies || '');
     
-    if (event.event_type === 'other') {
-      setTextField("Other More Detail", event.event_type_other || '');
+    // Fill in form fields
+    console.log('Filling form fields...');
+    setTextField("Event Name", data.title);
+    setTextField("Event Date", data.date);
+    setTextField("Event Set Up Time", data.setup_time);
+    setTextField("Event Duration", data.duration);
+    setTextField("DP Staff Attending", data.staffAttending);
+    setTextField("Event Contact", data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '');
+    setTextField("Expected Attendees", data.expected_attendees?.toString());
+    setTextField("Event Instructions", data.event_instructions || data.info || '');
+    setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
+    
+    if (data.event_type === 'other') {
+      setTextField("Other More Detail", data.event_type_other || '');
     }
     
-    // Set beer fields - Using a separate approach to avoid the black box issue
-    if (event.beers && event.beers.length > 0) {
-      // Only set up to 5 beer entries (limit of the form)
-      for (let i = 0; i < Math.min(event.beers.length, 5); i++) {
+    // Beer table fields
+    if (data.beers && data.beers.length > 0) {
+      for (let i = 0; i < Math.min(data.beers.length, 5); i++) {
         const idx = i + 1;
-        const beer = event.beers[i];
+        const beer = data.beers[i];
         if (beer) {
-          // Set beer style field
           setTextField(`Beer Style ${idx}`, beer.beer_style || '');
-          
-          // Set packaging field
           setTextField(`Package Style ${idx}`, beer.packaging || '');
-          
-          // Set quantity field
           setTextField(`Quantity ${idx}`, beer.quantity?.toString() || '');
         }
       }
     }
     
-    // Set checkboxes for event type
-    setCheckbox("Tasting", event.event_type === 'tasting');
-    setCheckbox("Pint Night", event.event_type === 'pint_night');
-    setCheckbox("Beer Fest", event.event_type === 'beer_fest');
-    setCheckbox("Other", event.event_type === 'other');
+    // Set checkboxes
+    setCheckbox("Tasting", data.event_type === 'tasting');
+    setCheckbox("Pint Night", data.event_type === 'pint_night');
+    setCheckbox("Beer Fest", data.event_type === 'beer_fest');
+    setCheckbox("Other", data.event_type === 'other');
     
-    // Set checkboxes for supplies
-    setCheckbox("Table", event.supplies?.table_needed);
-    setCheckbox("Beer Buckets", event.supplies?.beer_buckets);
-    setCheckbox("Table Cloth", event.supplies?.table_cloth);
-    setCheckbox("Tent Weights", event.supplies?.tent_weights);
-    setCheckbox("Signage", event.supplies?.signage);
-    setCheckbox("Ice", event.supplies?.ice);
-    setCheckbox("Jockey Box", event.supplies?.jockey_box);
-    setCheckbox("Cups", event.supplies?.cups);
+    setCheckbox("Table", data.supplies?.table_needed);
+    setCheckbox("Beer Buckets", data.supplies?.beer_buckets);
+    setCheckbox("Table Cloth", data.supplies?.table_cloth);
+    setCheckbox("Tent Weights", data.supplies?.tent_weights);
+    setCheckbox("Signage", data.supplies?.signage);
+    setCheckbox("Ice", data.supplies?.ice);
+    setCheckbox("Jockey Box", data.supplies?.jockey_box);
+    setCheckbox("Cups", data.supplies?.cups);
     
-    // Critical: Do NOT flatten the form - this preserves all text and formatting
-    
-    // Save the unflattened PDF
+    // DO NOT FLATTEN - just save the document as is
     console.log('Saving PDF...');
-    const modifiedPdfBytes = await pdfDoc.save();
+    const pdfBytes = await pdfDoc.save();
     
-    // Create a blob and download it
-    const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${event.title || 'Event'}_Form.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    // Send the PDF as a response
+    console.log('Sending PDF response...');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${data.title || 'Event'}_Form.pdf"`);
+    res.send(Buffer.from(pdfBytes));
     
-    console.log('PDF downloaded successfully.');
-    return true;
+    console.log('PDF generation completed successfully.');
   } catch (error) {
-    console.error("Error generating PDF:", error);
-    return false;
+    console.error('Error generating PDF:', error);
+    res.status(500).json({ error: error.message || 'Error generating PDF' });
   }
 }
