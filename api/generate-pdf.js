@@ -1,5 +1,5 @@
 // api/generate-pdf.js
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 import fs from 'fs';
 import path from 'path';
 
@@ -19,140 +19,80 @@ export default async function handler(req, res) {
     
     // Load the PDF
     const pdfDoc = await PDFDocument.load(templateBytes);
+    const form = pdfDoc.getForm();
     
-    // Get the first page
-    const page = pdfDoc.getPages()[0];
-    
-    // Define the font
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    
-    // Field coordinates (these will need to be adjusted to match your form template)
-    // format: [x, y, fontSize]
-    const fieldPositions = {
-      "Event Name": [700, 700, 10],
-      "Event Date": [700, 670, 10],
-      "Event Set Up Time": [700, 640, 10],
-      "Event Duration": [700, 610, 10],
-      "DP Staff Attending": [700, 580, 10],
-      "Event Contact": [700, 550, 10],
-      "Expected Attendees": [600, 520, 10],
-      "Other More Detail": [600, 490, 10],
-      "Additional Supplies": [700, 450, 10],
-      "Event Instructions": [700, 420, 10],
-      // Beer table positions - you'll need to adjust these
-      "Beer Style 1": [580, 380, 10], 
-      "Package Style 1": [680, 380, 10],
-      "Quantity 1": [750, 380, 10],
-      "Beer Style 2": [580, 360, 10],
-      "Package Style 2": [680, 360, 10],
-      "Quantity 2": [750, 360, 10]
-    };
-    
-    // Checkbox positions (these will need to be adjusted)
-    // format: [x, y, isChecked]
-    const checkboxPositions = {
-      "Tasting": [530, 500, data.event_type === 'tasting'],
-      "Pint Night": [530, 480, data.event_type === 'pint_night'],
-      "Beer Fest": [530, 460, data.event_type === 'beer_fest'],
-      "Other": [530, 440, data.event_type === 'other'],
-      "Table": [800, 380, data.supplies?.table_needed],
-      "Beer Buckets": [800, 360, data.supplies?.beer_buckets],
-      "Table Cloth": [800, 340, data.supplies?.table_cloth],
-      "Tent Weights": [800, 320, data.supplies?.tent_weights],
-      "Signage": [800, 300, data.supplies?.signage],
-      "Ice": [800, 280, data.supplies?.ice],
-      "Jockey Box": [800, 260, data.supplies?.jockey_box],
-      "Cups": [800, 240, data.supplies?.cups]
-    };
-    
-    // Draw text directly on the page
-    for (const [fieldName, value] of Object.entries({
-      "Event Name": data.title,
-      "Event Date": data.date,
-      "Event Set Up Time": data.setup_time,
-      "Event Duration": data.duration,
-      "DP Staff Attending": getAssignedEmployees(),
-      "Event Contact": data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '',
-      "Expected Attendees": data.expected_attendees,
-      "Other More Detail": data.event_type === 'other' ? data.event_type_other : '',
-      "Additional Supplies": data.supplies?.additional_supplies,
-      "Event Instructions": data.event_instructions || data.info
-    })) {
-      if (!value) continue;
-      
-      if (fieldPositions[fieldName]) {
-        const [x, y, fontSize] = fieldPositions[fieldName];
-        page.drawText(String(value), {
-          x: x,
-          y: y,
-          size: fontSize,
-          font: helveticaFont,
-          color: rgb(0, 0, 0)
-        });
+    // Basic text field setter - absolute minimum approach
+    const setTextField = (name, value) => {
+      if (!value) return;
+      try {
+        const field = form.getTextField(name);
+        field.setText(String(value));
+      } catch (e) {
+        // Silent error handling to prevent crashes
       }
+    };
+    
+    // Set checkboxes
+    const setCheckbox = (name, checked) => {
+      try {
+        const checkbox = form.getCheckBox(name);
+        if (checked) {
+          checkbox.check();
+        } else {
+          checkbox.uncheck();
+        }
+      } catch (e) {
+        // Silent error handling
+      }
+    };
+    
+    // Set all fields with minimal code
+    // Event info
+    setTextField("Event Name", data.title);
+    setTextField("Event Date", data.date);
+    setTextField("Event Set Up Time", data.setup_time);
+    setTextField("Event Duration", data.duration);
+    setTextField("DP Staff Attending", getAssignedEmployees());
+    setTextField("Event Contact", data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '');
+    setTextField("Expected Attendees", data.expected_attendees);
+    setTextField("Event Instructions", data.event_instructions || data.info || '');
+    setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
+    
+    if (data.event_type === 'other') {
+      setTextField("Other More Detail", data.event_type_other || '');
     }
     
-    // Draw beer table fields
+    // Beer table fields
     if (data.beers && data.beers.length > 0) {
       for (let i = 0; i < Math.min(data.beers.length, 5); i++) {
         const idx = i + 1;
         const beer = data.beers[i];
         if (beer) {
-          const beerStyleField = `Beer Style ${idx}`;
-          const packageStyleField = `Package Style ${idx}`;
-          const quantityField = `Quantity ${idx}`;
-          
-          if (fieldPositions[beerStyleField] && beer.beer_style) {
-            const [x, y, fontSize] = fieldPositions[beerStyleField];
-            page.drawText(beer.beer_style, {
-              x: x,
-              y: y,
-              size: fontSize,
-              font: helveticaFont,
-              color: rgb(0, 0, 0)
-            });
-          }
-          
-          if (fieldPositions[packageStyleField] && beer.packaging) {
-            const [x, y, fontSize] = fieldPositions[packageStyleField];
-            page.drawText(beer.packaging, {
-              x: x,
-              y: y,
-              size: fontSize,
-              font: helveticaFont,
-              color: rgb(0, 0, 0)
-            });
-          }
-          
-          if (fieldPositions[quantityField] && beer.quantity) {
-            const [x, y, fontSize] = fieldPositions[quantityField];
-            page.drawText(String(beer.quantity), {
-              x: x,
-              y: y,
-              size: fontSize,
-              font: helveticaFont,
-              color: rgb(0, 0, 0)
-            });
-          }
+          setTextField(`Beer Style ${idx}`, beer.beer_style || '');
+          setTextField(`Package Style ${idx}`, beer.packaging || '');
+          setTextField(`Quantity ${idx}`, beer.quantity?.toString() || '');
         }
       }
     }
     
-    // Draw checkboxes
-    for (const [checkboxName, [x, y, isChecked]] of Object.entries(checkboxPositions)) {
-      if (isChecked) {
-        // Draw a filled square for checked
-        page.drawRectangle({
-          x: x,
-          y: y,
-          width: 10,
-          height: 10,
-          color: rgb(0, 0, 0)
-        });
-      }
-    }
+    // Set checkboxes
+    setCheckbox("Tasting", data.event_type === 'tasting');
+    setCheckbox("Pint Night", data.event_type === 'pint_night');
+    setCheckbox("Beer Fest", data.event_type === 'beer_fest');
+    setCheckbox("Other", data.event_type === 'other');
     
-    // Save without any form manipulation
+    setCheckbox("Table", data.supplies?.table_needed);
+    setCheckbox("Beer Buckets", data.supplies?.beer_buckets);
+    setCheckbox("Table Cloth", data.supplies?.table_cloth);
+    setCheckbox("Tent Weights", data.supplies?.tent_weights);
+    setCheckbox("Signage", data.supplies?.signage);
+    setCheckbox("Ice", data.supplies?.ice);
+    setCheckbox("Jockey Box", data.supplies?.jockey_box);
+    setCheckbox("Cups", data.supplies?.cups);
+    
+    // Very important: DO NOT FLATTEN
+    
+    // Save the PDF without flattening
     console.log('Saving PDF...');
     const pdfBytes = await pdfDoc.save();
     
