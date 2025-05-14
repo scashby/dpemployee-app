@@ -31,27 +31,19 @@ export default async function handler(req, res) {
     const pdfDoc = await PDFDocument.load(templateBytes);
     const form = pdfDoc.getForm();
     
-    // Log all form field names for debugging
-    console.log('Available form fields:');
-    form.getFields().forEach(field => {
-      console.log(`- ${field.getName()} (${field.constructor.name})`);
-    });
-    
-    // Enhanced field setters with better error handling
+    // Simple field setters with error handling
     const setTextField = (name, value) => {
       if (!value) return;
       try {
-        console.log(`Setting text field "${name}" to "${value}"`);
         const field = form.getTextField(name);
         field.setText(String(value));
       } catch (e) {
-        console.error(`Error setting field ${name}: ${e.message}`);
+        console.log(`Warning: Could not set field ${name}: ${e.message}`);
       }
     };
     
     const setCheckBox = (name, checked) => {
       try {
-        console.log(`Setting checkbox "${name}" to ${checked ? 'checked' : 'unchecked'}`);
         const checkbox = form.getCheckBox(name);
         if (checked) {
           checkbox.check();
@@ -59,11 +51,11 @@ export default async function handler(req, res) {
           checkbox.uncheck();
         }
       } catch (e) {
-        console.error(`Error setting checkbox ${name}: ${e.message}`);
+        console.log(`Warning: Could not set checkbox ${name}: ${e.message}`);
       }
     };
     
-    // Fill in form fields
+    // Fill in form fields using exact field names from Adobe
     console.log('Filling form fields...');
     
     // Event details
@@ -74,7 +66,7 @@ export default async function handler(req, res) {
     setTextField("DP Staff Attending", data.staffAttending);
     setTextField("Event ContactName Phone", data.contact_name ? 
       `${data.contact_name}${data.contact_phone ? ` (${data.contact_phone})` : ''}` : '');
-    setTextField("Expected # of Attendees", data.expected_attendees?.toString());
+    setTextField("Expected Attendees", data.expected_attendees?.toString());
     
     // Event type
     setCheckBox("Tasting", data.event_type === 'tasting');
@@ -87,33 +79,42 @@ export default async function handler(req, res) {
       setTextField("Other Details", data.event_type_other);
     }
     
-    // Beer products - Fill in the table with detailed logging
+    // Beer products - using exact field names from Adobe field panel
     if (data.beers && data.beers.length > 0) {
-      console.log(`Processing ${data.beers.length} beers`);
-      
-      // Process each beer row
-      for (let i = 0; i < Math.min(data.beers.length, 5); i++) {
-        const beer = data.beers[i];
-        const rowNum = i + 1;
-        
-        if (beer) {
-          console.log(`Beer ${rowNum}:`, beer);
-          
-          // Set beer style field
-          const styleField = `${getOrdinal(rowNum)} Beer Style`;
-          setTextField(styleField, beer.beer_style);
-          
-          // Set beer packaging field
-          const packagingField = `${getOrdinal(rowNum)} Beer Packaging`;
-          setTextField(packagingField, beer.packaging || '');
-          
-          // Set beer quantity field
-          const quantityField = `${getOrdinal(rowNum)} Beer Quantity`;
-          setTextField(quantityField, beer.quantity?.toString() || '1');
-        }
+      // Process beer 1
+      if (data.beers[0]) {
+        setTextField("First Beer Style", data.beers[0].beer_style);
+        setTextField("First Beer Package Style", data.beers[0].packaging || '');
+        setTextField("First Beer Quantity", data.beers[0].quantity?.toString() || '1');
       }
-    } else {
-      console.log('No beers to process');
+      
+      // Process beer 2
+      if (data.beers[1]) {
+        setTextField("Second Beer Style", data.beers[1].beer_style);
+        setTextField("Second Beer Package Style", data.beers[1].packaging || '');
+        setTextField("Second Beer Quantity", data.beers[1].quantity?.toString() || '1');
+      }
+      
+      // Process beer 3
+      if (data.beers[2]) {
+        setTextField("Third Beer Style", data.beers[2].beer_style);
+        setTextField("Third Beer Package Style", data.beers[2].packaging || '');
+        setTextField("Third Beer Quantity", data.beers[2].quantity?.toString() || '1');
+      }
+      
+      // Process beer 4
+      if (data.beers[3]) {
+        setTextField("Fourth Beer Style", data.beers[3].beer_style);
+        setTextField("Fourth Beer Package Style", data.beers[3].packaging || '');
+        setTextField("Fourth Beer Quantity", data.beers[3].quantity?.toString() || '1');
+      }
+      
+      // Process beer 5
+      if (data.beers[4]) {
+        setTextField("Fifth Beer Style", data.beers[4].beer_style);
+        setTextField("Fifth Beer Package Style", data.beers[4].packaging || '');
+        setTextField("Fifth Beer Quantity", data.beers[4].quantity?.toString() || '1');
+      }
     }
     
     // Supplies checkboxes - using exact field names from the form
@@ -130,7 +131,7 @@ export default async function handler(req, res) {
     setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
     setTextField("Event Instructions", data.event_instructions || data.info || '');
     
-    // For the estimated attendees field
+    // For the estimated attendees field - using exact field name from Adobe
     setTextField("EstimatedAttendees", data.notes?.estimated_attendees?.toString() || '');
     
     // Post-event notes are now in a single field
@@ -155,7 +156,7 @@ export default async function handler(req, res) {
       setTextField("Post Event Notes", notesText);
     }
     
-    // The return equipment by field
+    // The return equipment by field - using exact field name from Adobe
     setTextField("RETURN EQUIPMENT BY", data.notes?.return_equipment_by || '');
     
     // Save the PDF
@@ -173,10 +174,4 @@ export default async function handler(req, res) {
     console.error('Error generating PDF:', error);
     res.status(500).json({ error: error.message || 'Error generating PDF' });
   }
-}
-
-// Helper function to get ordinal (First, Second, etc.)
-function getOrdinal(num) {
-  const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
-  return ordinals[num - 1] || `${num}th`;
 }
