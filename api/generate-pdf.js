@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     setTextField("DP Staff Attending", data.staffAttending);
     setTextField("Event ContactName Phone", data.contact_name ? 
       `${data.contact_name}${data.contact_phone ? ` (${data.contact_phone})` : ''}` : '');
-    setTextField("Expected At", data.expected_attendees?.toString());
+    setTextField("Expected Attendees", data.expected_attendees?.toString());
     
     // Event type
     setCheckBox("Tasting", data.event_type === 'tasting');
@@ -82,11 +82,11 @@ export default async function handler(req, res) {
     // Beer products - Fill in the table using the exact field names
     if (data.beers && data.beers.length > 0) {
       const beerFields = [
-        ['First Beer Style', 'First Beer Package', 'First Beer Quantity'],
-        ['Second Beer Style', 'Second Beer Package', 'Second Beer Quantity'],
-        ['Third Beer Style', 'Third Beer Package', 'Third Beer Quantity'],
-        ['Fourth Beer Style', 'Fourth Beer Package', 'Fourth Beer Quantity'],
-        ['Fifth Beer Style', 'Fifth Beer Package', 'Fifth Beer Quantity']
+        ['First Beer Style', 'First Beer Packaging', 'First Beer Quantity'],
+        ['Second Beer Style', 'Second Beer Packaging', 'Second Beer Quantity'],
+        ['Third Beer Style', 'Third Beer Packaging', 'Third Beer Quantity'],
+        ['Fourth Beer Style', 'Fourth Beer Packaging', 'Fourth Beer Quantity'],
+        ['Fifth Beer Style', 'Fifth Beer Packaging', 'Fifth Beer Quantity']
       ];
       
       // Only fill as many rows as we have beers, up to 5
