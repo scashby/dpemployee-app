@@ -39,13 +39,10 @@ const AdminEvents = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [editMode, setEditMode] = useState(null);
-  // Add these state variables
   const [openEventId, setOpenEventId] = useState(null);
   const [showPostNotes, setShowPostNotes] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [newEventEmployees, setNewEventEmployees] = useState([]);
-
-  // Helper functions for the detail view
   const [showPrintForm, setShowPrintForm] = useState(false);
 
   const printEventForm = (event) => {
@@ -208,7 +205,6 @@ const AdminEvents = () => {
     }
   };
 
-  // New handler functions for the form
   const handleSupplyChange = (e, id, field) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     
@@ -830,7 +826,7 @@ const AdminEvents = () => {
             <label className="dp-form-label">
               Type of Event
             </label>
-            <div className="dp-form-row" style={{ marginBottom: "0.5rem" }}>
+            <div className="dp-form-row">
               <div className="dp-checkbox-container">
                 <label className="dp-checkbox-label">
                   <input
@@ -926,7 +922,7 @@ const AdminEvents = () => {
           </div>
 
           <h4 className="dp-subsection-title">Supplies Needed</h4>
-          <div className="dp-form-row">
+          <div className="dp-supplies-grid">
             <div className="dp-checkbox-container">
               <label className="dp-checkbox-label">
                 <input
@@ -971,8 +967,6 @@ const AdminEvents = () => {
                 <span>Tent/Weights</span>
               </label>
             </div>
-          </div>
-          <div className="dp-form-row">
             <div className="dp-checkbox-container">
               <label className="dp-checkbox-label">
                 <input
@@ -1033,70 +1027,76 @@ const AdminEvents = () => {
 
           <h4 className="dp-subsection-title">Beer Products</h4>
           {newEvent.beers.map((beer, index) => (
-            <div key={index} className="dp-form-row">
-              <div className="dp-form-group">
-                <label className="dp-form-label">
-                  Beer Style
-                </label>
-                <select
-                  value={beer.beer_style}
-                  onChange={(e) => handleBeerChange(e, null, index, 'beer_style')}
-                  className="dp-input"
-                >
-                  <option value="">Select Beer Style</option>
-                  {[
-                    "Blanket Bay Lager", "Charlene's Dream Altbier", "Chiselbraü Golden Ale",
-                    "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
-                    "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
-                    "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
-                    "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
-                    "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
-                    "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
-                    "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
-                    "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
-                  ].map((style, idx) => (
-                    <option key={idx} value={style}>{style}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="dp-form-group">
-                <label className="dp-form-label">
-                  Packaging
-                </label>
-                <select
-                  value={beer.packaging}
-                  onChange={(e) => handleBeerChange(e, null, index, 'packaging')}
-                  className="dp-input"
-                >
-                  <option value="">Select Package Style</option>
-                  {[
-                    "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
-                    "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
-                  ].map((pack, idx) => (
-                    <option key={idx} value={pack}>{pack}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="dp-form-group">
-                <label className="dp-form-label">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  value={beer.quantity}
-                  onChange={(e) => handleBeerChange(e, null, index, 'quantity')}
-                  className="dp-input"
-                  placeholder="e.g. 2"
-                />
-              </div>
-              <div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <div key={index} className="dp-beer-product-row">
+              <div className="dp-beer-product-header">
+                <span className="dp-beer-product-number">Beer #{index + 1}</span>
                 <button
                   type="button"
                   onClick={() => removeBeer(null, index)}
-                  className="dp-button dp-button-danger dp-button-sm"
+                  className="dp-beer-product-remove"
+                  aria-label="Remove beer"
                 >
-                  Remove
+                  <span aria-hidden="true">&times;</span>
                 </button>
+              </div>
+              <div className="dp-beer-product-fields">
+                <div className="dp-form-group">
+                  <label className="dp-form-label">
+                    Beer Style
+                  </label>
+                  <select
+                    value={beer.beer_style}
+                    onChange={(e) => handleBeerChange(e, null, index, 'beer_style')}
+                    className="dp-input"
+                  >
+                    <option value="">Select Beer Style</option>
+                    {[
+                      "Blanket Bay Lager", "Charlene's Dream Altbier", "Chiselbraü Golden Ale",
+                      "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
+                      "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
+                      "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
+                      "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
+                      "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
+                      "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
+                      "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
+                      "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
+                    ].map((style, idx) => (
+                      <option key={idx} value={style}>{style}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="dp-beer-product-inline">
+                  <div className="dp-form-group">
+                    <label className="dp-form-label">
+                      Packaging
+                    </label>
+                    <select
+                      value={beer.packaging}
+                      onChange={(e) => handleBeerChange(e, null, index, 'packaging')}
+                      className="dp-input"
+                    >
+                      <option value="">Select Package Style</option>
+                      {[
+                        "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
+                        "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
+                      ].map((pack, idx) => (
+                        <option key={idx} value={pack}>{pack}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="dp-form-group">
+                    <label className="dp-form-label">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      value={beer.quantity}
+                      onChange={(e) => handleBeerChange(e, null, index, 'quantity')}
+                      className="dp-input"
+                      placeholder="e.g. 2"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -1122,7 +1122,8 @@ const AdminEvents = () => {
       <div className="dp-section">
         <h3 className="dp-subsection-title">Event List</h3>
         <div className="dp-table-container">
-          <table className="dp-table">
+          {/* Desktop view table */}
+          <table className="dp-table hidden-mobile">
             <thead>
               <tr>
                 <th>Event Name</th>
@@ -1420,7 +1421,7 @@ const AdminEvents = () => {
 
                             <div className="dp-form-group">
                               <label className="dp-form-label">Type of Event</label>
-                              <div className="dp-form-row" style={{ marginBottom: "0.5rem" }}>
+                              <div className="dp-form-row">
                                 <div className="dp-checkbox-container">
                                   <label className="dp-checkbox-label">
                                     <input
@@ -1511,7 +1512,7 @@ const AdminEvents = () => {
                             </div>
 
                             <h4>Supplies Needed</h4>
-                            <div className="dp-form-row">
+                            <div className="dp-supplies-grid">
                               <div className="dp-checkbox-container">
                                 <label className="dp-checkbox-label">
                                   <input
@@ -1556,8 +1557,6 @@ const AdminEvents = () => {
                                   <span>Tent/Weights</span>
                                 </label>
                               </div>
-                            </div>
-                            <div className="dp-form-row">
                               <div className="dp-checkbox-container">
                                 <label className="dp-checkbox-label">
                                   <input
@@ -1603,6 +1602,7 @@ const AdminEvents = () => {
                                 </label>
                               </div>
                             </div>
+                            
                             <div className="dp-form-group">
                               <label className="dp-form-label">Additional Supplies</label>
                               <input
@@ -1615,64 +1615,70 @@ const AdminEvents = () => {
 
                             <h4>Beer Products</h4>
                             {event.beers && event.beers.map((beer, index) => (
-                              <div key={index} className="dp-form-row">
-                                <div className="dp-form-group">
-                                  <label className="dp-form-label">Beer Style</label>
-                                  <select
-                                    value={beer.beer_style || ''}
-                                    onChange={(e) => handleBeerChange(e, event.id, index, 'beer_style')}
-                                    className="dp-input"
-                                  >
-                                    <option value="">Select Beer Style</option>
-                                    {[
-                                      "Blanket Bay Lager", "Charlene's Dream Altbier", "Chiselbraü Golden Ale",
-                                      "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
-                                      "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
-                                      "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
-                                      "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
-                                      "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
-                                      "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
-                                      "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
-                                      "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
-                                    ].map((style, idx) => (
-                                      <option key={idx} value={style}>{style}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className="dp-form-group">
-                                  <label className="dp-form-label">Packaging</label>
-                                  <select
-                                    value={beer.packaging || ''}
-                                    onChange={(e) => handleBeerChange(e, event.id, index, 'packaging')}
-                                    className="dp-input"
-                                  >
-                                    <option value="">Select Package Style</option>
-                                    {[
-                                      "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
-                                      "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
-                                    ].map((pack, idx) => (
-                                      <option key={idx} value={pack}>{pack}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className="dp-form-group">
-                                  <label className="dp-form-label">Quantity</label>
-                                  <input
-                                    type="number"
-                                    value={beer.quantity || 1}
-                                    onChange={(e) => handleBeerChange(e, event.id, index, 'quantity')}
-                                    className="dp-input"
-                                    min="1"
-                                  />
-                                </div>
-                                <div className="dp-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                              <div key={index} className="dp-beer-product-row">
+                                <div className="dp-beer-product-header">
+                                  <span className="dp-beer-product-number">Beer #{index + 1}</span>
                                   <button
                                     type="button"
                                     onClick={() => removeBeer(event.id, index)}
-                                    className="dp-button dp-button-danger dp-button-sm"
+                                    className="dp-beer-product-remove"
+                                    aria-label="Remove beer"
                                   >
-                                    Remove
+                                    <span aria-hidden="true">&times;</span>
                                   </button>
+                                </div>
+                                <div className="dp-beer-product-fields">
+                                  <div className="dp-form-group">
+                                    <label className="dp-form-label">Beer Style</label>
+                                    <select
+                                      value={beer.beer_style || ''}
+                                      onChange={(e) => handleBeerChange(e, event.id, index, 'beer_style')}
+                                      className="dp-input"
+                                    >
+                                      <option value="">Select Beer Style</option>
+                                      {[
+                                        "Blanket Bay Lager", "Charlene's Dream Altbier", "Chiselbraü Golden Ale",
+                                        "Floating Neutral White IPA", "Good Mud Black Lager", "Handline Kolsch",
+                                        "Hen & Chickens DIPA", "Hoppy Small Beer Ale", "Horchata Stout",
+                                        "Intertidal Oyster Stout", "Jandals IPA", "Keyholder IPA", "Layering IPA",
+                                        "Leagues Beneath Spice Ale", "Lonely Boy Lager", "Neon Shape Pale Ale",
+                                        "Pollock Rip IPA", "Powder Hole Porter", "Shelby Rose Red Ale",
+                                        "Shiso & Berry Ale", "Skywind IPA", "South-Dennis Style Table Beer",
+                                        "Spicy Pickle Lager", "Standard Wit Witbier", "Stonehorse Citra IPA",
+                                        "Stonehorse Dlamond", "The Mollusk Lager", "Wellfleets Rice Ale"
+                                      ].map((style, idx) => (
+                                        <option key={idx} value={style}>{style}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="dp-beer-product-inline">
+                                    <div className="dp-form-group">
+                                      <label className="dp-form-label">Packaging</label>
+                                      <select
+                                        value={beer.packaging || ''}
+                                        onChange={(e) => handleBeerChange(e, event.id, index, 'packaging')}
+                                        className="dp-input"
+                                      >
+                                        <option value="">Select Package Style</option>
+                                        {[
+                                          "1/2 Barrel Keg", "1/6 Barrel Keg", "12 pack - 12 oz",
+                                          "4 pack - 16 oz", "6 pack - 12 oz", "Case - 12 oz", "Case - 16 oz"
+                                        ].map((pack, idx) => (
+                                          <option key={idx} value={pack}>{pack}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div className="dp-form-group">
+                                      <label className="dp-form-label">Quantity</label>
+                                      <input
+                                        type="number"
+                                        value={beer.quantity || 1}
+                                        onChange={(e) => handleBeerChange(e, event.id, index, 'quantity')}
+                                        className="dp-input"
+                                        min="1"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -1707,6 +1713,173 @@ const AdminEvents = () => {
               )}
             </tbody>
           </table>
+
+          {/* Mobile card view */}
+          <div className="dp-mobile-events">
+            {events.length === 0 ? (
+              <div className="dp-empty-events">No events found.</div>
+            ) : (
+              events.map((event) => (
+                <div key={event.id} className="dp-event-card">
+                  <div className="dp-event-card-header">
+                    <h3 className="dp-event-title">{event.title}</h3>
+                    <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>
+                      {event.off_prem ? "Off-premise" : "On-premise"}
+                    </span>
+                  </div>
+                  
+                  <div className="dp-event-card-body">
+                    <div className="dp-event-card-row">
+                      <span className="dp-event-card-label">Date:</span>
+                      <span className="dp-event-card-value">{formatDate(event.date)}</span>
+                    </div>
+                    
+                    <div className="dp-event-card-row">
+                      <span className="dp-event-card-label">Duration:</span>
+                      <span className="dp-event-card-value">{event.duration || event.time || "Time TBD"}</span>
+                    </div>
+                    
+                    <div className="dp-event-card-row">
+                      <span className="dp-event-card-label">Staff:</span>
+                      <span className="dp-event-card-value">
+                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
+                          employees.find(e => e.id === eventAssignments[event.id][0])?.name + 
+                          (eventAssignments[event.id].length > 1 ? ` +${eventAssignments[event.id].length - 1} more` : '')
+                          : "Not assigned"
+                        }
+                      </span>
+                    </div>
+                    
+                    <div className="dp-event-card-row">
+                      <span className="dp-event-card-label">Type:</span>
+                      <span className="dp-event-card-value">
+                        {event.event_type === 'other' ? event.event_type_other : 
+                        event.event_type === 'tasting' ? 'Tasting' :
+                        event.event_type === 'pint_night' ? 'Pint Night' :
+                        event.event_type === 'beer_fest' ? 'Beer Fest' : 'Other'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="dp-event-card-actions">
+                    <button
+                      onClick={() => setOpenEventId(openEventId === event.id ? null : event.id)}
+                      className="dp-button dp-button-secondary dp-button-sm"
+                    >
+                      {openEventId === event.id ? "Hide" : "Details"}
+                    </button>
+                    <button
+                      onClick={() => setEditMode(event.id)}
+                      className="dp-button dp-button-primary dp-button-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteEvent(event.id)}
+                      className="dp-button dp-button-danger dp-button-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  
+                  {/* Mobile details view */}
+                  {openEventId === event.id && (
+                    <div className="dp-event-details">
+                      <div className="dp-event-details-section">
+                        <h4>Event Information</h4>
+                        <div className="dp-event-details-grid">
+                          <div>
+                            <strong>Date:</strong> {formatDate(event.date)}
+                          </div>
+                          <div>
+                            <strong>Setup Time:</strong> {event.setup_time || "Not specified"}
+                          </div>
+                          <div>
+                            <strong>Duration:</strong> {event.duration || event.time || "Not specified"}
+                          </div>
+                          <div>
+                            <strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}
+                          </div>
+                          <div>
+                            <strong>Staff Attending:</strong> 
+                            {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
+                              eventAssignments[event.id].map(empId => 
+                                employees.find(e => e.id === empId)?.name).filter(Boolean).join(', ')
+                              : "Not assigned"
+                            }
+                          </div>
+                          <div>
+                            <strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}
+                          </div>
+                        </div>
+                        {event.event_instructions && (
+                          <div className="dp-event-details-instructions">
+                            <strong>Instructions:</strong>
+                            <p>{event.event_instructions}</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="dp-event-details-section">
+                        <h4>Supplies</h4>
+                        {event.supplies && Object.keys(event.supplies).length > 0 ? (
+                          <ul className="dp-event-supplies-list">
+                            {event.supplies.table_needed && <li>Table</li>}
+                            {event.supplies.beer_buckets && <li>Beer buckets</li>}
+                            {event.supplies.table_cloth && <li>Table cloth</li>}
+                            {event.supplies.tent_weights && <li>Tent/weights</li>}
+                            {event.supplies.signage && <li>Signage</li>}
+                            {event.supplies.ice && <li>Ice</li>}
+                            {event.supplies.jockey_box && <li>Jockey box</li>}
+                            {event.supplies.cups && <li>Cups</li>}
+                            {event.supplies.additional_supplies && (
+                              <li>Additional: {event.supplies.additional_supplies}</li>
+                            )}
+                          </ul>
+                        ) : (
+                          <p>No supplies specified</p>
+                        )}
+                      </div>
+                      
+                      <div className="dp-event-details-section">
+                        <h4>Beer Products</h4>
+                        {event.beers && event.beers.length > 0 ? (
+                          <div className="dp-event-beers-mobile">
+                            {event.beers.map((beer, index) => (
+                              <div key={index} className="dp-event-beer-item">
+                                <div className="dp-event-beer-style">{beer.beer_style}</div>
+                                <div className="dp-event-beer-details">
+                                  <span>{beer.packaging}</span>
+                                  <span>Qty: {beer.quantity}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p>No beer products specified</p>
+                        )}
+                      </div>
+                      
+                      <div className="dp-event-actions">
+                        <button
+                          onClick={() => generatePDF(event, employees, eventAssignments)}
+                          className="dp-button dp-button-secondary dp-button-sm"
+                        >
+                          Download PDF
+                        </button>
+                        <button
+                          onClick={() => viewPostEventNotes(event)}
+                          className="dp-button dp-button-secondary"
+                        >
+                          Post-Event Notes
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
@@ -1835,48 +2008,44 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
           <div className="dp-form-section dp-supplies-needed">
             <h5 className="dp-section-header">SUPPLIES NEEDED</h5>
             <div className="dp-supplies-grid">
-              <div className="dp-supplies-column">
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.table_needed ? 'checked' : ''}`}></div>
-                  <span>Table</span>
-                </div>
-                
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.table_cloth ? 'checked' : ''}`}></div>
-                  <span>Table Cloth</span>
-                </div>
-                
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.signage ? 'checked' : ''}`}></div>
-                  <span>Signage</span>
-                </div>
-                
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.jockey_box ? 'checked' : ''}`}></div>
-                  <span>Jockey Box</span>
-                </div>
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.table_needed ? 'checked' : ''}`}></div>
+                <span>Table</span>
               </div>
               
-              <div className="dp-supplies-column">
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.cups ? 'checked' : ''}`}></div>
-                  <span>Cups</span>
-                </div>
-                
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.beer_buckets ? 'checked' : ''}`}></div>
-                  <span>Beer Buckets</span>
-                </div>
-                
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.tent_weights ? 'checked' : ''}`}></div>
-                  <span>Tent/Weights</span>
-                </div>
-                
-                <div className="dp-checkbox">
-                  <div className={`dp-checkbox-box ${event.supplies?.ice ? 'checked' : ''}`}></div>
-                  <span>Ice</span>
-                </div>
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.table_cloth ? 'checked' : ''}`}></div>
+                <span>Table Cloth</span>
+              </div>
+              
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.signage ? 'checked' : ''}`}></div>
+                <span>Signage</span>
+              </div>
+              
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.jockey_box ? 'checked' : ''}`}></div>
+                <span>Jockey Box</span>
+              </div>
+              
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.cups ? 'checked' : ''}`}></div>
+                <span>Cups</span>
+              </div>
+              
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.beer_buckets ? 'checked' : ''}`}></div>
+                <span>Beer Buckets</span>
+              </div>
+              
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.tent_weights ? 'checked' : ''}`}></div>
+                <span>Tent/Weights</span>
+              </div>
+              
+              <div className="dp-checkbox">
+                <div className={`dp-checkbox-box ${event.supplies?.ice ? 'checked' : ''}`}></div>
+                <span>Ice</span>
               </div>
             </div>
             

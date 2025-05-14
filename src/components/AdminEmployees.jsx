@@ -213,7 +213,9 @@ const AdminEmployees = () => {
       </div>
 
       <h3 className="admin-subtitle">Employee List</h3>
-      <div className="overflow-x-auto">
+
+      {/* Desktop view table */}
+      <div className="overflow-x-auto hidden-mobile">
         <table className="admin-table">
           <thead>
             <tr>
@@ -284,6 +286,76 @@ const AdminEmployees = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card view */}
+      <div className="dp-employee-cards">
+        {employees.length === 0 ? (
+          <div className="dp-empty-employees">No employees found.</div>
+        ) : (
+          employees.map((employee) => (
+            <div key={employee.id} className="dp-employee-card">
+              <div className="dp-employee-card-body">
+                <div className="dp-employee-card-field">
+                  <label className="dp-employee-card-label">Name:</label>
+                  <input
+                    type="text"
+                    value={employee.name || ''}
+                    onChange={(e) => handleInputChange(e, employee.id, 'name')}
+                    className="dp-employee-card-input"
+                  />
+                </div>
+                
+                <div className="dp-employee-card-field">
+                  <label className="dp-employee-card-label">Email:</label>
+                  <input
+                    type="email"
+                    value={employee.email || ''}
+                    onChange={(e) => handleInputChange(e, employee.id, 'email')}
+                    className="dp-employee-card-input"
+                  />
+                </div>
+                
+                <div className="dp-employee-card-field">
+                  <label className="dp-employee-card-label">Phone:</label>
+                  <input
+                    type="tel"
+                    value={employee.phone || ''}
+                    onChange={(e) => handleInputChange(e, employee.id, 'phone')}
+                    className="dp-employee-card-input"
+                  />
+                </div>
+                
+                <div className="dp-employee-card-field">
+                  <label className="dp-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={employee.is_admin || false}
+                      onChange={(e) => handleInputChange(e, employee.id, 'is_admin')}
+                      className="dp-checkbox"
+                    />
+                    <span>Admin</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="dp-employee-card-actions">
+                <button
+                  onClick={() => saveEmployeeChanges(employee.id)}
+                  className="btn btn-success btn-sm"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => deleteEmployee(employee.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

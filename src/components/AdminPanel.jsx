@@ -28,7 +28,71 @@ const AdminPanel = () => {
     }
   };
 
-  return (
+  retuconst [menuOpen, setMenuOpen] = useState(false);
+
+return (
+  <div className="admin-layout">
+    {/* Mobile menu button */}
+    <button 
+      className="mobile-menu-toggle md:hidden" 
+      onClick={() => setMenuOpen(!menuOpen)}
+    >
+      {menuOpen ? 'Close Menu' : 'Open Menu'}
+    </button>
+    
+    {/* Mobile/desktop responsive nav */}
+    <nav className={`admin-sidebar ${menuOpen ? 'mobile-menu-open' : 'mobile-menu-closed'}`}>
+      <h2 className="sidebar-title">Admin Tools</h2>
+      <ul className="admin-nav-list">
+        <li>
+          <button 
+            onClick={() => {
+              setActivePanel('employees');
+              setMenuOpen(false);
+            }} 
+            className={`admin-nav-button ${activePanel === 'employees' ? 'active' : ''}`}
+          >
+            Edit/Add Employees
+          </button>
+        </li>
+        <li>
+          <button 
+            onClick={() => {
+              setActivePanel('events');
+              setMenuOpen(false);
+            }} 
+            className={`admin-nav-button ${activePanel === 'events' ? 'active' : ''}`}
+          >
+            Edit/Add Events
+          </button>
+        </li>
+        <li>
+          <button 
+            onClick={() => {
+              setActivePanel('default'); 
+              setMenuOpen(false);
+            }} 
+            className={`admin-nav-button ${activePanel === 'default' ? 'active' : ''}`}
+          >
+            Edit/Add Default Schedule
+          </button>
+        </li>
+        <li>
+          <button 
+            onClick={() => {
+              setActivePanel('schedule');
+              setMenuOpen(false);
+            }} 
+            className={`admin-nav-button ${activePanel === 'schedule' ? 'active' : ''}`}
+          >
+            Edit Weekly Schedule
+          </button>
+        </li>
+      </ul>
+    </nav>
+    <main className="admin-content">{renderPanel()}</main>
+  </div>
+);rn (
     <div className="admin-layout">
       <nav className="admin-sidebar">
         <h2 className="sidebar-title">Admin Tools</h2>

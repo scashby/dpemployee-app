@@ -63,6 +63,7 @@ const AdminScheduleEditor = () => {
   const [templates, setTemplates] = useState([]); 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeDayMobile, setActiveDayMobile] = useState(null);
   
   // Day headers - starting with Monday
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -73,18 +74,25 @@ const AdminScheduleEditor = () => {
   }, []);
   
   // Fetch schedule when week changes
-    useEffect(() => {
-      if (employees.length > 0) {
-        loadScheduleData();
-      }
-    }, [currentWeekStart, employees]);
+  useEffect(() => {
+    if (employees.length > 0) {
+      loadScheduleData();
+    }
+  }, [currentWeekStart, employees]);
 
-    // Ensure schedule is loaded after component mounts
-    useEffect(() => {
-      if (!loading && Object.keys(scheduleData).length === 0 && employees.length > 0) {
-        loadScheduleData();
-      }
-    }, [loading, scheduleData, employees]);
+  // Ensure schedule is loaded after component mounts
+  useEffect(() => {
+    if (!loading && Object.keys(scheduleData).length === 0 && employees.length > 0) {
+      loadScheduleData();
+    }
+  }, [loading, scheduleData, employees]);
+  
+  // Set initial active mobile day when data loads
+  useEffect(() => {
+    if (!activeDayMobile && Object.keys(scheduleData).length > 0) {
+      setActiveDayMobile(dayNames[0]);
+    }
+  }, [scheduleData, activeDayMobile]);
   
   // Load all initial data
   const loadInitialData = async () => {
@@ -464,6 +472,19 @@ const AdminScheduleEditor = () => {
       showError('Failed to remove employee from schedule.');
     }
   };
+
+  // Format date for display
+  const formatDateDisplay = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Get formatted date for day
+  const getFormattedDateForDay = (day) => {
+    const date = getDateForDay(day);
+    return formatDateDisplay(date);
+  };
   
   return (
     <div className="dp-schedule-container">
@@ -512,16 +533,135 @@ const AdminScheduleEditor = () => {
         </button>
       </div>
 
-      <ScheduleTable
-        scheduleData={scheduleData}
-        employees={employees}
-        dayNames={dayNames}
-        getDateForDay={getDateForDay}
-        onAddShift={openAddShiftModal}
-        onEditShift={openEditShiftModal}
-        onDeleteShift={deleteShift}
-        onRemoveEmployee={removeEmployee}
-      />
+      {/* Desktop Schedule Table - hidden on mobile */}
+      <div className="hidden-mobile">
+        <ScheduleTable
+          scheduleData={scheduleData}
+          employees={employees}
+          dayNames={dayNames}
+          getDateForDay={getDateForDay}
+          onAddShift={openAddShiftModal}
+          onEditShift={openEditShiftModal}
+          onDeleteShift={deleteShift}
+          onRemoveEmployee={removeEmployee}
+        />
+      </div>
+
+      {/* Mobile Schedule View */}
+      <div className="dp-mobile-schedule">
+        {/* Mobile Day Selector */}
+        <div className="dp-mobile-days-selector">
+          {dayNames.map((day) => (
+            <button
+              key={day}
+              className={`dp-mobile-day-button ${activeDayMobile === day ? 'active' : ''}`}
+              onClick={() => setActiveDayMobile(day)}
+            >
+              <div className="dp-mobile-day-name">{day}</div>
+              <div className="dp-mobile-day-date">{getFormattedDateForDay(day)}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile Schedule Content */}
+        {activeDayMobile && (
+          <div className="dp-mobile-schedule-content">
+            <h3 className="dp-mobile-schedule-day">
+              {activeDayMobile} - {getFormattedDateForDay(activeDayMobile)}
+            </h3>
+            
+            {Object.keys(scheduleData).length === 0 ? (
+              <div className="dp-mobile-schedule-empty">
+                No employees scheduled for this week.
+              </div>
+            ) : (
+              Object.entries(scheduleData).map(([employeeName, employeeSchedule]) => {
+                const shiftsForDay = employeeSchedule[activeDayMobile] || [];
+                
+                return (
+                  <div key={employeeName} className="dp-mobile-employee-schedule">
+                    <div className="dp-mobile-employee-header">
+                      <span className="dp-mobile-employee-name">{employeeName}</span>
+                      <button
+                        onClick={() => removeEmployee(employeeName)}
+                        className="dp-mobile-employee-remove"
+                        aria-label={`Remove ${employeeName}`}
+                      >
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    
+                    {shiftsForDay.length === 0 ? (
+                      <div className="dp-mobile-no-shifts">
+                        <button
+                          onClick={() => openAddShiftModal(employeeName, activeDayMobile)}
+                          className="dp-mobile-add-shift"
+                        >
+                          + Add Shift
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="dp-mobile-shifts-list">
+                        {shiftsForDay.map((shift) => (
+                          <div 
+                            key={shift.id} 
+                            className={`dp-mobile-shift dp-mobile-shift-${shift.event_type || 'tasting'}`}
+                          >
+                            <div className="dp-mobile-shift-details">
+                              <div className="dp-mobile-shift-title">
+                                {shift.event_name || 'Tasting Room'}
+                              </div>
+                              <div className="dp-mobile-shift-time">
+                                {shift.shift}
+                              </div>
+                            </div>
+                            <div className="dp-mobile-shift-actions">
+                              {!shift.event_id && (
+                                <button
+                                  onClick={() => openEditShiftModal(shift.id, employeeName, shift.day, shift.shift)}
+                                  className="dp-mobile-shift-edit"
+                                  aria-label="Edit shift"
+                                >
+                                  ✏️
+                                </button>
+                              )}
+                              <button
+                                onClick={() => deleteShift(shift.id)}
+                                className="dp-mobile-shift-delete"
+                                aria-label="Delete shift"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => openAddShiftModal(employeeName, activeDayMobile)}
+                          className="dp-mobile-add-shift"
+                        >
+                          + Add Another Shift
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+            
+            {/* Add Employee Quick Action for mobile */}
+            {Object.keys(scheduleData).length > 0 && (
+              <div className="dp-mobile-quick-add">
+                <button
+                  onClick={openAddEmployeeModal}
+                  className="dp-button dp-button-secondary"
+                >
+                  Add Employee to Schedule
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       
       <AdminModal
         show={showShiftModal}
@@ -708,6 +848,6 @@ const AdminScheduleEditor = () => {
       />
     </div>
   );
-}
+};
 
 export default AdminScheduleEditor;

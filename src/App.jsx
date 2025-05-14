@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/Header.jsx';
+import MobileNavigation from './components/MobileNavigation.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import ScheduleView from './components/ScheduleView.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
@@ -21,9 +22,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-dpoffwhite text-dpblue">
+    <div className="min-h-screen bg-dpoffwhite text-dpblue pb-14 md:pb-0">
       <Header onNavigate={setView} />
       {renderView()}
+      <MobileNavigation onNavigate={setView} currentView={view} />
     </div>
   );
 }
