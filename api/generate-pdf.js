@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
     // Get data from request body
     const data = req.body;
-    console.log('Received data:', JSON.stringify(data).substring(0, 100) + '...');
+    console.log('Received data:', JSON.stringify(data, null, 2).substring(0, 200) + '...');
 
     // Load the PDF template
     console.log('Loading PDF template...');
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       }
     };
     
-    const setCheckbox = (name, checked) => {
+    const setCheckBox = (name, checked) => {
       try {
         const checkbox = form.getCheckBox(name);
         if (checked) {
@@ -57,49 +57,61 @@ export default async function handler(req, res) {
     
     // Fill in form fields
     console.log('Filling form fields...');
+    
+    // Event details
     setTextField("Event Name", data.title);
     setTextField("Event Date", data.date);
     setTextField("Event Set Up Time", data.setup_time);
     setTextField("Event Duration", data.duration);
     setTextField("DP Staff Attending", data.staffAttending);
-    setTextField("Event Contact", data.contact_name ? `${data.contact_name} ${data.contact_phone || ''}` : '');
-    setTextField("Expected Attendees", data.expected_attendees?.toString());
-    setTextField("Event Instructions", data.event_instructions || data.info || '');
-    setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
+    setTextField("Event Contact(Name, Phone)", data.contact_name ? 
+      `${data.contact_name}${data.contact_phone ? ` (${data.contact_phone})` : ''}` : '');
+    setTextField("Expected # of Attendees", data.expected_attendees?.toString());
     
-    if (data.event_type === 'other') {
-      setTextField("Other More Detail", data.event_type_other || '');
+    // Event type
+    setCheckBox("Tasting", data.event_type === 'tasting');
+    setCheckBox("Pint Night", data.event_type === 'pint_night');
+    setCheckBox("Beer Fest", data.event_type === 'beer_fest');
+    setCheckBox("Other", data.event_type === 'other');
+    
+    // If Other is selected, populate the Other field with the specific type
+    if (data.event_type === 'other' && data.event_type_other) {
+      // There may be an Other field to populate with the specific type
+      try {
+        setTextField("Other", data.event_type_other);
+      } catch (e) {
+        console.log("No separate Other field found");
+      }
     }
     
-    // Beer table fields
+    // Beer products - Fill in the table
     if (data.beers && data.beers.length > 0) {
+      // The PDF template has 5 rows for beers
       for (let i = 0; i < Math.min(data.beers.length, 5); i++) {
-        const idx = i + 1;
         const beer = data.beers[i];
-        if (beer) {
-          setTextField(`Beer Style ${idx}`, beer.beer_style || '');
-          setTextField(`Package Style ${idx}`, beer.packaging || '');
-          setTextField(`Quantity ${idx}`, beer.quantity?.toString() || '');
+        if (beer && beer.beer_style) {
+          setTextField(`Beer Style ${i+1}`, beer.beer_style);
+          setTextField(`Pkg ${i+1}`, beer.packaging || '');
+          setTextField(`Qty ${i+1}`, beer.quantity?.toString() || '1');
         }
       }
     }
     
-    // Set checkboxes
-    setCheckbox("Tasting", data.event_type === 'tasting');
-    setCheckbox("Pint Night", data.event_type === 'pint_night');
-    setCheckbox("Beer Fest", data.event_type === 'beer_fest');
-    setCheckbox("Other", data.event_type === 'other');
+    // Supplies checkboxes
+    setCheckBox("Table", data.supplies?.table_needed);
+    setCheckBox("Table Cloth", data.supplies?.table_cloth);
+    setCheckBox("Signage", data.supplies?.signage);
+    setCheckBox("Jockey box", data.supplies?.jockey_box);
+    setCheckBox("Cups", data.supplies?.cups);
+    setCheckBox("Beer buckets", data.supplies?.beer_buckets);
+    setCheckBox("Tent/Weights", data.supplies?.tent_weights);
+    setCheckBox("Ice", data.supplies?.ice);
     
-    setCheckbox("Table", data.supplies?.table_needed);
-    setCheckbox("Beer Buckets", data.supplies?.beer_buckets);
-    setCheckbox("Table Cloth", data.supplies?.table_cloth);
-    setCheckbox("Tent Weights", data.supplies?.tent_weights);
-    setCheckbox("Signage", data.supplies?.signage);
-    setCheckbox("Ice", data.supplies?.ice);
-    setCheckbox("Jockey Box", data.supplies?.jockey_box);
-    setCheckbox("Cups", data.supplies?.cups);
+    // Additional supplies and instructions
+    setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
+    setTextField("Event Instructions", data.event_instructions || data.info || '');
     
-    // DO NOT FLATTEN - just save the document as is
+    // Save the PDF
     console.log('Saving PDF...');
     const pdfBytes = await pdfDoc.save();
     

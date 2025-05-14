@@ -8,10 +8,18 @@ export async function generatePDF(event, employees = [], eventAssignments = {}) 
         .join(', ');
     };
 
+    // Format date properly for PDF
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      // Convert YYYY-MM-DD to MM/DD/YYYY
+      const [year, month, day] = dateStr.split('-');
+      return `${month}/${day}/${year}`;
+    };
+
     // Prepare the event data to send to the API
     const eventData = {
       title: event.title || '',
-      date: event.date || '',
+      date: formatDate(event.date),
       setup_time: event.setup_time || '',
       duration: event.duration || '',
       staffAttending: getAssignedEmployees(),
