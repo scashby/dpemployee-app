@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
     // Get data from request body
     const data = req.body;
-    console.log('Received data:', JSON.stringify(data, null, 2).substring(0, 200) + '...');
+    console.log('Received data:', JSON.stringify(data).substring(0, 100) + '...');
 
     // Load the PDF template
     console.log('Loading PDF template...');
@@ -64,9 +64,9 @@ export default async function handler(req, res) {
     setTextField("Event Set Up Time", data.setup_time);
     setTextField("Event Duration", data.duration);
     setTextField("DP Staff Attending", data.staffAttending);
-    setTextField("Event Contact(Name, Phone)", data.contact_name ? 
+    setTextField("Event ContactName Phone", data.contact_name ? 
       `${data.contact_name}${data.contact_phone ? ` (${data.contact_phone})` : ''}` : '');
-    setTextField("Expected # of Attendees", data.expected_attendees?.toString());
+    setTextField("Expected At", data.expected_attendees?.toString());
     
     // Event type
     setCheckBox("Tasting", data.event_type === 'tasting');
@@ -74,42 +74,73 @@ export default async function handler(req, res) {
     setCheckBox("Beer Fest", data.event_type === 'beer_fest');
     setCheckBox("Other", data.event_type === 'other');
     
-    // If Other is selected, populate the Other field with the specific type
+    // If Other is selected, populate the Other Details field 
     if (data.event_type === 'other' && data.event_type_other) {
-      // There may be an Other field to populate with the specific type
-      try {
-        setTextField("Other", data.event_type_other);
-      } catch (e) {
-        console.log("No separate Other field found");
-      }
+      setTextField("Other Details", data.event_type_other);
     }
     
-    // Beer products - Fill in the table
+    // Beer products - Fill in the table using the exact field names
     if (data.beers && data.beers.length > 0) {
-      // The PDF template has 5 rows for beers
+      const beerFields = [
+        ['First Beer Style', 'First Beer Package', 'First Beer Quantity'],
+        ['Second Beer Style', 'Second Beer Package', 'Second Beer Quantity'],
+        ['Third Beer Style', 'Third Beer Package', 'Third Beer Quantity'],
+        ['Fourth Beer Style', 'Fourth Beer Package', 'Fourth Beer Quantity'],
+        ['Fifth Beer Style', 'Fifth Beer Package', 'Fifth Beer Quantity']
+      ];
+      
+      // Only fill as many rows as we have beers, up to 5
       for (let i = 0; i < Math.min(data.beers.length, 5); i++) {
         const beer = data.beers[i];
         if (beer && beer.beer_style) {
-          setTextField(`Beer Style ${i+1}`, beer.beer_style);
-          setTextField(`Pkg ${i+1}`, beer.packaging || '');
-          setTextField(`Qty ${i+1}`, beer.quantity?.toString() || '1');
+          setTextField(beerFields[i][0], beer.beer_style);
+          setTextField(beerFields[i][1], beer.packaging || '');
+          setTextField(beerFields[i][2], beer.quantity?.toString() || '1');
         }
       }
     }
     
-    // Supplies checkboxes
+    // Supplies checkboxes - using exact field names from the form
     setCheckBox("Table", data.supplies?.table_needed);
     setCheckBox("Table Cloth", data.supplies?.table_cloth);
     setCheckBox("Signage", data.supplies?.signage);
-    setCheckBox("Jockey box", data.supplies?.jockey_box);
+    setCheckBox("Jockey Box", data.supplies?.jockey_box);
     setCheckBox("Cups", data.supplies?.cups);
     setCheckBox("Beer buckets", data.supplies?.beer_buckets);
-    setCheckBox("Tent/Weights", data.supplies?.tent_weights);
+    setCheckBox("Tent and Weights", data.supplies?.tent_weights);
     setCheckBox("Ice", data.supplies?.ice);
     
     // Additional supplies and instructions
     setTextField("Additional Supplies", data.supplies?.additional_supplies || '');
     setTextField("Event Instructions", data.event_instructions || data.info || '');
+    
+    // For the estimated attendees field
+    setTextField("EstimatedAttendees", data.notes?.estimated_attendees?.toString() || '');
+    
+    // Post-event notes are now in a single field
+    if (data.notes) {
+      let notesText = '';
+      if (data.notes.favorite_beer) {
+        notesText += `Favorite beer: ${data.notes.favorite_beer}\n`;
+      }
+      if (data.notes.enough_product !== undefined) {
+        notesText += `Enough product: ${data.notes.enough_product ? 'Yes' : 'No'}\n`;
+      }
+      if (data.notes.adequately_staffed !== undefined) {
+        notesText += `Adequately staffed: ${data.notes.adequately_staffed ? 'Yes' : 'No'}\n`;
+      }
+      if (data.notes.continue_participation !== undefined) {
+        notesText += `Continue participation: ${data.notes.continue_participation ? 'Yes' : 'No'}\n`;
+      }
+      if (data.notes.critiques) {
+        notesText += `Critiques: ${data.notes.critiques}`;
+      }
+      
+      setTextField("Post Event Notes", notesText);
+    }
+    
+    // The return equipment by field
+    setTextField("RETURN EQUIPMENT BY", data.notes?.return_equipment_by || '');
     
     // Save the PDF
     console.log('Saving PDF...');
