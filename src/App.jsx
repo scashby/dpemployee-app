@@ -4,6 +4,7 @@ import MobileNavigation from './components/MobileNavigation.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import ScheduleView from './components/ScheduleView.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
+import DebugInfo from './components/DebugInfo.jsx';
 
 function App() {
   const [view, setView] = useState('dashboard');
@@ -22,11 +23,18 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-dpoffwhite text-dpblue pb-14 md:pb-0">
+    <div className="min-h-screen bg-dpoffwhite text-dpblue">
       <Header onNavigate={setView} />
-      {renderView()}
+      <div className="main-content-container">
+        {renderView()}
+      </div>
       <MobileNavigation onNavigate={setView} currentView={view} />
+      <>
+        {/* Other components */}
+        <DebugInfo />
+      </>
     </div>
+    
   );
 }
 
