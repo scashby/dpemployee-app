@@ -8,13 +8,17 @@ const Header = () => {
     setIsOpen(!isOpen);
   };
 
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
   const linkStyle = ({ isActive }) =>
     isActive
       ? "block text-gold font-bold underline py-2"
       : "block text-gray-dark hover:text-gold py-2";
 
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-white shadow-md relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
         {/* Logo */}
         <div className="flex items-center">
@@ -24,7 +28,7 @@ const Header = () => {
             className="h-16 w-auto" // Adjusted for better visibility
           />
           <h1 className="ml-4 text-xl font-serif text-black">
-            Devil's Purse Brewing Co.
+            Devil's Purse Brewing Co. <span className="font-normal">Employee Portal</span>
           </h1>
         </div>
 
@@ -36,40 +40,43 @@ const Header = () => {
         >
           <span className="hamburger-icon text-2xl">&#9776;</span> {/* Hamburger Icon */}
         </button>
-      </div>
 
-      {/* Dropdown Navigation Menu */}
-      {isOpen && (
-        <nav className="absolute top-full left-0 w-full bg-white shadow-md z-10">
-          <ul className="flex flex-col items-start p-4 space-y-2">
-            <li>
-              <NavLink to="/" className={linkStyle} onClick={() => setIsOpen(false)}>
-                Announcements
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/schedule" className={linkStyle} onClick={() => setIsOpen(false)}>
-                Schedule
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/employees" className={linkStyle} onClick={() => setIsOpen(false)}>
-                Employees
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/events" className={linkStyle} onClick={() => setIsOpen(false)}>
-                Events
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/links" className={linkStyle} onClick={() => setIsOpen(false)}>
-                Links
-              </NavLink>
-            </li>
-          </ul>
-        </nav>
-      )}
+        {/* Dropdown Navigation Menu */}
+        {isOpen && (
+          <nav
+            className="absolute top-full right-4 mt-2 w-48 bg-white shadow-lg rounded-md z-10"
+            onClick={closeMenu} // Close menu when clicking inside
+          >
+            <ul className="flex flex-col p-2">
+              <li>
+                <NavLink to="/" className={linkStyle}>
+                  Announcements
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/schedule" className={linkStyle}>
+                  Schedule
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/employees" className={linkStyle}>
+                  Employees
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/events" className={linkStyle}>
+                  Events
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/links" className={linkStyle}>
+                  Links
+                </NavLink>
+              </li>
+            </ul>
+          </nav>
+        )}
+      </div>
     </header>
   );
 };

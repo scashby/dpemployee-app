@@ -2,11 +2,7 @@ import React from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const Layout = ({ children, pageTitle }) => {
-  React.useEffect(() => {
-    document.title = pageTitle || "Devil's Purse Brewing Co. Employee Portal";
-  }, [pageTitle]);
-
+const Layout = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}

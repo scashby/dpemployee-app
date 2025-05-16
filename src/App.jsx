@@ -14,7 +14,7 @@ const App = () => {
         <Route
           path="/"
           element={
-            <Layout pageTitle="Announcements - Devil's Purse Brewing Co. Employee Portal">
+            <Layout>
               <Announcements />
             </Layout>
           }
@@ -22,7 +22,7 @@ const App = () => {
         <Route
           path="/schedule"
           element={
-            <Layout pageTitle="Schedule - Devil's Purse Brewing Co. Employee Portal">
+            <Layout>
               <Schedule />
             </Layout>
           }
@@ -30,7 +30,7 @@ const App = () => {
         <Route
           path="/employees"
           element={
-            <Layout pageTitle="Employees - Devil's Purse Brewing Co. Employee Portal">
+            <Layout>
               <Employees />
             </Layout>
           }
@@ -38,7 +38,7 @@ const App = () => {
         <Route
           path="/events"
           element={
-            <Layout pageTitle="Events - Devil's Purse Brewing Co. Employee Portal">
+            <Layout>
               <Events />
             </Layout>
           }
@@ -46,7 +46,7 @@ const App = () => {
         <Route
           path="/links"
           element={
-            <Layout pageTitle="Links - Devil's Purse Brewing Co. Employee Portal">
+            <Layout>
               <Links />
             </Layout>
           }
