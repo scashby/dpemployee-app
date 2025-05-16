@@ -8,10 +8,14 @@ const Header = () => {
     setIsOpen(!isOpen);
   };
 
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
   const linkStyle = ({ isActive }) =>
     isActive
-      ? "text-gold font-bold underline"
-      : "text-gray-dark hover:text-gold";
+      ? "block text-gold font-bold underline py-2"
+      : "block text-gray-dark hover:text-gold py-2";
 
   return (
     <header className="bg-white shadow-md">
@@ -19,58 +23,57 @@ const Header = () => {
         {/* Logo */}
         <div className="flex items-center">
           <img
-            src="/logo.png" // Path to the logo in the public folder
+            src="/logo.png" 
             alt="Devil's Purse Brewing Co."
-            className="h-16 w-auto" // Adjusted size for better visibility
+            className="h-16 w-auto" // Adjusted for better visibility
           />
           <h1 className="ml-4 text-xl font-serif text-black">
             Devil's Purse Brewing Co.
           </h1>
         </div>
 
-        {/* Hamburger Menu for Mobile */}
+        {/* Hamburger Button */}
         <button
-          className="block lg:hidden text-gray-dark focus:outline-none"
+          className="text-gray-dark focus:outline-none"
           onClick={toggleMenu}
+          aria-label="Toggle Navigation"
         >
-          <span className="hamburger-icon">&#9776;</span> {/* Hamburger Icon */}
+          <span className="hamburger-icon text-2xl">&#9776;</span> {/* Hamburger Icon */}
         </button>
+      </div>
 
-        {/* Navigation Links */}
-        <nav
-          className={`${
-            isOpen ? "block" : "hidden"
-          } lg:flex lg:items-center lg:space-x-4`}
-        >
-          <ul className="flex flex-col lg:flex-row lg:space-x-6">
+      {/* Dropdown Navigation Menu */}
+      {isOpen && (
+        <nav className="bg-white shadow-md">
+          <ul className="flex flex-col items-start p-4 space-y-2">
             <li>
-              <NavLink to="/" className={linkStyle}>
+              <NavLink to="/" className={linkStyle} onClick={closeMenu}>
                 Announcements
               </NavLink>
             </li>
             <li>
-              <NavLink to="/schedule" className={linkStyle}>
+              <NavLink to="/schedule" className={linkStyle} onClick={closeMenu}>
                 Schedule
               </NavLink>
             </li>
             <li>
-              <NavLink to="/employees" className={linkStyle}>
+              <NavLink to="/employees" className={linkStyle} onClick={closeMenu}>
                 Employees
               </NavLink>
             </li>
             <li>
-              <NavLink to="/events" className={linkStyle}>
+              <NavLink to="/events" className={linkStyle} onClick={closeMenu}>
                 Events
               </NavLink>
             </li>
             <li>
-              <NavLink to="/links" className={linkStyle}>
+              <NavLink to="/links" className={linkStyle} onClick={closeMenu}>
                 Links
               </NavLink>
             </li>
           </ul>
         </nav>
-      </div>
+      )}
     </header>
   );
 };
