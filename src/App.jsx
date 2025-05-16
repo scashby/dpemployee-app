@@ -1,41 +1,27 @@
-import React, { useState } from 'react';
-import Header from './components/Header.jsx';
-import MobileNavigation from './components/MobileNavigation.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import ScheduleView from './components/ScheduleView.jsx';
-import AdminPanel from './components/AdminPanel.jsx';
-import DebugInfo from './components/DebugInfo.jsx';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Announcements from "./pages/Announcements";
+import Schedule from "./pages/Schedule";
+import Employees from "./pages/Employees";
+import Events from "./pages/Events";
+import Links from "./pages/Links";
 
-function App() {
-  const [view, setView] = useState('dashboard');
-
-  const renderView = () => {
-    switch (view) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'schedule':
-        return <ScheduleView />;
-      case 'admin':
-        return <AdminPanel />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
+const App = () => {
   return (
-    <div className="min-h-screen bg-dpoffwhite text-dpblue">
-      <Header onNavigate={setView} />
-      <div className="main-content-container">
-        {renderView()}
-      </div>
-      <MobileNavigation onNavigate={setView} currentView={view} />
-      <>
-        {/* Other components */}
-        <DebugInfo />
-      </>
-    </div>
-    
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Announcements />} />
+        <Route path="/schedule" element={<Schedule />} />
+        <Route path="/employees" element={<Employees />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/links" element={<Links />} />
+
+        {/* Fallback for undefined routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
