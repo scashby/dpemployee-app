@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,8 +20,8 @@ const Header = () => {
   return (
     <header className="bg-white shadow-md relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
-        {/* Logo */}
-        <div className="flex items-center">
+        {/* Logo and Title wrapped in a Link to Home */}
+        <Link to="/" className="flex items-center">
           <img
             src="/logo.png"
             alt="Devil's Purse Brewing Co."
@@ -30,7 +30,7 @@ const Header = () => {
           <h1 className="ml-4 text-xl font-serif text-black">
             Devil's Purse Brewing Co. <span className="font-normal">Employee Portal</span>
           </h1>
-        </div>
+        </Link>
 
         {/* Hamburger Button */}
         <button
