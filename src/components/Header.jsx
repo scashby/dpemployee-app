@@ -8,10 +8,6 @@ const Header = () => {
     setIsOpen(!isOpen);
   };
 
-  const closeMenu = () => {
-    setIsOpen(false);
-  };
-
   const linkStyle = ({ isActive }) =>
     isActive
       ? "block text-gold font-bold underline py-2"
@@ -23,7 +19,7 @@ const Header = () => {
         {/* Logo */}
         <div className="flex items-center">
           <img
-            src="/logo.png" 
+            src="/logo.png"
             alt="Devil's Purse Brewing Co."
             className="h-16 w-auto" // Adjusted for better visibility
           />
@@ -44,30 +40,30 @@ const Header = () => {
 
       {/* Dropdown Navigation Menu */}
       {isOpen && (
-        <nav className="bg-white shadow-md">
+        <nav className="absolute top-full left-0 w-full bg-white shadow-md z-10">
           <ul className="flex flex-col items-start p-4 space-y-2">
             <li>
-              <NavLink to="/" className={linkStyle} onClick={closeMenu}>
+              <NavLink to="/" className={linkStyle} onClick={() => setIsOpen(false)}>
                 Announcements
               </NavLink>
             </li>
             <li>
-              <NavLink to="/schedule" className={linkStyle} onClick={closeMenu}>
+              <NavLink to="/schedule" className={linkStyle} onClick={() => setIsOpen(false)}>
                 Schedule
               </NavLink>
             </li>
             <li>
-              <NavLink to="/employees" className={linkStyle} onClick={closeMenu}>
+              <NavLink to="/employees" className={linkStyle} onClick={() => setIsOpen(false)}>
                 Employees
               </NavLink>
             </li>
             <li>
-              <NavLink to="/events" className={linkStyle} onClick={closeMenu}>
+              <NavLink to="/events" className={linkStyle} onClick={() => setIsOpen(false)}>
                 Events
               </NavLink>
             </li>
             <li>
-              <NavLink to="/links" className={linkStyle} onClick={closeMenu}>
+              <NavLink to="/links" className={linkStyle} onClick={() => setIsOpen(false)}>
                 Links
               </NavLink>
             </li>
