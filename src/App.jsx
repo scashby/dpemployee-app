@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./components/Layout";
 import Announcements from "./pages/Announcements";
 import Schedule from "./pages/Schedule";
 import Employees from "./pages/Employees";
@@ -10,14 +11,46 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Announcements />} />
-        <Route path="/schedule" element={<Schedule />} />
-        <Route path="/employees" element={<Employees />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/links" element={<Links />} />
-
-        {/* Fallback for undefined routes */}
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <Announcements />
+            </Layout>
+          }
+        />
+        <Route
+          path="/schedule"
+          element={
+            <Layout>
+              <Schedule />
+            </Layout>
+          }
+        />
+        <Route
+          path="/employees"
+          element={
+            <Layout>
+              <Employees />
+            </Layout>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <Layout>
+              <Events />
+            </Layout>
+          }
+        />
+        <Route
+          path="/links"
+          element={
+            <Layout>
+              <Links />
+            </Layout>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

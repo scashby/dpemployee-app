@@ -1,24 +1,53 @@
-import React from 'react';
+import React from "react";
+import { NavLink } from "react-router-dom";
 
-const Header = ({ onNavigate }) => {
+const Header = () => {
+  const linkStyle = ({ isActive }) =>
+    isActive
+      ? "text-gold font-bold underline"
+      : "text-gray-dark hover:text-gold";
+
   return (
-    <header className="bg-white shadow-md px-6 py-2 flex justify-between items-center">
-      <div className="flex items-center space-x-4 cursor-pointer" onClick={() => onNavigate('dashboard')}>
+    <header className="bg-white shadow-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
+        {/* Logo */}
         <img
-          src="/logo.png"
-          alt="Devil's Purse Logo"
-          className="h-20 w-auto object-contain"
+          src="/logo.png" // Assuming the logo is named "logo.png" in the public folder
+          alt="Devil's Purse Brewing Co."
+          className="h-10"
         />
-        <h1 className="text-2xl font-bold tracking-wide text-dpblue">
-          DEVIL'S PURSE BREWING CO.
-        </h1>
+
+        {/* Navigation */}
+        <nav>
+          <ul className="flex space-x-4">
+            <li>
+              <NavLink to="/" className={linkStyle}>
+                Announcements
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/schedule" className={linkStyle}>
+                Schedule
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/employees" className={linkStyle}>
+                Employees
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/events" className={linkStyle}>
+                Events
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/links" className={linkStyle}>
+                Links
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
       </div>
-      <nav className="space-x-6 text-dpblue font-body text-sm">
-        <button onClick={() => onNavigate('dashboard')} className="hover:underline">Dashboard</button>
-        <button onClick={() => onNavigate('admin')} className="hover:underline">Admin Panel</button>
-        <button onClick={() => onNavigate('schedule')} className="hover:underline">Schedule</button>
-        <button onClick={() => onNavigate('events')} className="hover:underline">Events</button>
-      </nav>
     </header>
   );
 };
