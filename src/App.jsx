@@ -14,7 +14,7 @@ const App = () => {
         <Route
           path="/"
           element={
-            <Layout>
+            <Layout pageTitle="Announcements - Devil's Purse Brewing Co.">
               <Announcements />
             </Layout>
           }
@@ -22,7 +22,7 @@ const App = () => {
         <Route
           path="/schedule"
           element={
-            <Layout>
+            <Layout pageTitle="Schedule - Devil's Purse Brewing Co.">
               <Schedule />
             </Layout>
           }
@@ -30,7 +30,7 @@ const App = () => {
         <Route
           path="/employees"
           element={
-            <Layout>
+            <Layout pageTitle="Employees - Devil's Purse Brewing Co.">
               <Employees />
             </Layout>
           }
@@ -38,7 +38,7 @@ const App = () => {
         <Route
           path="/events"
           element={
-            <Layout>
+            <Layout pageTitle="Events - Devil's Purse Brewing Co.">
               <Events />
             </Layout>
           }
@@ -46,7 +46,7 @@ const App = () => {
         <Route
           path="/links"
           element={
-            <Layout>
+            <Layout pageTitle="Links - Devil's Purse Brewing Co.">
               <Links />
             </Layout>
           }

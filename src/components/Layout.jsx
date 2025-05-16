@@ -2,9 +2,14 @@ import React from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const Layout = ({ children }) => {
+const Layout = ({ children, pageTitle }) => {
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Set the page title */}
+      <head>
+        <title>{pageTitle || "Devil's Purse Brewing Co. Employee Portal"}</title>
+      </head>
+
       {/* Header */}
       <Header />
 
