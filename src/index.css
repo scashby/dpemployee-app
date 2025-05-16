@@ -1,6 +1,6 @@
 :root {
-  --font-family-serif: "Georgia", serif;
-  --font-family-sans: "Arial", sans-serif;
+  --font-family-serif: "Merriweather", serif;
+  --font-family-sans: "Lato", sans-serif;
   --color-black: #000000;
   --color-white: #FFFFFF;
   --color-gray-light: #F7F7F7;
@@ -13,7 +13,7 @@
 }
 
 body {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-family-sans);
   color: var(--color-gray-dark);
   margin: 0;
   padding: 0;
@@ -21,11 +21,7 @@ body {
   line-height: 1.6;
 }
 
-a {
-  color: var(--color-gold);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-serif);
+  color: var(--color-black);
 }
