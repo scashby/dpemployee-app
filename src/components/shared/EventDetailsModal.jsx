@@ -1,5 +1,6 @@
 import React from "react";
 import { generatePDF } from "../../services/generatePDF";
+import { Link } from "react-router-dom";
 
 const EventDetailsModal = ({ event, employees = [], eventAssignments = {}, onClose }) => (
   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -17,6 +18,12 @@ const EventDetailsModal = ({ event, employees = [], eventAssignments = {}, onClo
       >
         Download PDF
       </button>
+      <Link
+        to="/admin-events"
+        className="mt-8 text-blue-700 underline text-lg hover:text-blue-900"
+      >
+        Go to Admin Events
+      </Link>
     </div>
   </div>
 );
