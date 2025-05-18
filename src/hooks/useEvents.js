@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../supabase/supabaseClient";
 
 const useEvents = () => {
   const [events, setEvents] = useState([]);
@@ -6,19 +7,27 @@ const useEvents = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("/api/events")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch events");
-        return res.json();
-      })
-      .then((data) => {
-        setEvents(data);
-        setLoading(false);
-      })
-      .catch((err) => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        // Fetch events from Supabase
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('events')
+          .select('*')
+          .order('date');
+
+        if (eventsError) throw eventsError;
+
+        setEvents(eventsData || []);
+        setError(null);
+      } catch (err) {
         setError(err.message || "Unknown error");
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   return { events, loading, error };
