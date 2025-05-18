@@ -4,13 +4,8 @@ import { NavLink, Link } from "react-router-dom";
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeMenu = () => {
-    setIsOpen(false);
-  };
+  const toggleMenu = () => setIsOpen(!isOpen);
+  const closeMenu = () => setIsOpen(false);
 
   const linkStyle = ({ isActive }) =>
     isActive
@@ -18,8 +13,8 @@ const Header = () => {
       : "block text-gray-dark hover:text-gold py-2";
 
   return (
-    <header className="bg-white shadow-md relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-4 relative">
+    <header className="bg-white shadow-md relative w-full">
+      <div className="w-full flex items-center justify-between px-4 py-4 relative">
         {/* Logo on the left */}
         <Link to="/" className="flex-shrink-0 flex items-center">
           <img
