@@ -741,33 +741,6 @@ const EventDetailsModal = () => {
                 events.map((event) => (
                   <React.Fragment key={event.id}>
                     <tr className="dp-table-row">
-                      <td>
-                        <span className="dp-event-title">{event.title}</span>
-                      </td>
-                      <td>
-                        {formatDate(event.date)}
-                      </td>
-                      <td>
-                        {event.duration || event.time || "Time TBD"}
-                      </td>
-                      <td>
-                        {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
-                          employees.find(e => e.id === eventAssignments[event.id][0])?.name + 
-                          (eventAssignments[event.id].length > 1 ? ` +${eventAssignments[event.id].length - 1} more` : '')
-                          : "Not assigned"
-                        }
-                      </td>
-                      <td>
-                        <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>
-                          {event.off_prem ? "Off-premise" : "On-premise"}
-                        </span>
-                      </td>
-                      <td>
-                        {event.event_type === 'other' ? event.event_type_other : 
-                        event.event_type === 'tasting' ? 'Tasting' :
-                        event.event_type === 'pint_night' ? 'Pint Night' :
-                        event.event_type === 'beer_fest' ? 'Beer Fest' : 'Other'}
-                      </td>
                       <td className="dp-text-center">
                         <div className="dp-button-group">
                           <button
@@ -775,18 +748,6 @@ const EventDetailsModal = () => {
                             className="dp-button dp-button-secondary dp-button-sm"
                           >
                             {openEventId === event.id ? "Hide" : "Details"}
-                          </button>
-                          <button
-                            onClick={() => setEditMode(event.id)}
-                            className="dp-button dp-button-primary dp-button-sm"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteEvent(event.id)}
-                            className="dp-button dp-button-danger dp-button-sm"
-                          >
-                            Delete
                           </button>
                         </div>
                       </td>
