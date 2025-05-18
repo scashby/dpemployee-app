@@ -6,6 +6,7 @@ import Schedule from "./pages/Schedule";
 import Employees from "./pages/Employees";
 import Events from "./pages/Events";
 import Links from "./pages/Links";
+import AdminEvents from "./components/AdminEvents";
 
 const App = () => {
   return (
@@ -48,6 +49,14 @@ const App = () => {
           element={
             <Layout>
               <Links />
+            </Layout>
+          }
+        />
+        <Route
+          path="/admin-events"
+          element={
+            <Layout>
+              <AdminEvents />
             </Layout>
           }
         />
