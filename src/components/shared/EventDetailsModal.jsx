@@ -18,6 +18,11 @@ const EventDetailsModal = ({ event, employees = [], eventAssignments = {} }) => 
     );
   }
 
+  // Build assignedEmployees string exactly as in AdminEvents
+  const assignedEmployees = (eventAssignments[event.id] || []).map(empId => {
+    return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
+  }).join(', ');
+
   return (
     <div className="dp-container">
       <div className="dp-section">
@@ -37,13 +42,15 @@ const EventDetailsModal = ({ event, employees = [], eventAssignments = {} }) => 
                       <div><strong>Contact Phone:</strong> {event.contact_phone}</div>
                       <div><strong>Expected Attendees:</strong> {event.expected_attendees}</div>
                       <div><strong>Type:</strong> {event.event_type === "other" ? event.event_type_other : event.event_type}</div>
-                      <div><strong>Staff Attending:</strong> {(eventAssignments[event.id] || []).map(empId => {
-                        return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
-                      }).join(', ')}</div>
+                      <div><strong>Staff Attending:</strong> {assignedEmployees}</div>
                     </div>
                     <div className="dp-event-actions">
                       <button
-                        onClick={() => generatePDF(event, employees, eventAssignments)}
+                        onClick={() => generatePDF(
+                          { ...event, assignedEmployees }, // <-- FIX: inject assignedEmployees
+                          employees,
+                          eventAssignments
+                        )}
                         className="dp-button dp-button-secondary dp-button-sm"
                       >
                         Download PDF
