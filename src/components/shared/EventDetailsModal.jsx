@@ -1867,12 +1867,6 @@ const EventDetailsModal = () => {
                         >
                           Download PDF
                         </button>
-                        <button
-                          onClick={() => viewPostEventNotes(event)}
-                          className="dp-button dp-button-secondary"
-                        >
-                          Post-Event Notes
-                        </button>
                       </div>
                     </div>
                   )}
@@ -1896,17 +1890,6 @@ const EventDetailsModal = () => {
         </div>
       )}
 
-      {showPostNotes && selectedEvent && (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <PostEventNotesModal
-              event={selectedEvent}
-              onClose={() => setShowPostNotes(false)}
-              onSave={savePostEventNotes}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -2171,8 +2154,5 @@ const PrintableEventForm = ({ event, employees, eventAssignments, onClose }) => 
     </div>
   );
 };
-    
-// Post Event Notes Modal - removed
-
 
 export default EventDetailsModal;
