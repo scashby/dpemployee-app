@@ -11,113 +11,70 @@ const EventDetailsModal = ({
   onDelete,
   onPostNotes,
 }) => {
-  // Get assigned employees
+  // This is a direct copy of your original PrintableEventForm logic:
   const assignedEmployees = (eventAssignments[event.id] || []).map(empId => {
     return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
   }).join(', ');
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
-    return `${month}/${day}/${year}`;
-  };
-
   return (
-    <div className="modal-backdrop">
-      <div className="modal max-w-2xl w-full p-6 relative overflow-y-auto max-h-[90vh]">
-        <button
-          className="absolute top-2 right-2 text-gray-500 hover:text-black"
-          onClick={onClose}
-        >
-          &times;
-        </button>
-        <h2 className="text-2xl font-bold mb-2">{event.title || "Event Details"}</h2>
-        <div className="mb-2"><strong>Date:</strong> {formatDate(event.date)}</div>
-        <div className="mb-2"><strong>Setup Time:</strong> {event.setup_time || "Not specified"}</div>
-        <div className="mb-2"><strong>Duration:</strong> {event.duration || event.time || "Not specified"}</div>
-        <div className="mb-2"><strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}</div>
-        <div className="mb-2"><strong>Staff Attending:</strong> {assignedEmployees || "Not assigned"}</div>
-        <div className="mb-2"><strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}</div>
-        <div className="mb-2"><strong>Location:</strong> <span className={`dp-badge ${event.off_prem ? 'dp-badge-active' : 'dp-badge-inactive'}`}>{event.off_prem ? "Off-premise" : "On-premise"}</span></div>
-        <div className="mb-2"><strong>Type:</strong> {event.event_type === 'other' ? event.event_type_other : 
-          event.event_type === 'tasting' ? 'Tasting' :
-          event.event_type === 'pint_night' ? 'Pint Night' :
-          event.event_type === 'beer_fest' ? 'Beer Fest' : 'Other'}
-        </div>
-        {event.event_instructions && (
-          <div className="mb-2">
-            <strong>Instructions:</strong>
-            <div>{event.event_instructions}</div>
-          </div>
-        )}
-
-        <div className="mb-4">
-          <h4 className="font-semibold">Supplies</h4>
-          {event.supplies && Object.keys(event.supplies).length > 0 ? (
-            <ul className="dp-event-supplies-list">
-              {event.supplies.table_needed && <li>Table</li>}
-              {event.supplies.beer_buckets && <li>Beer buckets</li>}
-              {event.supplies.table_cloth && <li>Table cloth</li>}
-              {event.supplies.tent_weights && <li>Tent/weights</li>}
-              {event.supplies.signage && <li>Signage</li>}
-              {event.supplies.ice && <li>Ice</li>}
-              {event.supplies.jockey_box && <li>Jockey box</li>}
-              {event.supplies.cups && <li>Cups</li>}
-              {event.supplies.additional_supplies && (
-                <li>Additional: {event.supplies.additional_supplies}</li>
-              )}
-            </ul>
-          ) : (
-            <p>No supplies specified</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <h4 className="font-semibold">Beer Products</h4>
-          {event.beers && event.beers.length > 0 ? (
-            <table className="dp-event-beers-table">
-              <thead>
-                <tr>
-                  <th>Beer Style</th>
-                  <th>Packaging</th>
-                  <th>Qty</th>
-                </tr>
-              </thead>
-              <tbody>
-                {event.beers.map((beer, index) => (
-                  <tr key={index}>
-                    <td>{beer.beer_style}</td>
-                    <td>{beer.packaging}</td>
-                    <td>{beer.quantity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No beer products specified</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <h4 className="font-semibold">Assigned Employees</h4>
-          <div className="dp-employee-list">
-            {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
-              <ul>
-                {(eventAssignments[event.id] || []).map(empId => {
-                  const emp = employees.find(e => e.id === empId);
-                  return emp ? (
-                    <li key={empId} className="dp-employee-item">{emp.name}</li>
-                  ) : null;
-                })}
-              </ul>
-            ) : (
-              <span className="dp-no-employees">No employees assigned</span>
+    <div className="dp-printable-event-form-modal">
+      <div className="dp-printable-event-form">
+        <button className="dp-close-btn" onClick={onClose}>&times;</button>
+        <h2 className="dp-form-title">{event.title || "Event Details"}</h2>
+        <div className="dp-form-row"><strong>Date:</strong> {event.date}</div>
+        <div className="dp-form-row"><strong>Setup Time:</strong> {event.setup_time}</div>
+        <div className="dp-form-row"><strong>Duration:</strong> {event.duration || event.time}</div>
+        <div className="dp-form-row"><strong>Contact Name:</strong> {event.contact_name}</div>
+        <div className="dp-form-row"><strong>Contact Phone:</strong> {event.contact_phone}</div>
+        <div className="dp-form-row"><strong>Expected Attendees:</strong> {event.expected_attendees}</div>
+        <div className="dp-form-row"><strong>Location:</strong> {event.off_prem ? "Off-premise" : "On-premise"}</div>
+        <div className="dp-form-row"><strong>Type:</strong> {event.event_type === "other" ? event.event_type_other : event.event_type}</div>
+        <div className="dp-form-row"><strong>Info:</strong> {event.info}</div>
+        <div className="dp-form-row"><strong>Event Instructions:</strong> {event.event_instructions}</div>
+        <div className="dp-form-row"><strong>Staff Attending:</strong> {assignedEmployees}</div>
+        <div className="dp-form-row">
+          <strong>Supplies Needed:</strong>
+          <ul>
+            {event.supplies && event.supplies.table_needed && <li>Table</li>}
+            {event.supplies && event.supplies.beer_buckets && <li>Beer buckets</li>}
+            {event.supplies && event.supplies.table_cloth && <li>Table cloth</li>}
+            {event.supplies && event.supplies.tent_weights && <li>Tent/weights</li>}
+            {event.supplies && event.supplies.signage && <li>Signage</li>}
+            {event.supplies && event.supplies.ice && <li>Ice</li>}
+            {event.supplies && event.supplies.jockey_box && <li>Jockey box</li>}
+            {event.supplies && event.supplies.cups && <li>Cups</li>}
+            {event.supplies && event.supplies.additional_supplies && (
+              <li>Additional: {event.supplies.additional_supplies}</li>
             )}
-          </div>
+          </ul>
         </div>
-
-        <div className="dp-event-actions flex gap-2 mt-4">
+        <div className="dp-form-row">
+          <strong>Beer Products:</strong>
+          <ul>
+            {event.beers && event.beers.length > 0 ? (
+              event.beers.map((beer, idx) => (
+                <li key={idx}>
+                  {beer.beer_style} — {beer.packaging} — {beer.quantity}
+                </li>
+              ))
+            ) : (
+              <li>No beers listed</li>
+            )}
+          </ul>
+        </div>
+        <div className="dp-form-row">
+          <strong>Post-Event Notes:</strong>
+          <ul>
+            <li><strong>Estimated Attendees:</strong> {event.notes?.estimated_attendees}</li>
+            <li><strong>Favorite Beer:</strong> {event.notes?.favorite_beer}</li>
+            <li><strong>Had Enough Product:</strong> {event.notes?.enough_product ? "Yes" : "No"}</li>
+            <li><strong>Adequately Staffed:</strong> {event.notes?.adequately_staffed ? "Yes" : "No"}</li>
+            <li><strong>Continue Participation:</strong> {event.notes?.continue_participation ? "Yes" : "No"}</li>
+            <li><strong>Critiques/Comments:</strong> {event.notes?.critiques}</li>
+            <li><strong>Return Equipment By:</strong> {event.notes?.return_equipment_by}</li>
+          </ul>
+        </div>
+        <div className="dp-event-actions">
           <button
             onClick={() => generatePDF(event, employees, eventAssignments)}
             className="dp-button dp-button-secondary"
