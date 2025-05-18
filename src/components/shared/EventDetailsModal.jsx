@@ -1,7 +1,7 @@
 import React from "react";
+import { generatePDF } from "../../services/generatePDF";
 
-const EventDetailsModal = ({ event, isAdmin, onClose }) => {
-  // Placeholder for actions: Pick Up Shift, Post Event Notes, Download PDF, Edit/Delete for admin
+const EventDetailsModal = ({ event, isAdmin, onClose, employees = [], eventAssignments = {} }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded shadow-lg p-6 w-full max-w-lg relative">
@@ -37,13 +37,12 @@ const EventDetailsModal = ({ event, isAdmin, onClose }) => {
           <button className="bg-gray-200 px-4 py-2 rounded shadow hover:bg-gray-300">
             Post Event Notes
           </button>
-          <a
-            href={`/api/events/${event.id}/download-pdf`}
+          <button
             className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 text-center"
-            download
+            onClick={() => generatePDF(event, employees, eventAssignments)}
           >
             Download Event Form
-          </a>
+          </button>
         </div>
         {/* Admin actions */}
         {isAdmin && (
