@@ -3,10 +3,8 @@ import { supabase } from '../../supabase/supabaseClient';
 import '../../styles/devils-purse.css';
 import { generatePDF } from '../../services/generatePDF';
 
-const EventDetailsModal = () => {
+const EventDetailsModal = ({ event, employees = [], eventAssignments = {} }) => {
   const [events, setEvents] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [eventAssignments, setEventAssignments] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -16,6 +14,7 @@ const EventDetailsModal = () => {
   useEffect(() => {
     fetchEvents();
     fetchEmployees();
+    // eslint-disable-next-line
   }, []);
 
   const fetchEvents = async () => {
