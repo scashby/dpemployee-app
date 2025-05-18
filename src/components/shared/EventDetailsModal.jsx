@@ -84,18 +84,7 @@ const EventDetailsModal = ({
         </div>
         <div className="flex flex-col md:flex-row gap-2 mt-6">
           <button
-            onClick={() => {
-              // Build staffAttending string and pass it to generatePDF
-              const staffAttending = (eventAssignments[event.id] || [])
-                .map(empId => employees.find(e => e.id === empId)?.name || '')
-                .filter(Boolean)
-                .join(', ');
-              generatePDF(
-                { ...event, staffAttending },
-                employees,
-                eventAssignments
-              );
-            }}
+            onClick={() => generatePDF(event, employees, eventAssignments)}
             className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
           >
             Download PDF
