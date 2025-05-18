@@ -11,7 +11,7 @@ const EventDetailsModal = ({
   onDelete,
   onPostNotes,
 }) => {
-  // This is a direct copy of your original PrintableEventForm logic:
+  // Get assigned employees as names
   const assignedEmployees = (eventAssignments[event.id] || []).map(empId => {
     return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
   }).join(', ');
