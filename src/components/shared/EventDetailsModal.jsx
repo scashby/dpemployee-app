@@ -719,17 +719,6 @@ const EventDetailsModal = () => {
         <div className="dp-table-container">
           {/* Desktop view table */}
           <table className="dp-table hidden-mobile">
-            <thead>
-              <tr>
-                <th>Event Name</th>
-                <th>Date</th>
-                <th>Duration</th>
-                <th>Staff</th>
-                <th>Location</th>
-                <th>Type</th>
-                <th className="dp-text-center">Actions</th>
-              </tr>
-            </thead>
             <tbody>
               {events.length === 0 ? (
                 <tr>
@@ -760,104 +749,6 @@ const EventDetailsModal = () => {
                           <div className="dp-event-details">
                             <div className="dp-event-details-section">
                               <h4>Event Information</h4>
-                              <div className="dp-event-details-grid">
-                                <div>
-                                  <strong>Date:</strong> {formatDate(event.date)}
-                                </div>
-                                <div>
-                                  <strong>Setup Time:</strong> {event.setup_time || "Not specified"}
-                                </div>
-                                <div>
-                                  <strong>Duration:</strong> {event.duration || event.time || "Not specified"}
-                                </div>
-                                <div>
-                                  <strong>Contact:</strong> {event.contact_name ? `${event.contact_name} (${event.contact_phone || 'No phone'})` : "Not specified"}
-                                </div>
-                                <div>
-                                  <strong>Staff Attending:</strong> 
-                                  {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? 
-                                    eventAssignments[event.id].map(empId => 
-                                      employees.find(e => e.id === empId)?.name).filter(Boolean).join(', ')
-                                    : "Not assigned"
-                                  }
-                                </div>
-                                <div>
-                                  <strong>Expected Attendees:</strong> {event.expected_attendees || "Unknown"}
-                                </div>
-                              </div>
-                              {event.event_instructions && (
-                                <div className="dp-event-details-instructions">
-                                  <strong>Instructions:</strong>
-                                  <p>{event.event_instructions}</p>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="dp-event-details-columns">
-                              <div className="dp-event-details-section">
-                                <h4>Supplies</h4>
-                                {event.supplies && Object.keys(event.supplies).length > 0 ? (
-                                  <ul className="dp-event-supplies-list">
-                                    {event.supplies.table_needed && <li>Table</li>}
-                                    {event.supplies.beer_buckets && <li>Beer buckets</li>}
-                                    {event.supplies.table_cloth && <li>Table cloth</li>}
-                                    {event.supplies.tent_weights && <li>Tent/weights</li>}
-                                    {event.supplies.signage && <li>Signage</li>}
-                                    {event.supplies.ice && <li>Ice</li>}
-                                    {event.supplies.jockey_box && <li>Jockey box</li>}
-                                    {event.supplies.cups && <li>Cups</li>}
-                                    {event.supplies.additional_supplies && (
-                                      <li>Additional: {event.supplies.additional_supplies}</li>
-                                    )}
-                                  </ul>
-                                ) : (
-                                  <p>No supplies specified</p>
-                                )}
-                              </div>
-                              
-                              <div className="dp-event-details-section">
-                                <h4>Beer Products</h4>
-                                {event.beers && event.beers.length > 0 ? (
-                                  <table className="dp-event-beers-table">
-                                    <thead>
-                                      <tr>
-                                        <th>Beer Style</th>
-                                        <th>Packaging</th>
-                                        <th>Qty</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {event.beers.map((beer, index) => (
-                                        <tr key={index}>
-                                          <td>{beer.beer_style}</td>
-                                          <td>{beer.packaging}</td>
-                                          <td>{beer.quantity}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                ) : (
-                                  <p>No beer products specified</p>
-                                )}
-                              </div>
-                              
-                              <div className="dp-event-details-section">
-                                <h4>Assigned Employees</h4>
-                                <div className="dp-employee-list">
-                                  {eventAssignments[event.id] && eventAssignments[event.id].length > 0 ? (
-                                    <ul>
-                                      {(eventAssignments[event.id] || []).map(empId => {
-                                        const emp = employees.find(e => e.id === empId);
-                                        return emp ? (
-                                          <li key={empId} className="dp-employee-item">{emp.name}</li>
-                                        ) : null;
-                                      })}
-                                    </ul>
-                                  ) : (
-                                    <span className="dp-no-employees">No employees assigned</span>
-                                  )}
-                                </div>
-                              </div>
                             </div>
                             
                             <div className="dp-event-actions">
