@@ -3,18 +3,18 @@ import { supabase } from '../../supabase/supabaseClient';
 import '../../styles/devils-purse.css';
 import { generatePDF } from '../../services/generatePDF';
 
-const EventDetailsModal = ({ eventId }) => {
+const EventDetailsModal = ({ visibleEventId }) => {
   const [events, setEvents] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [eventAssignments, setEventAssignments] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPrintForm, setShowPrintForm] = useState(false);
 
   useEffect(() => {
     fetchEvents();
     fetchEmployees();
-    // eslint-disable-next-line
   }, []);
 
   const fetchEvents = async () => {
@@ -129,9 +129,8 @@ const EventDetailsModal = ({ eventId }) => {
                   </td>
                 </tr>
               ) : (
-                events
-                  .filter(event => String(event.id) === String(eventId))
-                  .map(event => (
+                events.map((event) =>
+                  String(event.id) === String(visibleEventId) ? (
                     <React.Fragment key={event.id}>
                       <tr className="dp-table-row">
                         <td colSpan="7">
@@ -162,7 +161,8 @@ const EventDetailsModal = ({ eventId }) => {
                         </td>
                       </tr>
                     </React.Fragment>
-                  ))
+                  ) : null
+                )
               )}
             </tbody>
           </table>
