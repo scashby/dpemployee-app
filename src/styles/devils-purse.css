@@ -2707,3 +2707,7 @@ margin-bottom: 0.5rem;
     overflow: visible;
   }
 }
+
+.dp-hide-row {
+  display: none !important;
+}
