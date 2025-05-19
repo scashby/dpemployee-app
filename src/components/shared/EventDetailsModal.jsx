@@ -3,13 +3,13 @@ import { supabase } from '../../supabase/supabaseClient';
 import '../../styles/devils-purse.css';
 import { generatePDF } from '../../services/generatePDF';
 
-const EventDetailsModal = ({ event, employees = [], eventAssignments = {} }) => {
+const EventDetailsModal = ({ eventId }) => {
   const [events, setEvents] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [eventAssignments, setEventAssignments] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [showPrintForm, setShowPrintForm] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -105,6 +105,9 @@ const EventDetailsModal = ({ event, employees = [], eventAssignments = {} }) => 
     );
   }
 
+  // NEW: Select the enriched event by eventId
+  const event = events.find(e => String(e.id) === String(eventId));
+
   return (
     <div className="dp-container">
       {error && (
@@ -148,12 +151,7 @@ const EventDetailsModal = ({ event, employees = [], eventAssignments = {} }) => 
                       </div>
                       <div className="dp-event-actions">
                         <button
-                          onClick={() => {
-                            const assignedEmployees = (eventAssignments[event.id] || []).map(empId => {
-                              return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
-                            }).join(', ');
-                            generatePDF({ ...event, assignedEmployees }, employees, eventAssignments);
-                          }}
+                          onClick={() => generatePDF(event, employees, eventAssignments)}
                           className="dp-button dp-button-secondary dp-button-sm"
                         >
                           Download PDF
