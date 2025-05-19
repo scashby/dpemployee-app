@@ -10,12 +10,21 @@ const EventDetailsModal = ({ eventId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     fetchEvents();
     fetchEmployees();
     // eslint-disable-next-line
   }, []);
+
+  useEffect(() => {
+    // When events or eventId changes, update selectedEvent
+    if (events.length > 0 && eventId != null) {
+      const found = events.find(e => String(e.id) === String(eventId));
+      setSelectedEvent(found || null);
+    }
+  }, [events, eventId]);
 
   const fetchEvents = async () => {
     try {
@@ -105,9 +114,6 @@ const EventDetailsModal = ({ eventId }) => {
     );
   }
 
-  // NEW: Select the enriched event by eventId
-  const event = events.find(e => String(e.id) === String(eventId));
-
   return (
     <div className="dp-container">
       {error && (
@@ -125,7 +131,7 @@ const EventDetailsModal = ({ eventId }) => {
         <div className="dp-table-container">
           <table className="dp-table hidden-mobile">
             <tbody>
-              {!event ? (
+              {!selectedEvent ? (
                 <tr>
                   <td colSpan="7" className="dp-empty-table">
                     No event selected.
@@ -137,21 +143,21 @@ const EventDetailsModal = ({ eventId }) => {
                     <div className="dp-event-details">
                       <div className="dp-event-details-section">
                         <h4>Event Information</h4>
-                        <div><strong>Event Name:</strong> {event.title}</div>
-                        <div><strong>Date:</strong> {formatDate(event.date)}</div>
-                        <div><strong>Setup Time:</strong> {event.setup_time}</div>
-                        <div><strong>Duration:</strong> {event.duration}</div>
-                        <div><strong>Contact Name:</strong> {event.contact_name}</div>
-                        <div><strong>Contact Phone:</strong> {event.contact_phone}</div>
-                        <div><strong>Expected Attendees:</strong> {event.expected_attendees}</div>
-                        <div><strong>Type:</strong> {event.event_type === "other" ? event.event_type_other : event.event_type}</div>
-                        <div><strong>Staff Attending:</strong> {(eventAssignments[event.id] || []).map(empId => {
+                        <div><strong>Event Name:</strong> {selectedEvent.title}</div>
+                        <div><strong>Date:</strong> {formatDate(selectedEvent.date)}</div>
+                        <div><strong>Setup Time:</strong> {selectedEvent.setup_time}</div>
+                        <div><strong>Duration:</strong> {selectedEvent.duration}</div>
+                        <div><strong>Contact Name:</strong> {selectedEvent.contact_name}</div>
+                        <div><strong>Contact Phone:</strong> {selectedEvent.contact_phone}</div>
+                        <div><strong>Expected Attendees:</strong> {selectedEvent.expected_attendees}</div>
+                        <div><strong>Type:</strong> {selectedEvent.event_type === "other" ? selectedEvent.event_type_other : selectedEvent.event_type}</div>
+                        <div><strong>Staff Attending:</strong> {(eventAssignments[selectedEvent.id] || []).map(empId => {
                           return employees.find(e => e.id === empId)?.name || 'Unknown Employee';
                         }).join(', ')}</div>
                       </div>
                       <div className="dp-event-actions">
                         <button
-                          onClick={() => generatePDF(event, employees, eventAssignments)}
+                          onClick={() => generatePDF(selectedEvent, employees, eventAssignments)}
                           className="dp-button dp-button-secondary dp-button-sm"
                         >
                           Download PDF
